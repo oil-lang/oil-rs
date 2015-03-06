@@ -1,0 +1,16 @@
+<view name="main" class="anim-blur">
+    <h1>BEST GAME EVER</h1>
+    <group class="align-center">
+        <button class="btn-play" goto-view="play">Play</button>
+        <button class="btn-quit" action="quit">Quitter</button>
+    </group>
+</view>
+<template test="allo">
+    <group></group>
+</template>
+<template name="allo">
+    FooBAR FOR ONCE
+    <repeat/>
+</template>
+<test>
+</test>

@@ -1,0 +1,13 @@
+[window]
+width = 800
+height = 600
+
+[main]
+font = Font("../images/font-menus.png", 20, 30)
+background = Image(path: "../images/background-main.png")
+title.font = Font(
+    path: "../images/font-slayers.png",
+    width: 50,
+    height: 30
+)
+title.logo = Image("../images/logo.png")

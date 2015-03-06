@@ -1,0 +1,15 @@
+.test {
+    font: $main.font;
+    width: 300px;
+    height: 200px;
+}
+
+.title {
+    margin-left: auto;
+    margin-right: auto;
+    font: $main.title.font;
+}
+
+.title-logo {
+    background-image: $main.title.logo;
+}
