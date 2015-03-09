@@ -359,17 +359,18 @@ mod test {
     use style::StyledNode;
     use style::Stylesheet;
     use style;
+    use report;
     use deps::StyleDefinitions;
 
-    fn stylesheet(style: &str) -> Stylesheet {
-        let reader = BufferedReader::new(style.as_bytes());
+    fn stylesheet(st: &str) -> Stylesheet {
+        let reader = BufferedReader::new(st.as_bytes());
         let defs = StyleDefinitions::new();
-        style::parse(report::StdOutErrorReporter, reader, defs)
+        style::parse(report::StdOutErrorReporter, reader, &defs)
     }
 
-    fn markup_tree(markup: &str) -> markup::Node {
-        let reader = BufferedReader::new(style.as_bytes());
-        let lib = markup::parse(report::StdOuErrorReporter, reader);
+    fn markup_tree(mk: &str) -> markup::Node {
+        let reader = BufferedReader::new(mk.as_bytes());
+        let lib = markup::parse(report::StdOutErrorReporter, reader);
         let (_, root) = lib.views.into_iter().next().unwrap();
         root
     }
@@ -381,13 +382,13 @@ mod test {
                 margin: auto;
             }
             ");
-        let root = marup_tree(
+        let root = markup_tree(
             "<view>\
                 <button class=\"btn\"></button>\
                 <button class=\"btn\"></button>\
                 <button class=\"btn\"></button>\
             </view>
             ");
-        let StyledNode = style::build_style_tree(root, stylesheet);
+        let StyledNode = style::build_style_tree(&root, &stylesheet);
     }
 }
