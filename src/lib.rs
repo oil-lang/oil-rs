@@ -13,11 +13,21 @@ pub mod markup;
 pub mod style;
 pub mod deps;
 pub mod layout;
+pub mod rendering;
 
 pub use self::report::ErrorReporter;
 pub use self::report::StdOutErrorReporter;
 pub use self::report::EmptyErrorReporter;
+pub use self::router::Router;
+pub use self::view::View;
 
 mod parsing;
 mod report;
 mod asset;
+mod router;
+mod view;
+
+pub trait RenderContext {
+    fn renderElement<B, R>(&mut self, boxi: &B, data: &R)
+        where B: layout::Box, R: rendering::Material;
+}

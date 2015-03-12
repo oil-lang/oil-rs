@@ -1,9 +1,11 @@
 
 use std::num::Float;
+use std::slice;
 use std::default::Default;
-use super::dim::Dimensions;
 use super::dim::DimFlags;
-use super::dim::EdgeSizes;
+use super::Dimensions;
+use super::EdgeSizes;
+use super::Box;
 use style::StyledNode;
 use style::PropertyName;
 
@@ -63,6 +65,14 @@ impl LayoutBuffer {
         LayoutBuffer(buffer)
     }
 
+    pub fn iter(&self) -> slice::Iter<LayoutBox> {
+        self.0.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> slice::IterMut<LayoutBox> {
+        self.0.iter_mut()
+    }
+
     fn size_needed_for(style_tree: &StyledNode) -> usize {
         let mut count = 1;
 
@@ -82,6 +92,11 @@ impl LayoutBuffer {
     }
 }
 
+impl Box for LayoutBox {
+    fn dimensions(&self) -> Dimensions {
+        self.dim
+    }
+}
 
 impl LayoutBox {
 
