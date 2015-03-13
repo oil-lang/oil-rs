@@ -3,6 +3,15 @@
 name = "uil"
 version = "0.0.1"
 authors = ["Nemikolh <joan.varvenne@gmail.com>"]
+homepage = "http://uil-lang.github.io/"
+repository = "https://github.com/uil-lang/uil-rs"
+readme = "README.md"
+license = "MIT"
+keywords = ["ui", "opengl", "gamedev"]
+description = "User interface library oriented for games. It includes a user interface language: uil."
+
+[features]
+use_glium = ["glium", "glutin"]
 
 [dependencies.xml-rs]
 # version = "*"
@@ -13,12 +22,18 @@ bitflags = "0.1"
 phf = "0.6.12"
 phf_macros = "0.6.12"
 
-[dev-dependencies.glium]
+[dependencies.glium]
 git = "https://github.com/tomaka/glium"
-[dev-dependencies.glium_macros]
+optional = true
+
+[dependencies.glium_macros]
 git = "https://github.com/tomaka/glium"
-[dev-dependencies.glutin]
+optional = true
+
+[dependencies.glutin]
 git = "https://github.com/tomaka/glutin"
+optional = true
+
 [dev-dependencies.image]
 git = "https://github.com/PistonDevelopers/image"
 [dev-dependencies.cgmath]
