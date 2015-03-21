@@ -1,36 +1,41 @@
 use std::ptr;
 use std::mem;
+use std::marker;
 use super::LayoutBox;
-
+use layout::LayoutBuffer;
 
 /// Mutable iterator over LayoutBuffer
-pub struct LayoutBoxIterMut {
+pub struct LayoutBoxIterMut<'a> {
     current: *mut LayoutBox,
+    _marker: marker::PhantomData<&'a mut LayoutBuffer>,
 }
 
-impl LayoutBoxIterMut {
-    pub fn new(boxes: &mut Box<[LayoutBox]>) -> LayoutBoxIterMut {
+impl<'s> LayoutBoxIterMut<'s> {
+    pub fn new<'a>(boxes: &'a mut Box<[LayoutBox]>) -> LayoutBoxIterMut<'a> {
         let lbox = boxes.iter().next().unwrap();
         LayoutBoxIterMut {
-            current: unsafe { mem::transmute(lbox) }
+            current: unsafe { mem::transmute(lbox) },
+            _marker: marker::PhantomData
         }
     }
 
-    pub unsafe fn new_with_childnode(lbox: & LayoutBox) -> LayoutBoxIterMut {
+    pub unsafe fn new_with_childnode<'a>(lbox: &'a LayoutBox) -> LayoutBoxIterMut<'a> {
         let ptr: *mut LayoutBox = mem::transmute(lbox);
         LayoutBoxIterMut {
-            current: ptr.offset(1)
+            current: ptr.offset(1),
+            _marker: marker::PhantomData
         }
     }
 
-    pub fn new_empty() -> LayoutBoxIterMut {
+    pub fn new_empty<'a>() -> LayoutBoxIterMut<'a> {
         LayoutBoxIterMut {
-            current: ptr::null_mut()
+            current: ptr::null_mut(),
+            _marker: marker::PhantomData
         }
     }
 }
 
-impl<'a> Iterator for LayoutBoxIterMut {
+impl<'b, 'a> Iterator for LayoutBoxIterMut<'b> {
     type Item = &'a mut LayoutBox;
 
     fn next(&mut self) -> Option<&mut LayoutBox> {
@@ -51,33 +56,37 @@ impl<'a> Iterator for LayoutBoxIterMut {
 }
 
 /// Immutable iterator over LayoutBuffer
-pub struct LayoutBoxIter {
+pub struct LayoutBoxIter<'a> {
     current: *const LayoutBox,
+    _marker: marker::PhantomData<&'a LayoutBuffer>,
 }
 
-impl LayoutBoxIter {
-    pub fn new(boxes: &Box<[LayoutBox]>) -> LayoutBoxIter {
+impl<'s> LayoutBoxIter<'s> {
+    pub fn new<'a>(boxes: &'a Box<[LayoutBox]>) -> LayoutBoxIter<'a> {
         let lbox = boxes.iter().next().unwrap();
         LayoutBoxIter {
-            current: unsafe { mem::transmute(lbox) }
+            current: unsafe { mem::transmute(lbox) },
+            _marker: marker::PhantomData
         }
     }
 
-    pub unsafe fn new_with_childnode(lbox: & LayoutBox) -> LayoutBoxIter {
+    pub unsafe fn new_with_childnode<'a>(lbox: &'a LayoutBox) -> LayoutBoxIter<'a> {
         let ptr: *mut LayoutBox = mem::transmute(lbox);
         LayoutBoxIter {
-            current: ptr.offset(1)
+            current: ptr.offset(1),
+            _marker: marker::PhantomData
         }
     }
 
-    pub fn new_empty() -> LayoutBoxIter {
+    pub fn new_empty<'a>() -> LayoutBoxIter<'a> {
         LayoutBoxIter {
-            current: ptr::null()
+            current: ptr::null(),
+            _marker: marker::PhantomData
         }
     }
 }
 
-impl<'a> Iterator for LayoutBoxIter {
+impl<'a, 'b> Iterator for LayoutBoxIter<'b> {
     type Item = &'a LayoutBox;
 
     fn next(&mut self) -> Option<&LayoutBox> {
