@@ -18,7 +18,7 @@ impl Router {
         }
     }
 
-    pub fn renderViews<C>(&self, ctx: &mut C)
+    pub fn render_views<C>(&self, ctx: &mut C)
         where C: RenderContext
     {
 

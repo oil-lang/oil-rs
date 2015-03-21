@@ -19,7 +19,6 @@ pub struct LayoutBox {
     // Stores auto/fixed behaviors
     flags: DimFlags,
     max_width: f32,
-    max_line_width: f32,
     next_sibling: isize,
 }
 
@@ -77,7 +76,6 @@ impl LayoutBox {
             },
             flags: flags,
             next_sibling: next_sibling,
-            max_line_width: 0f32,
             max_width: 0f32,
         }
     }

@@ -1,5 +1,6 @@
 
 #![feature(core, old_io)]
+#![feature(collections)]
 #![feature(plugin)]
 #![plugin(phf_macros)]
 
@@ -37,6 +38,6 @@ mod router;
 mod view;
 
 pub trait RenderContext {
-    fn renderElement<B, R>(&mut self, boxi: &B, data: &R)
+    fn render_element<B, R>(&mut self, boxi: &B, data: &R)
         where B: layout::Box, R: rendering::Material;
 }

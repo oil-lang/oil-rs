@@ -3,7 +3,7 @@ use std::slice;
 use super::LayoutBox;
 use super::boxes::{LayoutBoxIterMut, LayoutBoxIter};
 
-use style::{StyledNode, PropertyName};
+use style::{StyledNode};
 
 // LayoutBuffer are of fixed sized.
 pub struct LayoutBuffer(Box<[LayoutBox]>);
@@ -50,7 +50,7 @@ impl LayoutBuffer {
         last_child: bool) -> isize
     {
 
-        let mut next_sibling = 1is;
+        let mut next_sibling: isize = 1;
         let mut kids = style_tree.kids.len();
         for kid in &style_tree.kids {
             kids -= 1;
@@ -81,3 +81,5 @@ impl LayoutBuffer {
     }
 
 }
+
+// TODO: test with iterators / lifetime

@@ -65,7 +65,7 @@ impl<'a> GliumRenderer<'a> {
 }
 
 impl<'a> uil::RenderContext for GliumRenderer<'a> {
-    fn renderElement<B, R>(&mut self, boxi: &B, data: &R)
+    fn render_element<B, R>(&mut self, boxi: &B, data: &R)
         where B: layout::Box, R: rendering::Material
     {
         let uniforms = uniform! {
