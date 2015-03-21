@@ -1,0 +1,9 @@
+
+.btns-group {
+    width: auto;
+}
+
+.btn-play {
+    margin-left: auto;
+    margin-right: auto;
+}

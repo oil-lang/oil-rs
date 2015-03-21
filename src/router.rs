@@ -11,6 +11,13 @@ pub struct Router {
 
 impl Router {
 
+    pub fn new() -> Router {
+        Router {
+            stack: Vec::new(),
+            views: HashMap::new(),
+        }
+    }
+
     pub fn renderViews<C>(&self, ctx: &mut C)
         where C: RenderContext
     {
