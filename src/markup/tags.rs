@@ -86,7 +86,7 @@ impl HasNodeChildren for Node {
 }
 
 // To help readability:
-type ResOrError = Result<NodeType, super::ParseError>;
+pub type ResOrError = Result<NodeType, super::ParseError>;
 
 // ------------------------------------------------- Button tag
 #[derive(PartialEq, Clone, Debug)]

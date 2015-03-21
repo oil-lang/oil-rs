@@ -21,9 +21,7 @@ pub mod style;
 pub mod deps;
 pub mod layout;
 pub mod rendering;
-
-#[cfg(feature = "use_glium")]
-pub mod glium;
+pub mod backend;
 
 pub use self::report::ErrorReporter;
 pub use self::report::StdOutErrorReporter;

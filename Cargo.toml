@@ -11,7 +11,7 @@ keywords = ["ui", "opengl", "gamedev"]
 description = "User interface library oriented for games. It includes a user interface language: uil."
 
 [features]
-use_glium = ["glium", "glutin"]
+use_glium = ["glium", "glium_macros", "glutin", "image"]
 
 [dependencies.xml-rs]
 # version = "*"
@@ -19,8 +19,8 @@ git = "https://github.com/Nemikolh/xml-rs"
 
 [dependencies]
 bitflags = "0.1"
-phf = "0.6.12"
-phf_macros = "0.6.12"
+phf = "*"
+phf_macros = "*"
 
 [dependencies.glium]
 git = "https://github.com/tomaka/glium"
@@ -31,12 +31,15 @@ git = "https://github.com/tomaka/glium"
 optional = true
 
 [dependencies.glutin]
-git = "https://github.com/tomaka/glutin"
+version = "*"
 optional = true
 
-[dev-dependencies.image]
-git = "https://github.com/PistonDevelopers/image"
+[dependencies.image]
+version = "*"
+optional = true
+
 [dev-dependencies.cgmath]
-git = "https://github.com/bjz/cgmath-rs"
+version = "*"
+
 [dev-dependencies]
 clock_ticks = "*"

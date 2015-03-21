@@ -43,7 +43,7 @@ impl<B> BufferConsumer<B>
     }
 
     pub fn consume_whitespace(&mut self) -> Result<(), Error> {
-        try!(self.consume_while(CharExt::is_whitespace));
+        try!(self.consume_while(char::is_whitespace));
         Ok(())
     }
 
@@ -138,7 +138,7 @@ impl<B> BufferConsumer<B>
 // ======================================== //
 
 fn is_numeric(c: char) -> bool {
-    CharExt::is_numeric(c) || c == '.'
+    char::is_numeric(c) || c == '.'
 }
 
 fn valid_alphabet_char(c: char) -> bool {
