@@ -82,7 +82,7 @@ impl LayoutBox {
 
     pub fn children<'a>(&'a self) -> LayoutBoxIter {
         if self.next_sibling > 1 || self.next_sibling == -1 {
-            unsafe { LayoutBoxIter::new_with_childnode(self) }
+            unsafe { LayoutBoxIter::new_with_firstchild(self) }
         } else {
             LayoutBoxIter::new_empty()
         }
@@ -90,7 +90,7 @@ impl LayoutBox {
 
     pub fn children_mut<'a>(&'a self) -> LayoutBoxIterMut {
         if self.next_sibling > 1 || self.next_sibling == -1 {
-            unsafe { LayoutBoxIterMut::new_with_childnode(self) }
+            unsafe { LayoutBoxIterMut::new_with_firstchild(self) }
         } else {
             LayoutBoxIterMut::new_empty()
         }

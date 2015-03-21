@@ -10,16 +10,16 @@ pub struct LayoutBoxIterMut<'a> {
     _marker: marker::PhantomData<&'a mut LayoutBuffer>,
 }
 
-impl<'s> LayoutBoxIterMut<'s> {
-    pub fn new<'a>(boxes: &'a mut Box<[LayoutBox]>) -> LayoutBoxIterMut<'a> {
-        let lbox = boxes.iter().next().unwrap();
+impl<'a> LayoutBoxIterMut<'a> {
+    pub fn new(boxes: &'a mut Box<[LayoutBox]>) -> LayoutBoxIterMut<'a> {
+        let lbox: &mut LayoutBox = boxes.first_mut().unwrap();
         LayoutBoxIterMut {
-            current: unsafe { mem::transmute(lbox) },
+            current: lbox,
             _marker: marker::PhantomData
         }
     }
 
-    pub unsafe fn new_with_childnode<'a>(lbox: &'a LayoutBox) -> LayoutBoxIterMut<'a> {
+    pub unsafe fn new_with_firstchild(lbox: &'a LayoutBox) -> LayoutBoxIterMut<'a> {
         let ptr: *mut LayoutBox = mem::transmute(lbox);
         LayoutBoxIterMut {
             current: ptr.offset(1),
@@ -27,7 +27,7 @@ impl<'s> LayoutBoxIterMut<'s> {
         }
     }
 
-    pub fn new_empty<'a>() -> LayoutBoxIterMut<'a> {
+    pub fn new_empty() -> LayoutBoxIterMut<'a> {
         LayoutBoxIterMut {
             current: ptr::null_mut(),
             _marker: marker::PhantomData
@@ -61,8 +61,8 @@ pub struct LayoutBoxIter<'a> {
     _marker: marker::PhantomData<&'a LayoutBuffer>,
 }
 
-impl<'s> LayoutBoxIter<'s> {
-    pub fn new<'a>(boxes: &'a Box<[LayoutBox]>) -> LayoutBoxIter<'a> {
+impl<'a> LayoutBoxIter<'a> {
+    pub fn new(boxes: &'a Box<[LayoutBox]>) -> LayoutBoxIter<'a> {
         let lbox = boxes.iter().next().unwrap();
         LayoutBoxIter {
             current: unsafe { mem::transmute(lbox) },
@@ -70,7 +70,7 @@ impl<'s> LayoutBoxIter<'s> {
         }
     }
 
-    pub unsafe fn new_with_childnode<'a>(lbox: &'a LayoutBox) -> LayoutBoxIter<'a> {
+    pub unsafe fn new_with_firstchild(lbox: &'a LayoutBox) -> LayoutBoxIter<'a> {
         let ptr: *mut LayoutBox = mem::transmute(lbox);
         LayoutBoxIter {
             current: ptr.offset(1),
@@ -78,7 +78,7 @@ impl<'s> LayoutBoxIter<'s> {
         }
     }
 
-    pub fn new_empty<'a>() -> LayoutBoxIter<'a> {
+    pub fn new_empty() -> LayoutBoxIter<'a> {
         LayoutBoxIter {
             current: ptr::null(),
             _marker: marker::PhantomData
