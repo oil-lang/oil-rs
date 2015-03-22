@@ -4,6 +4,19 @@
 }
 
 .btn-play {
+    width: 400px;
+    height: 40px;
+    background-image: $btn.selected;
+    background-image-rule: fit;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.btn-quit {
+    width: 400px;
+    height: 40px;
+    background-image: $btn.notselected;
+    background-image-rule: fit;
     margin-left: auto;
     margin-right: auto;
 }

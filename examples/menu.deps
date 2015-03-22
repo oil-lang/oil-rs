@@ -1,0 +1,14 @@
+[btn]
+selected = Image(
+    path: "./btn.png",
+    offset-y: 172,
+    width: 400,
+    height: 40
+)
+notselected = Image(
+    path: "./btn.png",
+    offset-y: 132,
+    offset-x: 0,
+    width: 400,
+    height: 40
+)
