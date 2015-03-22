@@ -37,10 +37,7 @@ fn main() {
         uil::style::parse(uil::StdOutErrorReporter, reader, &styledefs)
     };
 
-    let view = uil::View::new(library.get("main").unwrap(), &stylesheet);
-    let mut router = uil::Router::new();
-
-    router.add_view("main".to_string(), view);
+    let mut router = uil::Router::from_library_and_stylesheet(library, &stylesheet);
 
     //////////////////////////////////////////////////////////////////////////////
     // glium related code
