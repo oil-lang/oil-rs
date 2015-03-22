@@ -7,9 +7,6 @@ use super::ErrorStatus;
 use super::lookup_name;
 use super::HasNodeChildren;
 
-// Name for the "main" view.
-pub const MAIN_VIEW_NAME: &'static str = "main";
-
 #[derive(PartialEq, Clone, Debug)]
 pub enum NodeType {
     Text(String),

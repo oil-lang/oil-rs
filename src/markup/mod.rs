@@ -16,6 +16,9 @@ mod lib;
 mod tags;
 mod parser;
 
+// Name for the "main" view.
+pub const MAIN_VIEW_NAME: &'static str = "main";
+
 // Tag list
 const TEMPLATE_TAG: &'static str = "template";
 const VIEW_TAG: &'static str = "view";

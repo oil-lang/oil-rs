@@ -22,6 +22,7 @@ use super::BUTTON_TAG;
 use super::LINE_INPUT_TAG;
 use super::PROGRESS_BAR_TAG;
 use super::REPEAT_TAG;
+use super::MAIN_VIEW_NAME;
 
 /// Parser
 pub struct Parser<E, B> {
@@ -126,7 +127,7 @@ impl<E, B> Parser<E, B>
             VIEW_TAG => {
                 let view = try!(self.parse_view());
                 let attr_name = lookup_name("name", attributes)
-                    .unwrap_or(tags::MAIN_VIEW_NAME.to_string());
+                    .unwrap_or(MAIN_VIEW_NAME.to_string());
                 views.insert(attr_name, view);
                 Ok(())
             }
