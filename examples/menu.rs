@@ -1,10 +1,11 @@
 
 extern crate glutin;
+extern crate glium;
 extern crate image;
 extern crate clock_ticks;
 extern crate uil;
 
-use std::old_io::BufReader;
+use std::old_io::{File, BufferedReader, BufReader};
 use glium::{DisplayBuild, Surface};
 use uil::layout;
 use uil::rendering;
@@ -36,8 +37,10 @@ fn main() {
         uil::style::parse(uil::StdOutErrorReporter, reader, &styledefs)
     };
 
-    let router = uil::Router::with_
+    let view = uil::View::new(library.get("main").unwrap(), &stylesheet);
+    let mut router = uil::Router::new();
 
+    router.add_view("main".to_string(), view);
 
     //////////////////////////////////////////////////////////////////////////////
     // glium related code
@@ -47,18 +50,24 @@ fn main() {
         .build_glium()
         .unwrap();
 
+    let (width, height) = display.get_window().unwrap().get_inner_size().unwrap();
+
     let image = image::load(BufReader::new(include_bytes!("./btn.png")),
         image::PNG).unwrap();
 
     // Use of the "use_glium" feature.
-    let renderer = uil::glium::GliumRenderer::new(display, image);
+    let mut renderer = uil::backend::GliumRenderer::new(&display, image);
 
     //////////////////////////////////////////////////////////////////////////////
     // main loop (modified example from glium lib)
     //
     start_loop(|| {
 
-        // TODO: FIXME call router.render()
+        // Update views
+        router.update(uil::Viewport { width: width as f32, height: height as f32 });
+
+        // Render views
+        router.render_views(&mut renderer);
 
         // polling and handling the events received by the window
         for event in display.poll_events() {

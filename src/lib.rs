@@ -35,7 +35,13 @@ mod asset;
 mod router;
 mod view;
 
-pub trait RenderContext {
+pub trait RenderBackbend {
     fn render_element<B, R>(&mut self, boxi: &B, data: &R)
         where B: layout::Box, R: rendering::Material;
+}
+
+#[derive(Copy)]
+pub struct Viewport {
+    pub width: f32,
+    pub height: f32,
 }

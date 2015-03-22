@@ -1,11 +1,10 @@
-extern crate glutin;
-extern crate glium;
-extern crate image;
+use glium;
+use image;
 
 use std::default::Default;
 use glium::{DisplayBuild, Surface, Display};
 
-use RenderContext;
+use RenderBackbend;
 use layout;
 use rendering;
 
@@ -71,7 +70,7 @@ impl<'a> GliumRenderer<'a> {
     }
 }
 
-impl<'a> RenderContext for GliumRenderer<'a> {
+impl<'a> RenderBackbend for GliumRenderer<'a> {
     fn render_element<B, R>(&mut self, boxi: &B, data: &R)
         where B: layout::Box, R: rendering::Material
     {
