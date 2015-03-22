@@ -27,6 +27,10 @@ impl<E> Library<E>
         }
     }
 
+    pub fn get<S: ToString>(&self, s: S) -> Option<&View> {
+        self.views.get(&s.to_string())
+    }
+
     pub fn merge(&mut self, other: Library<E>) {
         for (key, val) in other.views.into_iter() {
             self.views.insert(key, val);

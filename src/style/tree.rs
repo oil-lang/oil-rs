@@ -52,15 +52,15 @@ pub struct StyledNode<'a> {
 
 // Thanks to lastest rustc nightly macros can't be
 // defined at the end of the file anymore. Shame.
-macro_rules! return_length_or_panic {
+macro_rules! return_length_or_zero {
 
     ($this:ident try $prop_name:ident) => {
-        return_length_or_panic!(rec $this try $prop_name else { panic!(); });
+        return_length_or_zero!(rec $this try $prop_name else { 0f32 });
     };
 
     ($this:ident try $prop_name:ident else $other:ident) => {
-        return_length_or_panic!(rec $this try $prop_name else {
-            return_length_or_panic!(rec $this try $other else { panic!(); })
+        return_length_or_zero!(rec $this try $prop_name else {
+            return_length_or_zero!(rec $this try $other else { 0f32 })
         });
     };
 
@@ -68,9 +68,9 @@ macro_rules! return_length_or_panic {
         match $this.property_values.get(&$prop_name) {
             Some(v) => {
                 if let Value::Length(val, Unit::Px) = *v {
-                    return val
+                    val
                 } else {
-                    panic!();
+                    0f32
                 }
             }
             None => $none_case
@@ -116,25 +116,25 @@ impl<'a> StyledNode<'a> {
             | PropertyName::BOTTOM
             | PropertyName::HEIGHT
             | PropertyName::WIDTH => {
-                return_length_or_panic!(self try prop_name);
+                return_length_or_zero!(self try prop_name)
             }
             PropertyName::MARGIN_LEFT
             | PropertyName::MARGIN_RIGHT
             | PropertyName::MARGIN_TOP
             | PropertyName::MARGIN_BOTTOM => {
-                return_length_or_panic!(self try prop_name else MARGIN);
+                return_length_or_zero!(self try prop_name else MARGIN)
             }
             PropertyName::PADDING_LEFT
             | PropertyName::PADDING_RIGHT
             | PropertyName::PADDING_TOP
             | PropertyName::PADDING_BOTTOM => {
-                return_length_or_panic!(self try prop_name else PADDING);
+                return_length_or_zero!(self try prop_name else PADDING)
             }
             PropertyName::BORDER_LEFT
             | PropertyName::BORDER_RIGHT
             | PropertyName::BORDER_TOP
             | PropertyName::BORDER_BOTTOM => {
-                return_length_or_panic!(self try prop_name else BORDER);
+                return_length_or_zero!(self try prop_name else BORDER)
             }
             _ => panic!()
         }

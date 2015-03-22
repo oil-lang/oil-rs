@@ -18,6 +18,15 @@ impl Router {
         }
     }
 
+    pub fn add_view(&mut self, name: String, view: View) {
+        let rcv = Rc::new(view);
+        // TODO: clean-up name
+        if name == "main" {
+            self.stack.push(rcv.clone())
+        }
+        self.views.insert(name, rcv);
+    }
+
     pub fn render_views<C>(&self, ctx: &mut C)
         where C: RenderContext
     {
