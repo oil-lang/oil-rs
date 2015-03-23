@@ -38,6 +38,7 @@ pub enum Constructor {
     Quote(String),
     /// Font(path, width, height)
     Font(String, f32, f32),
+    /// TODO: replace String by the type Path
     /// Image(path, width, height, offset-x, offset-y)
     Image(String, Option<f32>, Option<f32>, Option<f32>, Option<f32>),
     // Add other construtor here...
@@ -52,8 +53,8 @@ impl Constructor {
         match *self {
             Constructor::Number(v) => Some(style::Value::Length(v, style::Unit::Px)),
             Constructor::Quote(..) => Some(style::Value::KeywordAuto),
-            Constructor::Font(..) => Some(style::Value::Font(asset::FontData)),
-            Constructor::Image(..) => Some(style::Value::Image(asset::ImageData)),
+            Constructor::Font(..) => Some(style::Value::Font(asset::FontData::new(self))),
+            Constructor::Image(..) => Some(style::Value::Image(asset::ImageData::new(self))),
             Constructor::None => None,
         }
     }
