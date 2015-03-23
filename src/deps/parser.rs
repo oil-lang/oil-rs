@@ -3,7 +3,7 @@ use report::ErrorReporter;
 use parsing::BufferConsumer;
 use parsing::Error;
 
-use super::Value;
+use super::Constructor;
 use super::StyleDefinitions;
 
 pub struct Parser<E, B> {
@@ -79,7 +79,7 @@ impl<E, B> Parser<E, B>
         Ok(prefix)
     }
 
-    fn parse_def(&mut self) -> Result<(String, Value), Error> {
+    fn parse_def(&mut self) -> Result<(String, Constructor), Error> {
         let name = try!(self.bc.consume_path());
         try!(self.bc.consume_whitespace());
         try!(self.bc.expect_char('='));
@@ -88,7 +88,7 @@ impl<E, B> Parser<E, B>
         Ok((name, value))
     }
 
-    fn parse_value(&mut self) -> Result<Value, Error> {
+    fn parse_value(&mut self) -> Result<Constructor, Error> {
 
         let c = match self.bc.look_next_char() {
             Some(c) => c,
@@ -102,15 +102,15 @@ impl<E, B> Parser<E, B>
         }
     }
 
-    fn parse_quote(&mut self) -> Result<Value, Error> {
-        Ok(Value::Quote(try!(self.consume_quote())))
+    fn parse_quote(&mut self) -> Result<Constructor, Error> {
+        Ok(Constructor::Quote(try!(self.consume_quote())))
     }
 
-    fn parse_number(&mut self) -> Result<Value, Error> {
-        Ok(Value::Number(try!(self.bc.consume_number())))
+    fn parse_number(&mut self) -> Result<Constructor, Error> {
+        Ok(Constructor::Number(try!(self.bc.consume_number())))
     }
 
-    fn parse_ctor(&mut self) -> Result<Value, Error> {
+    fn parse_ctor(&mut self) -> Result<Constructor, Error> {
         let ctor = try!(self.bc.consume_word());
         try!(self.bc.consume_whitespace());
         let args = try!(self.parse_args());
@@ -120,7 +120,7 @@ impl<E, B> Parser<E, B>
                 let path = try!(self.find_str_arg(args.iter(), "path", 0));
                 let width = try!(self.find_num_arg(args.iter(), "width", 0));
                 let height = try!(self.find_num_arg(args.iter(), "height", 1));
-                Ok(Value::Font(path, width, height))
+                Ok(Constructor::Font(path, width, height))
             },
             "Image" => {
                 let path = try!(self.find_str_arg(args.iter(), "path", 0));
@@ -128,7 +128,7 @@ impl<E, B> Parser<E, B>
                 let height = self.find_num_arg(args.iter(), "height", 1).ok();
                 let offset_x = self.find_num_arg(args.iter(), "offset-x", 2).ok();
                 let offset_y = self.find_num_arg(args.iter(), "offset-y", 3).ok();
-                Ok(Value::Image(path, width, height, offset_x, offset_y))
+                Ok(Constructor::Image(path, width, height, offset_x, offset_y))
             }
             _ => {
                 Err(self.bc.error(

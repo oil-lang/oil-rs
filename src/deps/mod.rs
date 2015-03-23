@@ -17,7 +17,7 @@ pub fn parse<E, B>(reporter: E, reader: B) -> StyleDefinitions
 }
 
 pub struct StyleDefinitions {
-    pub defs: HashMap<String, Value>,
+    pub defs: HashMap<String, Constructor>,
 }
 
 impl StyleDefinitions {
@@ -29,7 +29,7 @@ impl StyleDefinitions {
 }
 
 #[derive(Clone, Debug)]
-pub enum Value {
+pub enum Constructor {
     /// None type -> Constructor failed loading the resource.
     None,
     /// Number [0-9]+
@@ -43,18 +43,18 @@ pub enum Value {
     // Add other construtor here...
 }
 
-impl Value {
+impl Constructor {
     pub fn convert_to_style_value(&self) -> Option<style::Value> {
         // TODO: FIXME
         // A string should be converted into Keyword(String),
         // once the modification is done to style::Value.
         //
         match *self {
-            Value::Number(v) => Some(style::Value::Length(v, style::Unit::Px)),
-            Value::Quote(..) => Some(style::Value::KeywordAuto),
-            Value::Font(..) => Some(style::Value::Font(asset::FontData)),
-            Value::Image(..) => Some(style::Value::Image(asset::ImageData)),
-            Value::None => None,
+            Constructor::Number(v) => Some(style::Value::Length(v, style::Unit::Px)),
+            Constructor::Quote(..) => Some(style::Value::KeywordAuto),
+            Constructor::Font(..) => Some(style::Value::Font(asset::FontData)),
+            Constructor::Image(..) => Some(style::Value::Image(asset::ImageData)),
+            Constructor::None => None,
         }
     }
 }
