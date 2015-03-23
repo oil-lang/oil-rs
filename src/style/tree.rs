@@ -38,6 +38,16 @@ pub enum PropertyName {
     BORDER_BOTTOM,
     // Layout mode (absolute / rtl / ltr)
     LAYOUT_MODE,
+
+    /// Background
+    /// Possibles rules:
+    /// * `"fit"` will scale the image with the node content size.
+    /// * `"repeat"` won't scale the image but will repeat it
+    ///
+    /// In any case, the node content bounds will be the final image bounds
+    BACKGROUND_IMAGE_RULE,
+    /// This property can only have Value::Image.
+    BACKGROUND_IMAGE,
 }
 
 pub struct StyledNode<'a> {
@@ -198,4 +208,7 @@ static STYLE_PROPERTIES: phf::Map<&'static str, PropertyName> = phf_map! {
     "border-bottom" => PropertyName::BORDER_BOTTOM,
     // Layout mode (absolute / rtl / ltr)
     "layout" => PropertyName::LAYOUT_MODE,
+    // Background image
+    "background-image" => PropertyName::BACKGROUND_IMAGE,
+    "background-image-rule" => PropertyName::BACKGROUND_IMAGE_RULE,
 };

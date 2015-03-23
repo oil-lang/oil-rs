@@ -124,7 +124,11 @@ impl<E, B> Parser<E, B>
             },
             "Image" => {
                 let path = try!(self.find_str_arg(args.iter(), "path", 0));
-                Ok(Value::Image(path))
+                let width = self.find_num_arg(args.iter(), "width", 0).ok();
+                let height = self.find_num_arg(args.iter(), "height", 1).ok();
+                let offset_x = self.find_num_arg(args.iter(), "offset-x", 2).ok();
+                let offset_y = self.find_num_arg(args.iter(), "offset-y", 3).ok();
+                Ok(Value::Image(path, width, height, offset_x, offset_y))
             }
             _ => {
                 Err(self.bc.error(
@@ -188,7 +192,7 @@ impl<E, B> Parser<E, B>
                 })
             }
             _ => {
-                let name = try!(self.bc.consume_word());
+                let name = try!(self.bc.consume_identifier());
                 try!(self.bc.consume_whitespace());
                 try!(self.bc.expect_char(':'));
                 try!(self.bc.consume_whitespace());

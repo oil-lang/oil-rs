@@ -38,8 +38,8 @@ pub enum Value {
     Quote(String),
     /// Font(path, width, height)
     Font(String, f32, f32),
-    /// Image(path)
-    Image(String),
+    /// Image(path, width, height, offset-x, offset-y)
+    Image(String, Option<f32>, Option<f32>, Option<f32>, Option<f32>),
     // Add other construtor here...
 }
 

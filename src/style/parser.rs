@@ -159,12 +159,32 @@ impl<'a, E, B> Parser<'a, E, B>
                         ))
                     }
                 },
+                // TODO: Fix this: Keyword should
+                // be handled in a more generic way.
                 'a' => {
-                    let auto = try!(self.bc.consume_identifier());
-                    if auto == "auto" {
+                    let keyword = try!(self.bc.consume_identifier());
+                    if keyword == "auto" {
                         Ok(Value::KeywordAuto)
+                    } else if keyword == "absolute" {
+                        Ok(Value::KeywordAbsolute)
                     } else {
-                        Err(self.bc.error("Did you mean `auto`?"))
+                        Err(self.bc.error("Did you mean `auto` or `absolute`?"))
+                    }
+                }
+                'f' => {
+                    let keyword = try!(self.bc.consume_identifier());
+                    if keyword == "fit" {
+                        Ok(Value::KeywordFit)
+                    } else {
+                        Err(self.bc.error("Did you mean `fit`?"))
+                    }
+                }
+                'r' => {
+                    let keyword = try!(self.bc.consume_identifier());
+                    if keyword == "repeat" {
+                        Ok(Value::KeywordRepeat)
+                    } else {
+                        Err(self.bc.error("Did you mean `repeat`?"))
                     }
                 }
                 '0'...'9' => {
