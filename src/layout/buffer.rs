@@ -13,12 +13,19 @@ impl LayoutBuffer {
 
     pub fn new(style_tree: &StyledNode) -> LayoutBuffer {
         // First traversal: get size for one big allocation
-        let size = LayoutBuffer::size_needed_for(style_tree);
+        // TODO: Is it really faster to traverse first the tree once
+        // to compute the total size to avoid reallocations ?
+        let size = style_tree.tree_size();
         let mut buffer = Vec::with_capacity(size);
 
         // Add children with properties
         let res = LayoutBuffer::fill_buffer(&mut buffer, style_tree, true);
         assert_eq!(res as usize, size);
+
+        // Set last next_sibling to 0:
+        unsafe {
+            buffer.get_unchecked_mut(size - 1).set_next_sibling(0);
+        }
 
         LayoutBuffer(buffer.into_boxed_slice())
     }
@@ -49,37 +56,29 @@ impl LayoutBuffer {
         style_tree: &StyledNode,
         last_child: bool) -> isize
     {
+        let index = vec.len();
+
+        // Default next sibling (has children and last child)
+        unsafe {
+            vec.push(LayoutBox::new(style_tree, -1));
+        }
 
         let mut next_sibling: isize = 1;
         let mut kids = style_tree.kids.len();
+
         for kid in &style_tree.kids {
             kids -= 1;
             next_sibling += LayoutBuffer::fill_buffer(vec, kid, kids == 0);
         }
 
-        if last_child {
+        if !last_child {
             unsafe {
-                vec.push(LayoutBox::new(style_tree, -1));
-            }
-        } else {
-            unsafe {
-                vec.push(LayoutBox::new(style_tree, next_sibling));
+                vec.get_unchecked_mut(index).set_next_sibling(next_sibling);
             }
         }
 
         next_sibling
     }
-
-    fn size_needed_for(style_tree: &StyledNode) -> usize {
-        let mut count = 1;
-
-        for kid in &style_tree.kids {
-            count += LayoutBuffer::size_needed_for(kid);
-        }
-
-        count
-    }
-
 }
 
 // TODO: test with iterators / lifetime

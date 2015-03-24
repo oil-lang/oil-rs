@@ -80,6 +80,11 @@ impl LayoutBox {
         }
     }
 
+    #[inline]
+    pub unsafe fn set_next_sibling(&mut self, next_sibling: isize) {
+        self.next_sibling = next_sibling;
+    }
+
     pub fn children<'a>(&'a self) -> LayoutBoxIter {
         if self.next_sibling > 1 || self.next_sibling == -1 {
             unsafe { LayoutBoxIter::new_with_firstchild(self) }

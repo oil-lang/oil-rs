@@ -18,10 +18,11 @@ impl View {
     {
         let stylenode = style::build_style_tree(view, stylesheet);
         let layout_buffer = LayoutBuffer::new(&stylenode);
+        let render_buffer = RenderBuffer::new(&stylenode);
         View {
             dirty_flags: LAYOUT_IS_DIRTY | RENDER_IS_DIRTY,
             layout_data: layout_buffer,
-            render_data: RenderBuffer,
+            render_data: render_buffer,
         }
     }
 
@@ -36,7 +37,7 @@ impl View {
         where B: RenderBackbend
     {
         for (boxi, data) in self.layout_data.iter().zip(self.render_data.iter()) {
-            backend.render_element(boxi, &data);
+            backend.render_element(boxi, data);
         }
     }
 }

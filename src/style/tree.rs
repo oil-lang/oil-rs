@@ -150,6 +150,16 @@ impl<'a> StyledNode<'a> {
         }
     }
 
+    pub fn tree_size(&self) -> usize {
+        let mut count = 1;
+
+        for kid in &self.kids {
+            count += kid.tree_size();
+        }
+
+        count
+    }
+
     fn set_properties(&mut self, style: &Stylesheet) {
         let classes = self.node.classes();
         let ref mut properties = self.property_values;
