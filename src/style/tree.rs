@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 use markup::Node;
+use rendering::TextureRule;
+use asset::ImageData;
 use super::Value;
 use super::Stylesheet;
 use super::Unit;
@@ -111,6 +113,21 @@ impl<'a> StyledNode<'a> {
             node: node,
             property_values: HashMap::new(),
             kids: kids
+        }
+    }
+
+    pub fn get_background_rule(&self) -> Option<TextureRule> {
+        match self.property_values.get(&PropertyName::BACKGROUND_IMAGE_RULE) {
+            Some(&Value::KeywordFit) => Some(TextureRule::Fit),
+            Some(&Value::KeywordRepeat) => Some(TextureRule::Repeat),
+            _ => None
+        }
+    }
+
+    pub fn get_background_image(&self) -> Option<ImageData> {
+        match self.property_values.get(&PropertyName::BACKGROUND_IMAGE) {
+            Some(&Value::Image(ref id)) => Some(id.clone()),
+            _ => None
         }
     }
 

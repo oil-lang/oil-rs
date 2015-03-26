@@ -11,7 +11,7 @@ use View;
 use Viewport;
 
 pub struct Router {
-    stack: Vec<Rc<RefCell<View>>>,
+    stack: Vec<(String, Rc<RefCell<View>>)>,
     views: HashMap<String, Rc<RefCell<View>>>,
 }
 
@@ -21,6 +21,23 @@ impl Router {
         Router {
             stack: Vec::new(),
             views: HashMap::new(),
+        }
+    }
+
+    pub fn goto_view(&mut self, name: String) -> Result<(), &str> {
+        match self.views.get(&name) {
+            Some(view) => {
+                // Look for the view in the stack
+                // and pop others views.
+                if let Some(pos) = self.stack.iter().rposition(|&(ref n, _)| *n == name) {
+                    self.stack.truncate(pos+1);
+                } else {
+                // If not found then add it to the stack
+                    self.stack.push((name, view.clone()));
+                }
+                Ok(())
+            }
+            None => Err("View not found")
         }
     }
 
@@ -35,7 +52,7 @@ impl Router {
     }
 
     pub fn update(&mut self, vp: Viewport) {
-        for v in self.stack.iter_mut() {
+        for &mut (_, ref mut v) in self.stack.iter_mut() {
             v.borrow_mut().update(vp);
         }
     }
@@ -44,7 +61,7 @@ impl Router {
         let name_str = name.to_string();
         let rcv = Rc::new(RefCell::new(view));
         if name_str == MAIN_VIEW_NAME {
-            self.stack.push(rcv.clone())
+            self.stack.push((name_str.clone(), rcv.clone()));
         }
         self.views.insert(name_str, rcv);
     }
@@ -53,7 +70,7 @@ impl Router {
         where C: RenderBackbend
     {
 
-        for v in &self.stack {
+        for &(_, ref v) in &self.stack {
             v.borrow().render(ctx);
         }
     }
