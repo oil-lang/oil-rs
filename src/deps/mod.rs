@@ -3,6 +3,8 @@ mod parser;
 
 // Dependencies
 use std::collections::HashMap;
+use std::io::BufRead;
+use std::path::PathBuf;
 use report::ErrorReporter;
 use style;
 use asset;
@@ -10,7 +12,7 @@ use asset;
 /// Convenient function to parse a style.
 pub fn parse<E, B>(reporter: E, reader: B) -> StyleDefinitions
     where E: ErrorReporter,
-          B: Buffer
+          B: BufRead
 {
     let mut parser = parser::Parser::new(reporter, reader);
     parser.parse()
@@ -40,7 +42,7 @@ pub enum Constructor {
     Font(String, f32, f32),
     /// TODO: replace String by the type Path
     /// Image(path, width, height, offset-x, offset-y)
-    Image(String, Option<f32>, Option<f32>, Option<f32>, Option<f32>),
+    Image(PathBuf, Option<f32>, Option<f32>, Option<f32>, Option<f32>),
     // Add other construtor here...
 }
 

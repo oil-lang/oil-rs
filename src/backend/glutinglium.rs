@@ -27,7 +27,7 @@ pub struct GliumRenderer<'a> {
 impl<'a> GliumRenderer<'a> {
     pub fn new(display: &'a Display, img: image::DynamicImage) -> GliumRenderer<'a> {
 
-        let program = glium::Program::from_source(&display, r"
+        let program = glium::Program::from_source(display, r"
             #version 110
 
             uniform mat4 matrix;
@@ -64,7 +64,7 @@ impl<'a> GliumRenderer<'a> {
             ),
             index_buffer: glium::IndexBuffer::new(display,
                 glium::index::TriangleStrip(vec![1 as u16, 2, 0, 3])),
-            texture: glium::texture::CompressedTexture2d::new(&display, img),
+            texture: glium::texture::CompressedTexture2d::new(display, img),
             program: program,
         }
     }

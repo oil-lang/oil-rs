@@ -1,5 +1,5 @@
-
-#![feature(core, old_io)]
+#![feature(convert)]
+#![feature(core, io)]
 #![feature(collections)]
 #![feature(plugin)]
 #![plugin(phf_macros)]

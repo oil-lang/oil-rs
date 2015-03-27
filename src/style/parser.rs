@@ -1,6 +1,7 @@
 
 use report::ErrorReporter;
 use deps::StyleDefinitions;
+use std::io::BufRead;
 use parsing::Error;
 use parsing::BufferConsumer;
 
@@ -19,7 +20,7 @@ pub struct Parser<'a, E, B> {
 
 impl<'a, E, B> Parser<'a, E, B>
     where E: ErrorReporter,
-          B: Buffer
+          B: BufRead
 {
 
     pub fn new(reporter: E, reader: B, deps: &'a StyleDefinitions) -> Parser<'a, E, B>

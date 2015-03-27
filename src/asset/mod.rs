@@ -1,6 +1,7 @@
 use std::num::ToPrimitive;
 use std::rc::Rc;
 use std::fmt::{self, Debug};
+use std::path::Path;
 use image::{self, GenericImage};
 
 use deps::Constructor;

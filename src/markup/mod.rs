@@ -1,4 +1,11 @@
 
+// Dependencies
+use self::parser::Parser;
+use xml::attribute::OwnedAttribute;
+use std::io::BufRead;
+use ErrorReporter;
+
+
 // Re-export
 pub use self::tags::Node;
 pub use self::tags::NodeType;
@@ -28,13 +35,7 @@ const LINE_INPUT_TAG: &'static str = "line-input";
 const PROGRESS_BAR_TAG: &'static str = "progress-bar";
 const REPEAT_TAG: &'static str = "repeat";
 
-// Dependencies
-use self::parser::Parser;
-use xml::attribute::OwnedAttribute;
-use ErrorReporter;
-
-
-/// Parse the given buffer.
+/// Parse the given BufRead.
 ///
 /// # Example:
 ///
@@ -50,7 +51,7 @@ use ErrorReporter;
 /// ```
 pub fn parse<E, B>(reporter: E, reader: B) -> Library<E>
     where E: ErrorReporter,
-          B: Buffer
+          B: BufRead
 {
     let mut parser = Parser::new(reporter, reader);
     parser.parse()

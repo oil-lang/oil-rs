@@ -2,7 +2,7 @@
 use xml::reader::EventReader;
 use xml::reader::events::*;
 use xml::attribute::OwnedAttribute;
-use std::old_io::Buffer;
+use std::io::BufRead;
 
 use std::collections::HashMap;
 use ErrorReporter;
@@ -25,14 +25,14 @@ use super::REPEAT_TAG;
 use super::MAIN_VIEW_NAME;
 
 /// Parser
-pub struct Parser<E, B> {
+pub struct Parser<E, B: BufRead> {
     err: E,
     parser: EventReader<B>,
 }
 
 impl<E, B> Parser<E, B>
     where E: ErrorReporter,
-          B: Buffer
+          B: BufRead
 {
 
     pub fn new(reporter: E, reader: B) -> Parser<E, B> {

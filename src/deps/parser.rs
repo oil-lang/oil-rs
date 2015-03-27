@@ -1,4 +1,6 @@
 
+use std::io::BufRead;
+use std::path::PathBuf;
 use report::ErrorReporter;
 use parsing::BufferConsumer;
 use parsing::Error;
@@ -15,7 +17,7 @@ pub struct Parser<E, B> {
 
 impl<E, B> Parser<E, B>
     where E: ErrorReporter,
-          B: Buffer
+          B: BufRead
 {
 
     pub fn new(reporter: E, reader: B) -> Parser<E, B> {
@@ -128,7 +130,7 @@ impl<E, B> Parser<E, B>
                 let height = self.find_num_arg(args.iter(), "height", 1).ok();
                 let offset_x = self.find_num_arg(args.iter(), "offset-x", 2).ok();
                 let offset_y = self.find_num_arg(args.iter(), "offset-y", 3).ok();
-                Ok(Constructor::Image(path, width, height, offset_x, offset_y))
+                Ok(Constructor::Image(PathBuf::from(path), width, height, offset_x, offset_y))
             }
             _ => {
                 Err(self.bc.error(

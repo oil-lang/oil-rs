@@ -1,23 +1,25 @@
 
 use std::num::FromStrRadix;
+use std::io::BufRead;
+use std::io::Chars;
 use super::Error;
 
 
 pub struct BufferConsumer<B> {
     row: usize,
     col: usize,
-    buffer: B,
+    buffer: Chars<B>,
     tmp_char: Option<char>,
 }
 
 impl<B> BufferConsumer<B>
-    where B: Buffer
+    where B: BufRead
 {
     pub fn new(reader: B) -> BufferConsumer<B> {
         BufferConsumer {
             row: 0,
             col: 0,
-            buffer: reader,
+            buffer: reader.chars(),
             tmp_char: None,
         }
     }
@@ -92,7 +94,7 @@ impl<B> BufferConsumer<B>
 
     pub fn consume_any_char(&mut self) -> Option<char> {
         if self.tmp_char.is_none() {
-            match self.buffer.read_char().ok() {
+            match self.buffer.next().and_then(|a| a.ok()) {
                 Some(c) => {
                     if c == '\n' {
                         self.row += 1;
