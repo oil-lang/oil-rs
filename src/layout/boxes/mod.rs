@@ -3,7 +3,7 @@ use std::num::Float;
 use std::default::Default;
 
 use super::dim::DimFlags;
-use super::{Dimensions, EdgeSizes, Box};
+use super::{Dimensions, EdgeSizes};
 use style::{StyledNode, PropertyName};
 
 // Reexport iterator for buffer
@@ -25,12 +25,6 @@ pub struct LayoutBox {
 // ======================================== //
 //                 INTERFACE                //
 // ======================================== //
-
-impl Box for LayoutBox {
-    fn dimensions(&self) -> Dimensions {
-        self.dim
-    }
-}
 
 impl LayoutBox {
 

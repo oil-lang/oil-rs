@@ -1,5 +1,6 @@
 use std::num::ToPrimitive;
 use std::rc::Rc;
+use std::ops::Deref;
 use std::fmt::{self, Debug};
 use std::path::Path;
 use image::{self, GenericImage};
@@ -15,10 +16,10 @@ pub struct FontData;
 #[derive(Clone)]
 pub struct ImageData {
     img: Rc<image::DynamicImage>,
-    offset_x: f32,
-    offset_y: f32,
-    width: f32,
-    height: f32,
+    pub offset_x: f32,
+    pub offset_y: f32,
+    pub width: f32,
+    pub height: f32,
 }
 
 /// Necessary because DynamicImage does not implement the trait Debug.
@@ -58,6 +59,10 @@ impl ImageData {
         } else {
             panic!("Wrong constructor passed. Expected Constructor::Image.");
         }
+    }
+
+    pub fn img(&self) -> &image::DynamicImage {
+        self.img.deref()
     }
 }
 

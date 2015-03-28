@@ -2,6 +2,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
+use glium::Display;
 
 use markup::MAIN_VIEW_NAME;
 use markup::Library;
@@ -41,12 +42,15 @@ impl Router {
         }
     }
 
-    pub fn from_library_and_stylesheet<E>(lib: Library<E>, style: &Stylesheet)
+    pub fn from_library_and_stylesheet<E>(
+        display: &Display,
+        lib: Library<E>,
+        style: &Stylesheet)
         -> Router
     {
         let mut router = Router::new();
         for (name, view) in lib.views.into_iter() {
-            router.add_view(name, View::new(&view, style));
+            router.add_view(name, View::new(display, &view, style));
         }
         router
     }
@@ -69,9 +73,10 @@ impl Router {
     pub fn render_views<C>(&self, ctx: &mut C)
         where C: RenderBackbend
     {
-
+        let mut f = ctx.prepare_frame();
         for &(_, ref v) in &self.stack {
-            v.borrow().render(ctx);
+            v.borrow().render(ctx, &mut f);
         }
+        ctx.flush_frame(f);
     }
 }

@@ -11,7 +11,7 @@ keywords = ["ui", "opengl", "gamedev"]
 description = "User interface library oriented for games. It includes a user interface language: uil."
 
 [features]
-use_glium = ["glium", "glium_macros", "glutin", "image"]
+default = ["glium", "glium_macros", "glutin", "image"]
 
 [dependencies.xml-rs]
 # version = "*"

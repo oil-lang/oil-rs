@@ -9,10 +9,8 @@ extern crate bitflags;
 extern crate xml;
 extern crate phf;
 
-#[cfg(feature = "use_glium")]
 #[macro_use]
 extern crate glium;
-#[cfg(feature = "use_glium")]
 extern crate image;
 
 // TODO: Export only minimum
@@ -36,8 +34,20 @@ mod router;
 mod view;
 
 pub trait RenderBackbend {
-    fn render_element<B, R>(&mut self, boxi: &B, data: &R)
-        where B: layout::Box, R: rendering::Material;
+    type Frame;
+
+    /// Prepare the frame for the current rendering step.
+    fn prepare_frame(&self) -> Self::Frame;
+
+    /// Render an element on the current frame.
+    fn render_element(
+        &self,
+        frame: &mut Self::Frame,
+        boxi: &layout::LayoutBox,
+        data: &rendering::RenderData);
+
+    // Flush the frame. Typically, swap buffers.
+    fn flush_frame(&self, frame: Self::Frame);
 }
 
 #[derive(Copy)]

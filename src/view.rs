@@ -1,6 +1,8 @@
 
 use layout::LayoutBuffer;
 use rendering::RenderBuffer;
+use glium::Display;
+
 use markup;
 use RenderBackbend;
 use Viewport;
@@ -14,11 +16,12 @@ pub struct View {
 
 impl View {
 
-    pub fn new(view: &markup::View, stylesheet: &style::Stylesheet) -> View
+    pub fn new(display: &Display, view: &markup::View, stylesheet: &style::Stylesheet)
+        -> View
     {
         let stylenode = style::build_style_tree(view, stylesheet);
         let layout_buffer = LayoutBuffer::new(&stylenode);
-        let render_buffer = RenderBuffer::new(&stylenode);
+        let render_buffer = RenderBuffer::new(display, &stylenode);
         View {
             dirty_flags: LAYOUT_IS_DIRTY | RENDER_IS_DIRTY,
             layout_data: layout_buffer,
@@ -33,11 +36,11 @@ impl View {
         }
     }
 
-    pub fn render<B>(&self, backend: &mut B)
+    pub fn render<B>(&self, backend: &mut B, frame: &mut <B as RenderBackbend>::Frame)
         where B: RenderBackbend
     {
         for (boxi, data) in self.layout_data.iter().zip(self.render_data.iter()) {
-            backend.render_element(boxi, data);
+            backend.render_element(frame, boxi, data);
         }
     }
 }

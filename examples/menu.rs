@@ -12,8 +12,6 @@ use uil::rendering;
 use std::old_io::timer;
 use std::time::duration::Duration;
 
-
-
 fn main() {
 
     //////////////////////////////////////////////////////////////////////////////
@@ -37,7 +35,6 @@ fn main() {
         uil::style::parse(uil::StdOutErrorReporter, reader, &styledefs)
     };
 
-    let mut router = uil::Router::from_library_and_stylesheet(library, &stylesheet);
 
     //////////////////////////////////////////////////////////////////////////////
     // glium related code
@@ -49,11 +46,8 @@ fn main() {
 
     let (width, height) = display.get_window().unwrap().get_inner_size().unwrap();
 
-    let image = image::load(BufReader::new(include_bytes!("./btn.png")),
-        image::PNG).unwrap();
-
-    // Use of the "use_glium" feature.
-    let mut renderer = uil::backend::GliumRenderer::new(&display, image);
+    let mut renderer = uil::backend::GliumRenderer::new(&display);
+    let mut router = uil::Router::from_library_and_stylesheet(&display, library, &stylesheet);
 
     //////////////////////////////////////////////////////////////////////////////
     // main loop (modified example from glium lib)

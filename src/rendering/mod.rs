@@ -1,12 +1,6 @@
 use std::slice;
 use style::{StyledNode};
-
-pub trait Material {
-    fn texture(&self);
-}
-
-#[cfg(not(feature = "use_glium"))]
-pub struct RenderData;
+use glium::Display;
 
 #[derive(Copy, Debug)]
 pub enum TextureRule {
@@ -14,20 +8,18 @@ pub enum TextureRule {
     Repeat
 }
 
-#[cfg(feature = "use_glium")]
 pub use self::glutinglium::RenderData;
-#[cfg(feature = "use_glium")]
-mod glutinglium;
 
+mod glutinglium;
 
 pub struct RenderBuffer(Box<[RenderData]>);
 
 impl RenderBuffer {
-    pub fn new(style_tree: &StyledNode) -> RenderBuffer {
+    pub fn new(display: &Display, style_tree: &StyledNode) -> RenderBuffer {
         // Create buffer.
         let mut buffer = Vec::with_capacity(style_tree.tree_size());
 
-        fill_buffer(&mut buffer, style_tree);
+        fill_buffer(display, &mut buffer, style_tree);
 
         RenderBuffer(buffer.into_boxed_slice())
     }
@@ -37,29 +29,19 @@ impl RenderBuffer {
     }
 }
 
-impl Material for RenderData {
-    fn texture(&self) {
-
-    }
-}
-
-#[cfg(feature = "use_glium")]
 fn fill_buffer(
+    display: &Display,
     vec: &mut Vec<RenderData>,
     style_tree: &StyledNode)
 {
     vec.push(
         RenderData::new(
+            display,
             style_tree.get_background_image(),
             style_tree.get_background_rule()
         )
     );
     for kid in &style_tree.kids {
-        fill_buffer(vec, kid);
+        fill_buffer(display, vec, kid);
     }
 }
-
-#[cfg(not(feature = "use_glium"))]
-fn fill_buffer(
-    vec: &mut Vec<RenderData>,
-    style_tree: &StyledNode) {}

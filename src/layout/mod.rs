@@ -8,11 +8,6 @@ mod boxes;
 mod buffer;
 mod dim;
 
-pub trait Box {
-    fn dimensions(&self) -> Dimensions;
-}
-
-
 #[cfg(test)]
 mod test {
 
