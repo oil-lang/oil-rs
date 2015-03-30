@@ -4,6 +4,7 @@ use deps::StyleDefinitions;
 use std::io::BufRead;
 use parsing::Error;
 use parsing::BufferConsumer;
+use resource::ResourceManager;
 
 use super::Value;
 use super::Rule;
@@ -12,23 +13,29 @@ use super::Unit;
 use super::Declaration;
 
 /// Parser
-pub struct Parser<'a, E, B> {
+pub struct Parser<'a, 'b, 'display: 'b, E, B> {
     err: E,
     bc: BufferConsumer<B>,
     deps: &'a StyleDefinitions,
+    resource_manager: &'b mut ResourceManager<'display>,
 }
 
-impl<'a, E, B> Parser<'a, E, B>
+impl<'a, 'b, 'display, E, B> Parser<'a, 'b, 'display, E, B>
     where E: ErrorReporter,
           B: BufRead
 {
 
-    pub fn new(reporter: E, reader: B, deps: &'a StyleDefinitions) -> Parser<'a, E, B>
+    pub fn new(
+        reporter: E,
+        reader: B,
+        deps: &'a StyleDefinitions,
+        resource_manager: &'b mut ResourceManager<'display>) -> Parser<'a,'b, 'display, E, B>
     {
         Parser {
             bc: BufferConsumer::new(reader),
             err: reporter,
             deps: deps,
+            resource_manager: resource_manager,
         }
     }
 
@@ -147,7 +154,7 @@ impl<'a, E, B> Parser<'a, E, B>
                     let path = try!(self.bc.consume_path());
                     match self.deps.defs.get(&path) {
                         Some(v) => {
-                            if let Some(val) = v.convert_to_style_value() {
+                            if let Some(val) = v.convert_to_style_value(self.resource_manager) {
                                 Ok(val)
                             } else {
                                 Err(self.bc.error_str(

@@ -8,6 +8,7 @@ use image::{
     ImageBuffer
 };
 
+use resource::ResourceManager;
 use RenderBackbend;
 use layout;
 use rendering;
@@ -87,13 +88,15 @@ impl<'a> RenderBackbend for GliumRenderer<'a> {
 
     fn render_element(
         &self,
+        resource_manager: &ResourceManager,
         frame: &mut <GliumRenderer as RenderBackbend>::Frame,
         boxi: &layout::LayoutBox,
         data: &rendering::RenderData)
     {
-        match data.main_texture.as_ref() {
-            Some(tex) => {
+        match data.main_texture {
+            Some(texId) => {
 
+                let tex = resource_manager.get_texture(texId);
                 let uniforms = uniform! {
                     matrix: [
                         [1.0, 0.0, 0.0, 0.0],

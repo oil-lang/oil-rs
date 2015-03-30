@@ -6,6 +6,7 @@ use glium::Display;
 
 use markup::MAIN_VIEW_NAME;
 use markup::Library;
+use resource::ResourceManager;
 use style::Stylesheet;
 use RenderBackbend;
 use View;
@@ -44,13 +45,14 @@ impl Router {
 
     pub fn from_library_and_stylesheet<E>(
         display: &Display,
+        resource_manager:  &ResourceManager,
         lib: Library<E>,
         style: &Stylesheet)
         -> Router
     {
         let mut router = Router::new();
         for (name, view) in lib.views.into_iter() {
-            router.add_view(name, View::new(display, &view, style));
+            router.add_view(name, View::new(display, resource_manager, &view, style));
         }
         router
     }
@@ -70,12 +72,12 @@ impl Router {
         self.views.insert(name_str, rcv);
     }
 
-    pub fn render_views<C>(&self, ctx: &mut C)
+    pub fn render_views<C>(&self, ctx: &mut C, resource_manager: &ResourceManager)
         where C: RenderBackbend
     {
         let mut f = ctx.prepare_frame();
         for &(_, ref v) in &self.stack {
-            v.borrow().render(ctx, &mut f);
+            v.borrow().render(ctx, resource_manager, &mut f);
         }
         ctx.flush_frame(f);
     }

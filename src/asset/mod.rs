@@ -3,9 +3,9 @@ use std::rc::Rc;
 use std::ops::Deref;
 use std::fmt::{self, Debug};
 use std::path::Path;
-use image::{self, GenericImage};
 
 use deps::Constructor;
+use resource::{ResourceManager, ResourceId};
 
 #[derive(Debug, Clone)]
 pub struct FontData;
@@ -15,7 +15,7 @@ pub struct FontData;
 // The opengl backend will do it by using the same texture id.
 #[derive(Clone)]
 pub struct ImageData {
-    img: Rc<image::DynamicImage>,
+    pub img: ResourceId,
     pub offset_x: f32,
     pub offset_y: f32,
     pub width: f32,
@@ -38,19 +38,23 @@ impl Debug for ImageData
 }
 impl ImageData {
 
-    pub fn new(imageCtor: &Constructor) -> ImageData {
+    pub fn new(
+        imageCtor: &Constructor,
+        resource_manager: &mut ResourceManager)
+        -> ImageData
+    {
         if let Constructor::Image(ref path, width, height, offset_x, offset_y)
                 = *imageCtor
         {
-            let image = image::open(&Path::new(path)).unwrap();
-            let (iw, ih) = image.dimensions();
+            let image = resource_manager.get_texture_id(&Path::new(path));
+            let (iw, ih) = resource_manager.get_image_dimensions(image);
             let w = width.unwrap_or(iw.to_f32().unwrap());
             let h = height.unwrap_or(ih.to_f32().unwrap());
             let x = offset_x.unwrap_or(0f32);
             let y = offset_y.unwrap_or(0f32);
 
             ImageData {
-                img: Rc::new(image),
+                img: image,
                 offset_x: x,
                 offset_y: y,
                 width: w,
@@ -59,10 +63,6 @@ impl ImageData {
         } else {
             panic!("Wrong constructor passed. Expected Constructor::Image.");
         }
-    }
-
-    pub fn img(&self) -> &image::DynamicImage {
-        self.img.deref()
     }
 }
 

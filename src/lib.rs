@@ -26,12 +26,14 @@ pub use self::report::StdOutErrorReporter;
 pub use self::report::EmptyErrorReporter;
 pub use self::router::Router;
 pub use self::view::View;
+pub use self::resource::ResourceManager;
 
 mod parsing;
 mod report;
 mod asset;
 mod router;
 mod view;
+mod resource;
 
 pub trait RenderBackbend {
     type Frame;
@@ -42,6 +44,7 @@ pub trait RenderBackbend {
     /// Render an element on the current frame.
     fn render_element(
         &self,
+        resource_manager: &ResourceManager,
         frame: &mut Self::Frame,
         boxi: &layout::LayoutBox,
         data: &rendering::RenderData);

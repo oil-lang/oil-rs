@@ -5,9 +5,11 @@ mod parser;
 use std::collections::HashMap;
 use std::io::BufRead;
 use std::path::PathBuf;
+
 use report::ErrorReporter;
 use style;
 use asset;
+use resource::ResourceManager;
 
 /// Convenient function to parse a style.
 pub fn parse<E, B>(reporter: E, reader: B) -> StyleDefinitions
@@ -47,7 +49,9 @@ pub enum Constructor {
 }
 
 impl Constructor {
-    pub fn convert_to_style_value(&self) -> Option<style::Value> {
+    pub fn convert_to_style_value(&self, resource_manager: &mut ResourceManager)
+        -> Option<style::Value>
+    {
         // TODO: FIXME
         // A string should be converted into Keyword(String),
         // once the modification is done to style::Value.
@@ -56,7 +60,7 @@ impl Constructor {
             Constructor::Number(v) => Some(style::Value::Length(v, style::Unit::Px)),
             Constructor::Quote(..) => Some(style::Value::KeywordAuto),
             Constructor::Font(..) => Some(style::Value::Font(asset::FontData::new(self))),
-            Constructor::Image(..) => Some(style::Value::Image(asset::ImageData::new(self))),
+            Constructor::Image(..) => Some(style::Value::Image(asset::ImageData::new(self, resource_manager))),
             Constructor::None => None,
         }
     }

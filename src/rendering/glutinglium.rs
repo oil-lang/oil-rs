@@ -4,6 +4,7 @@ use glium::Display;
 use image::{self, GenericImage};
 
 use asset::ImageData;
+use resource::{ResourceManager, ResourceId};
 use super::TextureRule;
 
 /// TODO: Remove this public qualifier somehow.
@@ -15,19 +16,25 @@ pub struct TexCoords {
 implement_vertex!(TexCoords, tex_coords);
 
 pub struct RenderData {
-    pub main_texture: Option<glium::texture::CompressedTexture2d>,
+    pub main_texture: Option<ResourceId>,
     pub tex_coords_buffer: Option<glium::VertexBuffer<TexCoords>>,
 }
 
 impl RenderData {
 
-    pub fn new(display: &Display, img: Option<ImageData>, rule: Option<TextureRule>) -> RenderData {
+    pub fn new(
+        display: &Display,
+        resource_manager: &ResourceManager,
+        img: Option<ImageData>,
+        rule: Option<TextureRule>)
+        -> RenderData
+    {
 
         // If we have an image then we load the rendering details.
         // TODO: clean up with the resource manager
         if let Some(image) = img {
 
-            let (iw, ih) = image.img().dimensions();
+            let (iw, ih) = resource_manager.get_image_dimensions(image.img);
             let (w_m, h_m) = (iw.to_f32().unwrap(), ih.to_f32().unwrap());
             let x = image.offset_x / w_m;
             let y = image.offset_y / h_m;
@@ -43,10 +50,8 @@ impl RenderData {
                 ]
             );
 
-            let tex = glium::texture::CompressedTexture2d::new(display, *image.img());
-
             RenderData {
-                main_texture: Some(tex),
+                main_texture: Some(image.img),
                 tex_coords_buffer: Some(buffer),
             }
         } else {
