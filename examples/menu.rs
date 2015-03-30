@@ -1,3 +1,4 @@
+#![feature(old_io, std_misc)]
 
 extern crate glutin;
 extern crate glium;
@@ -5,7 +6,9 @@ extern crate image;
 extern crate clock_ticks;
 extern crate uil;
 
-use std::old_io::{File, BufferedReader, BufReader};
+use std::io::BufReader;
+use std::fs::File;
+use std::path::Path;
 use glium::{DisplayBuild, Surface};
 use uil::layout;
 use uil::rendering;
@@ -19,35 +22,45 @@ fn main() {
     //
     let library = {
         let file = File::open(&Path::new("./examples/menu.markup")).unwrap();
-        let reader = BufferedReader::new(file);
+        let reader = BufReader::new(file);
         uil::markup::parse(uil::StdOutErrorReporter, reader)
     };
 
     let styledefs = {
         let file = File::open(&Path::new("./examples/menu.deps")).unwrap();
-        let reader = BufferedReader::new(file);
+        let reader = BufReader::new(file);
         uil::deps::parse(uil::StdOutErrorReporter, reader)
     };
 
-    let stylesheet = {
-        let file = File::open(&Path::new("./examples/menu.style")).unwrap();
-        let reader = BufferedReader::new(file);
-        uil::style::parse(uil::StdOutErrorReporter, reader, &styledefs)
-    };
-
-
     //////////////////////////////////////////////////////////////////////////////
-    // glium related code
+    // glium display start
     //
     let display = glutin::WindowBuilder::new()
         .with_vsync()
         .build_glium()
         .unwrap();
 
+    //////////////////////////////////////////////////////////////////////////////
+    // uil resource manager and final tree
+    //
+
+    let mut resource_manager = uil::ResourceManager::new(&display);
+
+    let stylesheet = {
+        let file = File::open(&Path::new("./examples/menu.style")).unwrap();
+        let reader = BufReader::new(file);
+        uil::style::parse(uil::StdOutErrorReporter, reader, &styledefs, &mut resource_manager)
+    };
+
     let (width, height) = display.get_window().unwrap().get_inner_size().unwrap();
 
     let mut renderer = uil::backend::GliumRenderer::new(&display);
-    let mut router = uil::Router::from_library_and_stylesheet(&display, library, &stylesheet);
+    let mut router = uil::Router::from_library_and_stylesheet(
+        &display,
+        &resource_manager,
+        library,
+        &stylesheet
+    );
 
     //////////////////////////////////////////////////////////////////////////////
     // main loop (modified example from glium lib)
@@ -58,7 +71,7 @@ fn main() {
         router.update(uil::Viewport { width: width as f32, height: height as f32 });
 
         // Render views
-        router.render_views(&mut renderer);
+        router.render_views(&mut renderer, &resource_manager);
 
         // polling and handling the events received by the window
         for event in display.poll_events() {
