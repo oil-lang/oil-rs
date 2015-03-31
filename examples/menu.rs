@@ -9,9 +9,7 @@ extern crate uil;
 use std::io::BufReader;
 use std::fs::File;
 use std::path::Path;
-use glium::{DisplayBuild, Surface};
-use uil::layout;
-use uil::rendering;
+use glium::DisplayBuild;
 use std::old_io::timer;
 use std::time::duration::Duration;
 
@@ -26,11 +24,7 @@ fn main() {
         uil::markup::parse(uil::StdOutErrorReporter, reader)
     };
 
-    let styledefs = {
-        let file = File::open(&Path::new("./examples/menu.deps")).unwrap();
-        let reader = BufReader::new(file);
-        uil::deps::parse(uil::StdOutErrorReporter, reader)
-    };
+    let defs = uil::deps::parse_file(uil::StdOutErrorReporter, "./examples/menu.deps");
 
     //////////////////////////////////////////////////////////////////////////////
     // glium display start
@@ -49,7 +43,7 @@ fn main() {
     let stylesheet = {
         let file = File::open(&Path::new("./examples/menu.style")).unwrap();
         let reader = BufReader::new(file);
-        uil::style::parse(uil::StdOutErrorReporter, reader, &styledefs, &mut resource_manager)
+        uil::style::parse(uil::StdOutErrorReporter, reader, &defs, &mut resource_manager)
     };
 
     let (width, height) = display.get_window().unwrap().get_inner_size().unwrap();

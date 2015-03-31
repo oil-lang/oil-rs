@@ -1,6 +1,6 @@
 
 use std::io::BufRead;
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 use report::ErrorReporter;
 use parsing::BufferConsumer;
 use parsing::Error;
@@ -12,6 +12,7 @@ pub struct Parser<E, B> {
     err: E,
     bc: BufferConsumer<B>,
     prefix: String,
+    relative_to: PathBuf,
 }
 
 
@@ -20,11 +21,12 @@ impl<E, B> Parser<E, B>
           B: BufRead
 {
 
-    pub fn new(reporter: E, reader: B) -> Parser<E, B> {
+    pub fn new(reporter: E, reader: B, folder_parent: PathBuf) -> Parser<E, B> {
         Parser {
             err: reporter,
             bc: BufferConsumer::new(reader),
-            prefix: "".to_string()
+            prefix: "".to_string(),
+            relative_to: folder_parent,
         }
     }
 
@@ -130,7 +132,7 @@ impl<E, B> Parser<E, B>
                 let height = self.find_num_arg(args.iter(), "height", 1).ok();
                 let offset_x = self.find_num_arg(args.iter(), "offset-x", 2).ok();
                 let offset_y = self.find_num_arg(args.iter(), "offset-y", 3).ok();
-                Ok(Constructor::Image(PathBuf::from(path), width, height, offset_x, offset_y))
+                Ok(Constructor::Image(self.resolve_path(path), width, height, offset_x, offset_y))
             }
             _ => {
                 Err(self.bc.error(
@@ -139,6 +141,10 @@ impl<E, B> Parser<E, B>
                 ))
             }
         }
+    }
+
+    fn resolve_path(&self, path: String) -> PathBuf {
+        self.relative_to.join(Path::new(&path))
     }
 
     fn parse_args(&mut self) -> Result<Vec<Arg>, Error> {
