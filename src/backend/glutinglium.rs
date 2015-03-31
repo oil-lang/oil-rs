@@ -30,10 +30,6 @@ pub struct GliumRenderer<'a> {
 impl<'a> GliumRenderer<'a> {
     pub fn new(display: &'a Display) -> GliumRenderer<'a> {
 
-        let img = ImageBuffer::from_fn(1, 1, |_, _| {
-            image::Luma([255u8])
-        });
-
         let program = glium::Program::from_source(display, r"
             #version 110
 
@@ -46,7 +42,7 @@ impl<'a> GliumRenderer<'a> {
 
             void main() {
                 gl_Position = matrix * vec4(position, 0.0, 1.0);
-                v_tex_coords = tex_coords;
+                v_tex_coords = vec2(tex_coords.x, 1.0 - tex_coords.y);
             }
         ", r"
             #version 110

@@ -2,7 +2,7 @@
 use std::num::Float;
 use std::default::Default;
 
-use super::dim::DimFlags;
+use super::dim::{self, DimFlags};
 use super::{Dimensions, EdgeSizes};
 use style::{StyledNode, PropertyName};
 
@@ -29,7 +29,27 @@ pub struct LayoutBox {
 impl LayoutBox {
 
     pub unsafe fn new(node: &StyledNode, next_sibling: isize) -> LayoutBox {
-        let flags = DimFlags::empty();
+        let mut flags = DimFlags::empty();
+
+        if node.is_property_auto(PropertyName::MARGIN_LEFT) {
+            flags = flags | dim::MARGIN_LEFT_AUTO;
+        }
+
+        if node.is_property_auto(PropertyName::MARGIN_RIGHT) {
+            flags = flags | dim::MARGIN_RIGHT_AUTO;
+        }
+
+        if node.is_property_auto(PropertyName::MARGIN_TOP) {
+            flags = flags | dim::MARGIN_TOP_AUTO;
+        }
+
+        if node.is_property_auto(PropertyName::MARGIN_BOTTOM) {
+            flags = flags | dim::MARGIN_BOT_AUTO;
+        }
+
+        if node.is_property_auto(PropertyName::WIDTH) {
+            flags = flags | dim::WIDTH_AUTO;
+        }
 
         let padding_left = node.size_prop(PropertyName::PADDING_LEFT);
         let padding_right = node.size_prop(PropertyName::PADDING_RIGHT);

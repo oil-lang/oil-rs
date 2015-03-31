@@ -116,6 +116,15 @@ impl<'a> StyledNode<'a> {
         }
     }
 
+    pub fn is_property_auto(&self, prop_name: PropertyName) -> bool {
+        match self.property_values.get(&prop_name) {
+            Some(&Value::KeywordAuto) => {
+                true
+            },
+            _ => false
+        }
+    }
+
     pub fn get_background_rule(&self) -> Option<TextureRule> {
         match self.property_values.get(&PropertyName::BACKGROUND_IMAGE_RULE) {
             Some(&Value::KeywordFit) => Some(TextureRule::Fit),
