@@ -1,5 +1,6 @@
 use glium;
 use image;
+use cgmath;
 
 use std::default::Default;
 use glium::{DisplayBuild, Surface, Display};
@@ -9,22 +10,16 @@ use image::{
 };
 
 use resource::ResourceManager;
+use Viewport;
 use RenderBackbend;
 use layout;
 use rendering;
 
-#[derive(Copy)]
-struct Vertex {
-    position: [f32; 2],
-}
-
-implement_vertex!(Vertex, position);
-
 pub struct GliumRenderer<'a> {
     display: &'a Display,
-    vertex_buffer: glium::VertexBuffer<Vertex>,
     index_buffer: glium::IndexBuffer,
     program: glium::Program,
+    matrix: cgmath::Matrix4<f32>,
 }
 
 impl<'a> GliumRenderer<'a> {
@@ -57,17 +52,10 @@ impl<'a> GliumRenderer<'a> {
 
         GliumRenderer {
             display: display,
-            vertex_buffer: glium::VertexBuffer::new(display,
-                vec![
-                    Vertex { position: [-1.0, -1.0] },
-                    Vertex { position: [-1.0,  1.0] },
-                    Vertex { position: [ 1.0,  1.0] },
-                    Vertex { position: [ 1.0, -1.0] }
-                ]
-            ),
             index_buffer: glium::IndexBuffer::new(display,
                 glium::index::TriangleStrip(vec![1 as u16, 2, 0, 3])),
             program: program,
+            matrix: cgmath::Matrix4::zero()
         }
     }
 }
@@ -76,8 +64,9 @@ impl<'a> RenderBackbend for GliumRenderer<'a> {
 
     type Frame = glium::Frame;
 
-    fn prepare_frame(&self) -> <GliumRenderer as RenderBackbend>::Frame {
+    fn prepare_frame(&mut self, vp: Viewport) -> <GliumRenderer as RenderBackbend>::Frame {
         let mut f = self.display.draw();
+        self.matrix = cgmath::ortho(0.0, vp.width, vp.height, 0.0, 0.0, 1.0);
         f.clear_color(0.0, 0.0, 0.0, 0.0);
         f
     }
@@ -94,23 +83,21 @@ impl<'a> RenderBackbend for GliumRenderer<'a> {
 
                 let tex = resource_manager.get_texture(texId);
                 let uniforms = uniform! {
-                    matrix: [
-                        [1.0, 0.0, 0.0, 0.0],
-                        [0.0, 1.0, 0.0, 0.0],
-                        [0.0, 0.0, 1.0, 0.0],
-                        [0.0, 0.0, 0.0, 1.0f32]
-                    ],
+                    matrix: self.matrix,
                     texture: tex
                 };
 
+                let vb = data.vertex_coords_buffer.as_ref().unwrap();
+                let tb = data.tex_coords_buffer.as_ref().unwrap();
+
                 frame.draw(
-                    (&self.vertex_buffer, data.tex_coords_buffer.as_ref().unwrap()),
+                    (vb, tb),
                     &self.index_buffer,
                     &self.program,
                     &uniforms,
                     &Default::default()).unwrap();
             }
-            None => ()
+            _ => ()
         }
     }
 

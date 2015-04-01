@@ -12,6 +12,7 @@ extern crate phf;
 #[macro_use]
 extern crate glium;
 extern crate image;
+extern crate cgmath;
 
 // TODO: Export only minimum
 pub mod markup;
@@ -39,7 +40,7 @@ pub trait RenderBackbend {
     type Frame;
 
     /// Prepare the frame for the current rendering step.
-    fn prepare_frame(&self) -> Self::Frame;
+    fn prepare_frame(&mut self, vp: Viewport) -> Self::Frame;
 
     /// Render an element on the current frame.
     fn render_element(

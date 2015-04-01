@@ -3,7 +3,7 @@ use std::num::Float;
 use std::default::Default;
 
 use super::dim::{self, DimFlags};
-use super::{Dimensions, EdgeSizes};
+use super::{Dimensions, EdgeSizes, Rect};
 use style::{StyledNode, PropertyName};
 
 // Reexport iterator for buffer
@@ -66,9 +66,33 @@ impl LayoutBox {
         let border_top = node.size_prop(PropertyName::BORDER_TOP);
         let border_bottom = node.size_prop(PropertyName::BORDER_BOTTOM);
 
+        let width = match node.size_prop_as_opt(PropertyName::WIDTH) {
+            Some(w) => {
+                flags = flags | dim::WIDTH_FIXED;
+                w
+            }
+            None => 0f32
+        };
+
+        let height = match node.size_prop_as_opt(PropertyName::HEIGHT) {
+            Some(h) => {
+                flags = flags | dim::HEIGHT_FIXED;
+                h
+            }
+            None => 0f32
+        };
+
+        // TODO: Missing bit for left / right / top / bottom
+        //       We also need at some point the relative information
+
         LayoutBox {
             dim: Dimensions {
-                content: Default::default(),
+                content: Rect {
+                    x: 0f32,
+                    y: 0f32,
+                    width: width,
+                    height: height,
+                },
                 padding: EdgeSizes {
                     left: padding_left,
                     right: padding_right,
@@ -113,6 +137,11 @@ impl LayoutBox {
         } else {
             LayoutBoxIterMut::new_empty()
         }
+    }
+
+    #[inline]
+    pub fn dim(&self) -> Dimensions {
+        self.dim
     }
 
     pub fn compute_max_width(&mut self)
@@ -202,23 +231,40 @@ impl LayoutBox {
         let mut x = self.dim.content.x + self.dim.padding.left + self.dim.border.left;
         let mut y = self.dim.content.y + self.dim.padding.top  + self.dim.border.top;
 
-        let child_max_width  = max_width
+        // Child max width calculation
+        let child_max_width = if self.flags.has_width_fixed() {
+
+            // The max width will be the content width.
+            self.dim.content.width
+        } else {
+            // In that case, the width can be immediately computed as:
+            self.dim.content.width = max_line_width;
+
+            // The resulting max_width for children is:
+            max_width
             - self.dim.padding.right - self.dim.padding.left
             - self.dim.border.right  - self.dim.border.left
-            - self.dim.margin.right  - self.dim.margin.left;
+            - self.dim.margin.right  - self.dim.margin.left
+        };
 
-        let child_max_height = max_height
+        // Equivalent rule for child max height:
+        let child_max_height = if self.flags.has_height_fixed() {
+
+            self.dim.content.height
+        } else {
+
+            max_height
             - self.dim.padding.bottom - self.dim.padding.top
             - self.dim.border.bottom  - self.dim.border.top
-            - self.dim.margin.bottom  - self.dim.margin.top;
-
-        self.dim.content.width = max_line_width;
+            - self.dim.margin.bottom  - self.dim.margin.top
+        };
 
         // Current line width allow to track the layout progress
         // in the x direction while height allow to track the y direction
         let mut current_line_width  = 0f32;
         let mut current_line_height = 0f32;
         let mut current_height_left = child_max_height;
+        let mut accumulated_line_height = 0f32;
 
         // Used for margin (top/bottom)
         let mut stack: Vec<&mut LayoutBox> = Vec::with_capacity(4);
@@ -229,6 +275,7 @@ impl LayoutBox {
              $current_line_height:ident,
              $current_line_width:ident,
              $current_height_left:ident,
+             $accumulated_line_height:ident,
              $d:ident) => ({
 
                 while let Some(ref mut c) = $stack.pop() {
@@ -255,7 +302,8 @@ impl LayoutBox {
 
                 x = $d.content.x + $d.padding.left + $d.border.left;
                 y += $current_line_height;
-                $current_height_left -= $current_line_height;
+                $accumulated_line_height += $current_line_height;
+                $current_height_left     -= $current_line_height;
                 $current_line_width   = 0f32;
                 $current_line_height  = 0f32;
             });
@@ -273,6 +321,7 @@ impl LayoutBox {
                     current_line_height,
                     current_line_width,
                     current_height_left,
+                    accumulated_line_height,
                     d);
             }
 
@@ -308,6 +357,7 @@ impl LayoutBox {
                     current_line_height,
                     current_line_width,
                     current_height_left,
+                    accumulated_line_height,
                     d);
             }
         }
@@ -318,8 +368,9 @@ impl LayoutBox {
         if node.has_width_auto() {
             self.dim.content.width = child_max_width;
         }
+
         self.dim.content.height =
-            self.dim.content.height.max(child_max_height.min(y + current_line_height));
+            self.dim.content.height.max(child_max_height.min(accumulated_line_height));
 
         // Compute the free space for margin in auto mode:
         let s = child_max_width - self.dim.content.width;

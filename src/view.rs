@@ -30,14 +30,15 @@ impl View {
         }
     }
 
-    pub fn update(&mut self, vp: Viewport) {
+    pub fn update(&mut self, display: &Display, vp: Viewport) {
         if self.dirty_flags.contains(LAYOUT_IS_DIRTY) {
             self.layout_data.compute_layout(vp.width, vp.height);
+            self.render_data.update_buffers(display, &self.layout_data);
             self.dirty_flags.remove(LAYOUT_IS_DIRTY);
         }
     }
 
-    pub fn render<B>(&self, backend: &mut B, resource_manager: &ResourceManager, frame: &mut <B as RenderBackbend>::Frame)
+    pub fn render<B>(&self, backend: &B, resource_manager: &ResourceManager, frame: &mut <B as RenderBackbend>::Frame)
         where B: RenderBackbend
     {
         for (boxi, data) in self.layout_data.iter().zip(self.render_data.iter()) {

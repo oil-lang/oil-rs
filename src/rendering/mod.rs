@@ -3,6 +3,7 @@ use style::{StyledNode};
 use glium::Display;
 
 use resource::ResourceManager;
+use layout::LayoutBuffer;
 
 #[derive(Copy, Debug)]
 pub enum TextureRule {
@@ -24,6 +25,12 @@ impl RenderBuffer {
         fill_buffer(display, resource_manager, &mut buffer, style_tree);
 
         RenderBuffer(buffer.into_boxed_slice())
+    }
+
+    pub fn update_buffers(&mut self, display: &Display, layout_buffer: &LayoutBuffer) {
+        for (data, boxi) in self.0.iter_mut().zip(layout_buffer.iter()) {
+            data.update_coords(display, &boxi.dim().content);
+        }
     }
 
     pub fn iter(&self) -> slice::Iter<RenderData> {

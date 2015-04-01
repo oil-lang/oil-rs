@@ -4,6 +4,7 @@ use glium::Display;
 use image::{self, GenericImage};
 
 use asset::ImageData;
+use layout::Rect;
 use resource::{ResourceManager, ResourceId};
 use super::TextureRule;
 
@@ -13,11 +14,18 @@ pub struct TexCoords {
     tex_coords: [f32; 2],
 }
 
+#[derive(Copy)]
+pub struct Vertex {
+    position: [f32; 2],
+}
+
+implement_vertex!(Vertex, position);
 implement_vertex!(TexCoords, tex_coords);
 
 pub struct RenderData {
     pub main_texture: Option<ResourceId>,
     pub tex_coords_buffer: Option<glium::VertexBuffer<TexCoords>>,
+    pub vertex_coords_buffer: Option<glium::VertexBuffer<Vertex>>,
 }
 
 impl RenderData {
@@ -53,12 +61,31 @@ impl RenderData {
             RenderData {
                 main_texture: Some(image.img),
                 tex_coords_buffer: Some(buffer),
+                vertex_coords_buffer: None,
             }
         } else {
             RenderData {
                 main_texture: None,
                 tex_coords_buffer: None,
+                vertex_coords_buffer: None,
             }
+        }
+    }
+
+    pub fn update_coords(&mut self, display: &Display, coords: &Rect) {
+        // TODO: Look how to do a glMapBuffer instead of this when
+        // vertex_coords_buffer is Some(buffer).
+        // Note: for now  it should be acceptable as this is probably
+        //       not the bottle neck.
+        if self.main_texture.is_some() {
+            self.vertex_coords_buffer = Some(
+                glium::VertexBuffer::new(display, vec![
+                    Vertex { position: [ coords.x, coords.y ]},
+                    Vertex { position: [ coords.x, coords.y + coords.height]},
+                    Vertex { position: [ coords.x + coords.width, coords.y + coords.height]},
+                    Vertex { position: [ coords.x + coords.width, coords.y ]}
+                ])
+            );
         }
     }
 }

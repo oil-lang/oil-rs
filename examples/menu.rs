@@ -13,6 +13,8 @@ use glium::DisplayBuild;
 use std::old_io::timer;
 use std::time::duration::Duration;
 
+use uil::RenderBackbend;
+
 fn main() {
 
     //////////////////////////////////////////////////////////////////////////////
@@ -61,11 +63,15 @@ fn main() {
     //
     start_loop(|| {
 
+        let vp = uil::Viewport { width: width as f32, height: height as f32 };
+
         // Update views
-        router.update(uil::Viewport { width: width as f32, height: height as f32 });
+        router.update(&display, vp);
 
         // Render views
-        router.render_views(&mut renderer, &resource_manager);
+        let mut f = renderer.prepare_frame(vp);
+        router.render_views(&renderer, &mut f, &resource_manager);
+        renderer.flush_frame(f);
 
         // polling and handling the events received by the window
         for event in display.poll_events() {

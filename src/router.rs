@@ -57,9 +57,9 @@ impl Router {
         router
     }
 
-    pub fn update(&mut self, vp: Viewport) {
+    pub fn update(&mut self, display: &Display, vp: Viewport) {
         for &mut (_, ref mut v) in self.stack.iter_mut() {
-            v.borrow_mut().update(vp);
+            v.borrow_mut().update(display, vp);
         }
     }
 
@@ -72,13 +72,15 @@ impl Router {
         self.views.insert(name_str, rcv);
     }
 
-    pub fn render_views<C>(&self, ctx: &mut C, resource_manager: &ResourceManager)
-        where C: RenderBackbend
+    pub fn render_views<C>(
+        &self,
+        ctx: &C,
+        frame: &mut C::Frame,
+        resource_manager: &ResourceManager)
+        where C: RenderBackbend,
     {
-        let mut f = ctx.prepare_frame();
         for &(_, ref v) in &self.stack {
-            v.borrow().render(ctx, resource_manager, &mut f);
+            v.borrow().render(ctx, resource_manager, frame);
         }
-        ctx.flush_frame(f);
     }
 }

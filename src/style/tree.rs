@@ -140,6 +140,19 @@ impl<'a> StyledNode<'a> {
         }
     }
 
+    pub fn size_prop_as_opt(&self, prop_name: PropertyName) -> Option<f32> {
+        match self.property_values.get(&prop_name) {
+            Some(v) => {
+                if let Value::Length(val, Unit::Px) = *v {
+                    Some(val)
+                } else {
+                    None
+                }
+            }
+            None => None
+        }
+    }
+
     pub fn size_prop(&self, prop_name: PropertyName) -> f32 {
         use self::PropertyName::MARGIN;
         use self::PropertyName::PADDING;
