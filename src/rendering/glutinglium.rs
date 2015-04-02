@@ -4,7 +4,7 @@ use glium::Display;
 use image::{self, GenericImage};
 
 use asset::ImageData;
-use layout::Rect;
+use layout::LayoutBox;
 use resource::{ResourceManager, ResourceId};
 use super::TextureRule;
 
@@ -72,18 +72,24 @@ impl RenderData {
         }
     }
 
-    pub fn update_coords(&mut self, display: &Display, coords: &Rect) {
+    pub fn update_coords(&mut self, display: &Display, lb: &LayoutBox) {
         // TODO: Look how to do a glMapBuffer instead of this when
         // vertex_coords_buffer is Some(buffer).
         // Note: for now  it should be acceptable as this is probably
         //       not the bottle neck.
         if self.main_texture.is_some() {
+
+            let x = lb.dim().content.x + lb.dim().margin.left;
+            let y = lb.dim().content.y + lb.dim().margin.top;
+            let height = lb.dim().content.height;
+            let width = lb.dim().content.width;
+
             self.vertex_coords_buffer = Some(
                 glium::VertexBuffer::new(display, vec![
-                    Vertex { position: [ coords.x, coords.y ]},
-                    Vertex { position: [ coords.x, coords.y + coords.height]},
-                    Vertex { position: [ coords.x + coords.width, coords.y + coords.height]},
-                    Vertex { position: [ coords.x + coords.width, coords.y ]}
+                    Vertex { position: [         x, y         ]},
+                    Vertex { position: [         x, y + height]},
+                    Vertex { position: [ x + width, y + height]},
+                    Vertex { position: [ x + width, y         ]}
                 ])
             );
         }

@@ -373,7 +373,7 @@ impl LayoutBox {
             self.dim.content.height.max(child_max_height.min(accumulated_line_height));
 
         // Compute the free space for margin in auto mode:
-        let s = child_max_width - self.dim.content.width;
+        let s = max_width - self.dim.content.width;
 
         // We can also compute the margins (left/right) if they're auto:
         match (node.has_margin_right_auto(), node.has_margin_left_auto()) {

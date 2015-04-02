@@ -29,7 +29,7 @@ impl RenderBuffer {
 
     pub fn update_buffers(&mut self, display: &Display, layout_buffer: &LayoutBuffer) {
         for (data, boxi) in self.0.iter_mut().zip(layout_buffer.iter()) {
-            data.update_coords(display, &boxi.dim().content);
+            data.update_coords(display, &boxi);
         }
     }
 
