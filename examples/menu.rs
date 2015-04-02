@@ -33,6 +33,7 @@ fn main() {
     //
     let display = glutin::WindowBuilder::new()
         .with_vsync()
+        .with_title("uil - menu example".to_string())
         .build_glium()
         .unwrap();
 
