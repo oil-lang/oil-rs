@@ -43,7 +43,7 @@ const REPEAT_TAG: &'static str = "repeat";
 /// use uil::StdOutErrorReporter;
 /// use uil::markup;
 ///
-/// let reader = std::old_io::BufferedReader::new(
+/// let reader = std::io::BufReader::new(
 ///     "<view name=\"toto\">\
 ///     </view>\
 /// ".as_bytes());

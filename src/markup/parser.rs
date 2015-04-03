@@ -310,12 +310,12 @@ impl<E, B> Parser<E, B>
 #[cfg(test)]
 mod test {
 
-    use std::old_io::BufferedReader;
+    use std::io::BufReader;
     use EmptyErrorReporter;
 
     #[test]
     fn reject_invalid_root_tags() {
-        let reader = BufferedReader::new("<test></test>".as_bytes());
+        let reader = BufReader::new("<test></test>".as_bytes());
         let mut parser = super::Parser::new(EmptyErrorReporter, reader);
 
         let res = parser.parse();
@@ -325,7 +325,7 @@ mod test {
 
     #[test]
     fn ignore_unknown_tags() {
-        let reader = BufferedReader::new(
+        let reader = BufReader::new(
             "<view>\
                 <toto />\
                 <h1>Test</h1>\
@@ -342,7 +342,7 @@ mod test {
 
     #[test]
     fn reject_unnamed_template() {
-        let reader = BufferedReader::new(
+        let reader = BufReader::new(
             "<template>\
                 <toto />\
              </template>
@@ -357,7 +357,7 @@ mod test {
 
     #[test]
     fn ignore_ill_formed_repeat_1() {
-        let reader = BufferedReader::new(
+        let reader = BufReader::new(
             "<view>\
                 <repeat template-name=\"test\"/>\
              </view>
@@ -373,7 +373,7 @@ mod test {
 
     #[test]
     fn ignore_ill_formed_repeat_2() {
-        let reader = BufferedReader::new(
+        let reader = BufReader::new(
             "<view>\
                 <repeat iter=\"{test}\"/>\
              </view>
@@ -389,7 +389,7 @@ mod test {
 
     #[test]
     fn accept_well_formed_repeat() {
-        let reader = BufferedReader::new(
+        let reader = BufReader::new(
             "<view>\
                 <repeat iter=\"{arf}\" template-name=\"test\"/>\
              </view>
