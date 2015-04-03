@@ -51,7 +51,7 @@ fn main() {
 
     let (width, height) = display.get_window().unwrap().get_inner_size().unwrap();
 
-    let mut renderer = uil::backend::GliumRenderer::new(&display);
+    let mut renderer = uil::rendering::backend::GliumRenderer::new(&display);
     let mut router = uil::Router::from_library_and_stylesheet(
         &display,
         &resource_manager,
