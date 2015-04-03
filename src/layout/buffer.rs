@@ -1,7 +1,7 @@
 use std::slice;
 
 use super::LayoutBox;
-use super::boxes::{LayoutBoxIterMut, LayoutBoxIter};
+use super::boxes::{LayoutBoxIterMut};
 
 use style::{StyledNode};
 

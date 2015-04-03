@@ -1,5 +1,5 @@
 use std::path::Path;
-use glium::{self, DisplayBuild, Surface, Display};
+use glium::{self, Display};
 use image::{self, GenericImage};
 
 #[derive(Copy, Clone)]

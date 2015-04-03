@@ -62,6 +62,9 @@ pub struct LayoutBoxIter<'a> {
 }
 
 impl<'a> LayoutBoxIter<'a> {
+
+    // FIXME(if we don't use this remove it)
+    #[allow(dead_code)]
     pub fn new(boxes: &'a Box<[LayoutBox]>) -> LayoutBoxIter<'a> {
         let lbox = boxes.iter().next().unwrap();
         LayoutBoxIter {
@@ -70,6 +73,8 @@ impl<'a> LayoutBoxIter<'a> {
         }
     }
 
+    // FIXME(if we don't use this remove it)
+    #[allow(dead_code)]
     pub unsafe fn new_with_firstchild(lbox: &'a LayoutBox) -> LayoutBoxIter<'a> {
         let ptr: *mut LayoutBox = mem::transmute(lbox);
         LayoutBoxIter {
@@ -78,6 +83,8 @@ impl<'a> LayoutBoxIter<'a> {
         }
     }
 
+    // FIXME(if we don't use this remove it)
+    #[allow(dead_code)]
     pub fn new_empty() -> LayoutBoxIter<'a> {
         LayoutBoxIter {
             current: ptr::null(),

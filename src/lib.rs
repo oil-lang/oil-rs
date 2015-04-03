@@ -47,7 +47,6 @@ pub trait RenderBackbend {
         &self,
         resource_manager: &ResourceManager,
         frame: &mut Self::Frame,
-        boxi: &layout::LayoutBox,
         data: &rendering::RenderData);
 
     // Flush the frame. Typically, swap buffers.

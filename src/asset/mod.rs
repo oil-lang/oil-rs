@@ -1,6 +1,4 @@
 use std::num::ToPrimitive;
-use std::rc::Rc;
-use std::ops::Deref;
 use std::fmt::{self, Debug};
 use std::path::Path;
 
@@ -39,12 +37,12 @@ impl Debug for ImageData
 impl ImageData {
 
     pub fn new(
-        imageCtor: &Constructor,
+        image_ctor: &Constructor,
         resource_manager: &mut ResourceManager)
         -> ImageData
     {
         if let Constructor::Image(ref path, width, height, offset_x, offset_y)
-                = *imageCtor
+                = *image_ctor
         {
             let image = resource_manager.get_texture_id(&Path::new(path));
             let (iw, ih) = resource_manager.get_image_dimensions(image);
@@ -68,8 +66,8 @@ impl ImageData {
 
 impl FontData {
 
-    pub fn new(fontCtor: &Constructor) -> FontData {
-        if let Constructor::Font(ref path, width, height) = *fontCtor {
+    pub fn new(font_ctor: &Constructor) -> FontData {
+        if let Constructor::Font(ref path, width, height) = *font_ctor {
             // TODO: see freetype-rs or something similar
             FontData
         } else {

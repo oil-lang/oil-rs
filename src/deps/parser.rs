@@ -1,5 +1,6 @@
 
 use std::io::BufRead;
+use std::ops::Deref;
 use std::path::{PathBuf, Path};
 use report::ErrorReporter;
 use parsing::BufferConsumer;
@@ -119,7 +120,7 @@ impl<E, B> Parser<E, B>
         try!(self.bc.consume_whitespace());
         let args = try!(self.parse_args());
 
-        match ctor.as_slice() {
+        match ctor.deref() {
             "Font" => {
                 let path = try!(self.find_str_arg(args.iter(), "path", 0));
                 let width = try!(self.find_num_arg(args.iter(), "width", 0));

@@ -1,6 +1,5 @@
 
 use std::num::Float;
-use std::default::Default;
 
 use super::dim::{self, DimFlags};
 use super::{Dimensions, EdgeSizes, Rect};

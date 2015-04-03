@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::ops::Deref;
 use markup::Node;
 use rendering::TextureRule;
 use asset::ImageData;
@@ -209,13 +210,16 @@ impl<'a> StyledNode<'a> {
         // rule does define a particular property.
         // Thus the code below wouldn't change.
         for rule in style.rules.iter() {
-            if classes.contains(rule.selector.as_slice()) {
+            // FIXME:
+            // using deref instead of as_ref because
+            // of an inference problem.
+            if classes.contains(rule.selector.deref()) {
                 // Loop over declaration in the rule.
                 // If some properties are declared multiple times
                 // the order matters here.
                 for dec in rule.declarations.iter() {
 
-                    if let Some(property) = STYLE_PROPERTIES.get(dec.name.as_slice()) {
+                    if let Some(property) = STYLE_PROPERTIES.get(dec.name.deref()) {
 
                         properties.insert(*property, dec.value.clone());
                     }

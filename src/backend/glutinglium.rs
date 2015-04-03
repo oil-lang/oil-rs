@@ -1,18 +1,15 @@
 use glium;
-use image;
 use cgmath;
 
 use std::default::Default;
-use glium::{DisplayBuild, Surface, Display};
+use glium::{Surface, Display};
 use image::{
-    GenericImage,
-    ImageBuffer
+    GenericImage
 };
 
 use resource::ResourceManager;
 use Viewport;
 use RenderBackbend;
-use layout;
 use rendering;
 
 pub struct GliumRenderer<'a> {
@@ -53,7 +50,7 @@ impl<'a> GliumRenderer<'a> {
         GliumRenderer {
             display: display,
             index_buffer: glium::IndexBuffer::new(display,
-                glium::index::TriangleStrip(vec![1 as u16, 2, 0, 3])),
+                glium::index::TriangleStrip(vec![1u32, 2, 0, 3])),
             program: program,
             matrix: cgmath::Matrix4::zero()
         }
@@ -75,13 +72,12 @@ impl<'a> RenderBackbend for GliumRenderer<'a> {
         &self,
         resource_manager: &ResourceManager,
         frame: &mut <GliumRenderer as RenderBackbend>::Frame,
-        boxi: &layout::LayoutBox,
         data: &rendering::RenderData)
     {
         match data.main_texture {
-            Some(texId) => {
+            Some(tex_id) => {
 
-                let tex = resource_manager.get_texture(texId);
+                let tex = resource_manager.get_texture(tex_id);
                 let uniforms = uniform! {
                     matrix: self.matrix,
                     texture: tex

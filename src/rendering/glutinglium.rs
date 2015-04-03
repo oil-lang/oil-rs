@@ -1,7 +1,7 @@
 use std::num::ToPrimitive;
 use glium;
 use glium::Display;
-use image::{self, GenericImage};
+use image::{GenericImage};
 
 use asset::ImageData;
 use layout::LayoutBox;
