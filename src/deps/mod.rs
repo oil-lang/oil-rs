@@ -71,6 +71,10 @@ impl StyleDefinitions {
             defs: HashMap::new(),
         }
     }
+
+    pub fn insert(&mut self, key: String, ctor: Constructor) {
+        self.defs.insert(key, ctor);
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -90,8 +94,9 @@ pub enum Constructor {
 }
 
 impl Constructor {
-    pub fn convert_to_style_value(&self, resource_manager: &mut ResourceManager)
+    pub fn convert_to_style_value<R>(&self, resource_manager: &mut R)
         -> Option<style::Value>
+        where R: ResourceManager
     {
         // TODO: FIXME
         // A string should be converted into Keyword(String),

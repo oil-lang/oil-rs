@@ -18,13 +18,14 @@ use resource::ResourceManager;
 use std::io::BufRead;
 
 /// Convenient function to parse a style.
-pub fn parse<'a, 'b, 'display, E, B>(
+pub fn parse<'a, 'b, R, E, B>(
     reporter: E,
     reader: B,
     defs: &'a StyleDefinitions,
-    resource_manager: &'b mut ResourceManager<'display>) -> Stylesheet
+    resource_manager: &'b mut R) -> Stylesheet
     where E: ErrorReporter,
-          B: BufRead
+          B: BufRead,
+          R: ResourceManager
 {
     let mut parser = parser::Parser::new(reporter, reader, defs, resource_manager);
     parser.parse()

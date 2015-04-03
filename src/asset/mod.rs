@@ -36,10 +36,11 @@ impl Debug for ImageData
 }
 impl ImageData {
 
-    pub fn new(
+    pub fn new<R>(
         image_ctor: &Constructor,
-        resource_manager: &mut ResourceManager)
+        resource_manager: &mut R)
         -> ImageData
+        where R: ResourceManager
     {
         if let Constructor::Image(ref path, width, height, offset_x, offset_y)
                 = *image_ctor

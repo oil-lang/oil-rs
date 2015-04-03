@@ -61,18 +61,21 @@ impl<'a> RenderBackbend for GliumRenderer<'a> {
 
     type Frame = glium::Frame;
 
-    fn prepare_frame(&mut self, vp: Viewport) -> <GliumRenderer as RenderBackbend>::Frame {
+    fn prepare_frame(&mut self, vp: Viewport)
+        -> <GliumRenderer as RenderBackbend>::Frame
+    {
         let mut f = self.display.draw();
         self.matrix = cgmath::ortho(0.0, vp.width, vp.height, 0.0, 0.0, 1.0);
         f.clear_color(0.0, 0.0, 0.0, 0.0);
         f
     }
 
-    fn render_element(
+    fn render_element<R>(
         &self,
-        resource_manager: &ResourceManager,
+        resource_manager: &R,
         frame: &mut <GliumRenderer as RenderBackbend>::Frame,
         data: &rendering::RenderData)
+        where R: ResourceManager
     {
         let tex = resource_manager.get_texture(data.main_texture);
         let uniforms = uniform! {

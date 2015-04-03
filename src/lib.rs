@@ -14,25 +14,27 @@ extern crate glium;
 extern crate image;
 extern crate cgmath;
 
+#[cfg(test)]
+extern crate glutin;
+
 // TODO: Export only minimum
 pub mod markup;
 pub mod style;
 pub mod deps;
 pub mod layout;
 pub mod rendering;
+pub mod resource;
 
 pub use self::report::ErrorReporter;
 pub use self::report::StdOutErrorReporter;
 pub use self::report::EmptyErrorReporter;
 pub use self::router::Router;
 pub use self::rendering::View;
-pub use self::resource::ResourceManager;
 
 mod parsing;
 mod report;
 mod asset;
 mod router;
-mod resource;
 
 pub trait RenderBackbend {
     type Frame;
@@ -41,9 +43,9 @@ pub trait RenderBackbend {
     fn prepare_frame(&mut self, vp: Viewport) -> Self::Frame;
 
     /// Render an element on the current frame.
-    fn render_element(
+    fn render_element<R : resource::ResourceManager>(
         &self,
-        resource_manager: &ResourceManager,
+        resource_manager: &R,
         frame: &mut Self::Frame,
         data: &rendering::RenderData);
 

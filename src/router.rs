@@ -43,12 +43,13 @@ impl Router {
         }
     }
 
-    pub fn from_library_and_stylesheet<E>(
+    pub fn from_library_and_stylesheet<R, E>(
         display: &Display,
-        resource_manager:  &ResourceManager,
+        resource_manager:  &R,
         lib: Library<E>,
         style: &Stylesheet)
         -> Router
+        where R: ResourceManager
     {
         let mut router = Router::new();
         for (name, view) in lib.views.into_iter() {
@@ -72,12 +73,13 @@ impl Router {
         self.views.insert(name_str, rcv);
     }
 
-    pub fn render_views<C>(
+    pub fn render_views<R, C>(
         &self,
         ctx: &C,
         frame: &mut C::Frame,
-        resource_manager: &ResourceManager)
+        resource_manager: &R)
         where C: RenderBackbend,
+              R: ResourceManager
     {
         for &(_, ref v) in &self.stack {
             v.borrow().render(ctx, resource_manager, frame);

@@ -41,7 +41,7 @@ fn main() {
     // uil resource manager and final tree
     //
 
-    let mut resource_manager = uil::ResourceManager::new(&display);
+    let mut resource_manager = uil::resource::create_resource_manager(&display);
 
     let stylesheet = {
         let file = File::open(&Path::new("./examples/menu.style")).unwrap();

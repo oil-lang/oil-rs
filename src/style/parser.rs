@@ -13,23 +13,24 @@ use super::Unit;
 use super::Declaration;
 
 /// Parser
-pub struct Parser<'a, 'b, 'display: 'b, E, B> {
+pub struct Parser<'a, 'b, R: 'b, E, B> {
     err: E,
     bc: BufferConsumer<B>,
     deps: &'a StyleDefinitions,
-    resource_manager: &'b mut ResourceManager<'display>,
+    resource_manager: &'b mut R,
 }
 
-impl<'a, 'b, 'display, E, B> Parser<'a, 'b, 'display, E, B>
+impl<'a, 'b, R, E, B> Parser<'a, 'b, R, E, B>
     where E: ErrorReporter,
-          B: BufRead
+          B: BufRead,
+          R: ResourceManager
 {
 
     pub fn new(
         reporter: E,
         reader: B,
         deps: &'a StyleDefinitions,
-        resource_manager: &'b mut ResourceManager<'display>) -> Parser<'a,'b, 'display, E, B>
+        resource_manager: &'b mut R) -> Parser<'a,'b, R, E, B>
     {
         Parser {
             bc: BufferConsumer::new(reader),

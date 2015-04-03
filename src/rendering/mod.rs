@@ -48,9 +48,9 @@ pub struct RenderData {
 
 impl RenderData {
 
-    fn new(
+    fn new<R: ResourceManager>(
         display: &Display,
-        resource_manager: &ResourceManager,
+        resource_manager: &R,
         image: ImageData,
         rule: TextureRule)
         -> RenderData
