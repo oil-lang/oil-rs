@@ -35,6 +35,8 @@ pub enum Value {
     Image(asset::ImageData),
     KeywordAuto,
     KeywordAbsolute,
+    KeywordFit,
+    KeywordRepeat,
 }
 
 #[derive(Debug, Clone)]

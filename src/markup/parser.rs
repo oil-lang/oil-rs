@@ -2,7 +2,7 @@
 use xml::reader::EventReader;
 use xml::reader::events::*;
 use xml::attribute::OwnedAttribute;
-use std::old_io::Buffer;
+use std::io::BufRead;
 
 use std::collections::HashMap;
 use ErrorReporter;
@@ -22,16 +22,17 @@ use super::BUTTON_TAG;
 use super::LINE_INPUT_TAG;
 use super::PROGRESS_BAR_TAG;
 use super::REPEAT_TAG;
+use super::MAIN_VIEW_NAME;
 
 /// Parser
-pub struct Parser<E, B> {
+pub struct Parser<E, B: BufRead> {
     err: E,
     parser: EventReader<B>,
 }
 
 impl<E, B> Parser<E, B>
     where E: ErrorReporter,
-          B: Buffer
+          B: BufRead
 {
 
     pub fn new(reporter: E, reader: B) -> Parser<E, B> {
@@ -126,7 +127,7 @@ impl<E, B> Parser<E, B>
             VIEW_TAG => {
                 let view = try!(self.parse_view());
                 let attr_name = lookup_name("name", attributes)
-                    .unwrap_or(tags::MAIN_VIEW_NAME.to_string());
+                    .unwrap_or(MAIN_VIEW_NAME.to_string());
                 views.insert(attr_name, view);
                 Ok(())
             }
@@ -309,12 +310,12 @@ impl<E, B> Parser<E, B>
 #[cfg(test)]
 mod test {
 
-    use std::old_io::BufferedReader;
+    use std::io::BufReader;
     use EmptyErrorReporter;
 
     #[test]
     fn reject_invalid_root_tags() {
-        let reader = BufferedReader::new("<test></test>".as_bytes());
+        let reader = BufReader::new("<test></test>".as_bytes());
         let mut parser = super::Parser::new(EmptyErrorReporter, reader);
 
         let res = parser.parse();
@@ -324,7 +325,7 @@ mod test {
 
     #[test]
     fn ignore_unknown_tags() {
-        let reader = BufferedReader::new(
+        let reader = BufReader::new(
             "<view>\
                 <toto />\
                 <h1>Test</h1>\
@@ -341,7 +342,7 @@ mod test {
 
     #[test]
     fn reject_unnamed_template() {
-        let reader = BufferedReader::new(
+        let reader = BufReader::new(
             "<template>\
                 <toto />\
              </template>
@@ -356,7 +357,7 @@ mod test {
 
     #[test]
     fn ignore_ill_formed_repeat_1() {
-        let reader = BufferedReader::new(
+        let reader = BufReader::new(
             "<view>\
                 <repeat template-name=\"test\"/>\
              </view>
@@ -372,7 +373,7 @@ mod test {
 
     #[test]
     fn ignore_ill_formed_repeat_2() {
-        let reader = BufferedReader::new(
+        let reader = BufReader::new(
             "<view>\
                 <repeat iter=\"{test}\"/>\
              </view>
@@ -388,7 +389,7 @@ mod test {
 
     #[test]
     fn accept_well_formed_repeat() {
-        let reader = BufferedReader::new(
+        let reader = BufReader::new(
             "<view>\
                 <repeat iter=\"{arf}\" template-name=\"test\"/>\
              </view>

@@ -1,28 +1,33 @@
 
+use std::io::BufRead;
+use std::ops::Deref;
+use std::path::{PathBuf, Path};
 use report::ErrorReporter;
 use parsing::BufferConsumer;
 use parsing::Error;
 
-use super::Value;
+use super::Constructor;
 use super::StyleDefinitions;
 
 pub struct Parser<E, B> {
     err: E,
     bc: BufferConsumer<B>,
     prefix: String,
+    relative_to: PathBuf,
 }
 
 
 impl<E, B> Parser<E, B>
     where E: ErrorReporter,
-          B: Buffer
+          B: BufRead
 {
 
-    pub fn new(reporter: E, reader: B) -> Parser<E, B> {
+    pub fn new(reporter: E, reader: B, folder_parent: PathBuf) -> Parser<E, B> {
         Parser {
             err: reporter,
             bc: BufferConsumer::new(reader),
-            prefix: "".to_string()
+            prefix: "".to_string(),
+            relative_to: folder_parent,
         }
     }
 
@@ -79,7 +84,7 @@ impl<E, B> Parser<E, B>
         Ok(prefix)
     }
 
-    fn parse_def(&mut self) -> Result<(String, Value), Error> {
+    fn parse_def(&mut self) -> Result<(String, Constructor), Error> {
         let name = try!(self.bc.consume_path());
         try!(self.bc.consume_whitespace());
         try!(self.bc.expect_char('='));
@@ -88,7 +93,7 @@ impl<E, B> Parser<E, B>
         Ok((name, value))
     }
 
-    fn parse_value(&mut self) -> Result<Value, Error> {
+    fn parse_value(&mut self) -> Result<Constructor, Error> {
 
         let c = match self.bc.look_next_char() {
             Some(c) => c,
@@ -102,29 +107,33 @@ impl<E, B> Parser<E, B>
         }
     }
 
-    fn parse_quote(&mut self) -> Result<Value, Error> {
-        Ok(Value::Quote(try!(self.consume_quote())))
+    fn parse_quote(&mut self) -> Result<Constructor, Error> {
+        Ok(Constructor::Quote(try!(self.consume_quote())))
     }
 
-    fn parse_number(&mut self) -> Result<Value, Error> {
-        Ok(Value::Number(try!(self.bc.consume_number())))
+    fn parse_number(&mut self) -> Result<Constructor, Error> {
+        Ok(Constructor::Number(try!(self.bc.consume_number())))
     }
 
-    fn parse_ctor(&mut self) -> Result<Value, Error> {
+    fn parse_ctor(&mut self) -> Result<Constructor, Error> {
         let ctor = try!(self.bc.consume_word());
         try!(self.bc.consume_whitespace());
         let args = try!(self.parse_args());
 
-        match ctor.as_slice() {
+        match ctor.deref() {
             "Font" => {
                 let path = try!(self.find_str_arg(args.iter(), "path", 0));
                 let width = try!(self.find_num_arg(args.iter(), "width", 0));
                 let height = try!(self.find_num_arg(args.iter(), "height", 1));
-                Ok(Value::Font(path, width, height))
+                Ok(Constructor::Font(path, width, height))
             },
             "Image" => {
                 let path = try!(self.find_str_arg(args.iter(), "path", 0));
-                Ok(Value::Image(path))
+                let width = self.find_num_arg(args.iter(), "width", 0).ok();
+                let height = self.find_num_arg(args.iter(), "height", 1).ok();
+                let offset_x = self.find_num_arg(args.iter(), "offset-x", 2).ok();
+                let offset_y = self.find_num_arg(args.iter(), "offset-y", 3).ok();
+                Ok(Constructor::Image(self.resolve_path(path), width, height, offset_x, offset_y))
             }
             _ => {
                 Err(self.bc.error(
@@ -133,6 +142,10 @@ impl<E, B> Parser<E, B>
                 ))
             }
         }
+    }
+
+    fn resolve_path(&self, path: String) -> PathBuf {
+        self.relative_to.join(Path::new(&path))
     }
 
     fn parse_args(&mut self) -> Result<Vec<Arg>, Error> {
@@ -188,7 +201,7 @@ impl<E, B> Parser<E, B>
                 })
             }
             _ => {
-                let name = try!(self.bc.consume_word());
+                let name = try!(self.bc.consume_identifier());
                 try!(self.bc.consume_whitespace());
                 try!(self.bc.expect_char(':'));
                 try!(self.bc.consume_whitespace());

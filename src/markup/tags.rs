@@ -7,9 +7,6 @@ use super::ErrorStatus;
 use super::lookup_name;
 use super::HasNodeChildren;
 
-// Name for the "main" view.
-pub const MAIN_VIEW_NAME: &'static str = "main";
-
 #[derive(PartialEq, Clone, Debug)]
 pub enum NodeType {
     Text(String),
@@ -86,7 +83,7 @@ impl HasNodeChildren for Node {
 }
 
 // To help readability:
-type ResOrError = Result<NodeType, super::ParseError>;
+pub type ResOrError = Result<NodeType, super::ParseError>;
 
 // ------------------------------------------------- Button tag
 #[derive(PartialEq, Clone, Debug)]

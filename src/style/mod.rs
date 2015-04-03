@@ -14,13 +14,18 @@ mod tree;
 
 use report::ErrorReporter;
 use deps::StyleDefinitions;
-
+use resource::ResourceManager;
+use std::io::BufRead;
 
 /// Convenient function to parse a style.
-pub fn parse<'a, E, B>(reporter: E, reader: B, defs: &'a StyleDefinitions) -> Stylesheet
+pub fn parse<'a, 'b, 'display, E, B>(
+    reporter: E,
+    reader: B,
+    defs: &'a StyleDefinitions,
+    resource_manager: &'b mut ResourceManager<'display>) -> Stylesheet
     where E: ErrorReporter,
-          B: Buffer
+          B: BufRead
 {
-    let mut parser = parser::Parser::new(reporter, reader, defs);
+    let mut parser = parser::Parser::new(reporter, reader, defs, resource_manager);
     parser.parse()
 }

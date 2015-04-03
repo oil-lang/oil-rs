@@ -31,9 +31,10 @@ bitflags! {
     flags DimFlags: u32 {
         // A text node is WIDTH_FIXED,
         // A node with a style fixed width is naturally WIDTH_FIXED
-        const ABSOLUTE_POSITIONING  = 0b01000000,
+        const ABSOLUTE_POSITIONING  = 0b10000000,
+        const HEIGHT_FIXED          = 0b01000000,
         const WIDTH_FIXED           = 0b00100000,
-        const MARGIN_BOTTTOM_AUTO   = 0b00010000,
+        const MARGIN_BOT_AUTO       = 0b00010000,
         const MARGIN_TOP_AUTO       = 0b00001000,
         const MARGIN_RIGHT_AUTO     = 0b00000100,
         const MARGIN_LEFT_AUTO      = 0b00000010,
@@ -41,7 +42,7 @@ bitflags! {
         const MARGIN_X_AUTO         = MARGIN_LEFT_AUTO.bits
                                     | MARGIN_RIGHT_AUTO.bits,
         const MARGIN_Y_AUTO         = MARGIN_TOP_AUTO.bits
-                                    | MARGIN_BOTTTOM_AUTO.bits,
+                                    | MARGIN_BOT_AUTO.bits,
     }
 }
 
@@ -60,6 +61,11 @@ impl DimFlags {
     #[inline]
     pub fn has_width_fixed(&self) -> bool {
         self.contains(WIDTH_FIXED)
+    }
+
+    #[inline]
+    pub fn has_height_fixed(&self) -> bool {
+        self.contains(HEIGHT_FIXED)
     }
 
     #[inline]
@@ -84,6 +90,6 @@ impl DimFlags {
 
     #[inline]
     pub fn has_margin_bottom_auto(&self) -> bool {
-        self.contains(MARGIN_BOTTTOM_AUTO)
+        self.contains(MARGIN_BOT_AUTO)
     }
 }

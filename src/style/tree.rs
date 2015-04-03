@@ -1,5 +1,8 @@
 use std::collections::HashMap;
+use std::ops::Deref;
 use markup::Node;
+use rendering::TextureRule;
+use asset::ImageData;
 use super::Value;
 use super::Stylesheet;
 use super::Unit;
@@ -38,6 +41,16 @@ pub enum PropertyName {
     BORDER_BOTTOM,
     // Layout mode (absolute / rtl / ltr)
     LAYOUT_MODE,
+
+    /// Background
+    /// Possibles rules:
+    /// * `"fit"` will scale the image with the node content size.
+    /// * `"repeat"` won't scale the image but will repeat it
+    ///
+    /// In any case, the node content bounds will be the final image bounds
+    BACKGROUND_IMAGE_RULE,
+    /// This property can only have Value::Image.
+    BACKGROUND_IMAGE,
 }
 
 pub struct StyledNode<'a> {
@@ -52,15 +65,15 @@ pub struct StyledNode<'a> {
 
 // Thanks to lastest rustc nightly macros can't be
 // defined at the end of the file anymore. Shame.
-macro_rules! return_length_or_panic {
+macro_rules! return_length_or_zero {
 
     ($this:ident try $prop_name:ident) => {
-        return_length_or_panic!(rec $this try $prop_name else { panic!(); });
+        return_length_or_zero!(rec $this try $prop_name else { 0f32 });
     };
 
     ($this:ident try $prop_name:ident else $other:ident) => {
-        return_length_or_panic!(rec $this try $prop_name else {
-            return_length_or_panic!(rec $this try $other else { panic!(); })
+        return_length_or_zero!(rec $this try $prop_name else {
+            return_length_or_zero!(rec $this try $other else { 0f32 })
         });
     };
 
@@ -68,9 +81,9 @@ macro_rules! return_length_or_panic {
         match $this.property_values.get(&$prop_name) {
             Some(v) => {
                 if let Value::Length(val, Unit::Px) = *v {
-                    return val
+                    val
                 } else {
-                    panic!();
+                    0f32
                 }
             }
             None => $none_case
@@ -104,6 +117,43 @@ impl<'a> StyledNode<'a> {
         }
     }
 
+    pub fn is_property_auto(&self, prop_name: PropertyName) -> bool {
+        match self.property_values.get(&prop_name) {
+            Some(&Value::KeywordAuto) => {
+                true
+            },
+            _ => false
+        }
+    }
+
+    pub fn get_background_rule(&self) -> Option<TextureRule> {
+        match self.property_values.get(&PropertyName::BACKGROUND_IMAGE_RULE) {
+            Some(&Value::KeywordFit) => Some(TextureRule::Fit),
+            Some(&Value::KeywordRepeat) => Some(TextureRule::Repeat),
+            _ => None
+        }
+    }
+
+    pub fn get_background_image(&self) -> Option<ImageData> {
+        match self.property_values.get(&PropertyName::BACKGROUND_IMAGE) {
+            Some(&Value::Image(ref id)) => Some(id.clone()),
+            _ => None
+        }
+    }
+
+    pub fn size_prop_as_opt(&self, prop_name: PropertyName) -> Option<f32> {
+        match self.property_values.get(&prop_name) {
+            Some(v) => {
+                if let Value::Length(val, Unit::Px) = *v {
+                    Some(val)
+                } else {
+                    None
+                }
+            }
+            None => None
+        }
+    }
+
     pub fn size_prop(&self, prop_name: PropertyName) -> f32 {
         use self::PropertyName::MARGIN;
         use self::PropertyName::PADDING;
@@ -116,28 +166,38 @@ impl<'a> StyledNode<'a> {
             | PropertyName::BOTTOM
             | PropertyName::HEIGHT
             | PropertyName::WIDTH => {
-                return_length_or_panic!(self try prop_name);
+                return_length_or_zero!(self try prop_name)
             }
             PropertyName::MARGIN_LEFT
             | PropertyName::MARGIN_RIGHT
             | PropertyName::MARGIN_TOP
             | PropertyName::MARGIN_BOTTOM => {
-                return_length_or_panic!(self try prop_name else MARGIN);
+                return_length_or_zero!(self try prop_name else MARGIN)
             }
             PropertyName::PADDING_LEFT
             | PropertyName::PADDING_RIGHT
             | PropertyName::PADDING_TOP
             | PropertyName::PADDING_BOTTOM => {
-                return_length_or_panic!(self try prop_name else PADDING);
+                return_length_or_zero!(self try prop_name else PADDING)
             }
             PropertyName::BORDER_LEFT
             | PropertyName::BORDER_RIGHT
             | PropertyName::BORDER_TOP
             | PropertyName::BORDER_BOTTOM => {
-                return_length_or_panic!(self try prop_name else BORDER);
+                return_length_or_zero!(self try prop_name else BORDER)
             }
             _ => panic!()
         }
+    }
+
+    pub fn tree_size(&self) -> usize {
+        let mut count = 1;
+
+        for kid in &self.kids {
+            count += kid.tree_size();
+        }
+
+        count
     }
 
     fn set_properties(&mut self, style: &Stylesheet) {
@@ -150,13 +210,16 @@ impl<'a> StyledNode<'a> {
         // rule does define a particular property.
         // Thus the code below wouldn't change.
         for rule in style.rules.iter() {
-            if classes.contains(rule.selector.as_slice()) {
+            // FIXME:
+            // using deref instead of as_ref because
+            // of an inference problem.
+            if classes.contains(rule.selector.deref()) {
                 // Loop over declaration in the rule.
                 // If some properties are declared multiple times
                 // the order matters here.
                 for dec in rule.declarations.iter() {
 
-                    if let Some(property) = STYLE_PROPERTIES.get(dec.name.as_slice()) {
+                    if let Some(property) = STYLE_PROPERTIES.get(dec.name.deref()) {
 
                         properties.insert(*property, dec.value.clone());
                     }
@@ -198,4 +261,7 @@ static STYLE_PROPERTIES: phf::Map<&'static str, PropertyName> = phf_map! {
     "border-bottom" => PropertyName::BORDER_BOTTOM,
     // Layout mode (absolute / rtl / ltr)
     "layout" => PropertyName::LAYOUT_MODE,
+    // Background image
+    "background-image" => PropertyName::BACKGROUND_IMAGE,
+    "background-image-rule" => PropertyName::BACKGROUND_IMAGE_RULE,
 };
