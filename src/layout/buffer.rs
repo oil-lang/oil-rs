@@ -1,5 +1,5 @@
 use std::slice;
-
+use std::ops::Deref;
 use super::LayoutBox;
 use super::boxes::{LayoutBoxIterMut};
 
@@ -8,6 +8,13 @@ use style::{StyledNode};
 // LayoutBuffer are of fixed sized.
 pub struct LayoutBuffer(Box<[LayoutBox]>);
 
+impl Deref for LayoutBuffer {
+    type Target = [LayoutBox];
+
+    fn deref<'a>(&'a self) -> &'a [LayoutBox] {
+        self.0.deref()
+    }
+}
 
 impl LayoutBuffer {
 

@@ -74,27 +74,20 @@ impl<'a> RenderBackbend for GliumRenderer<'a> {
         frame: &mut <GliumRenderer as RenderBackbend>::Frame,
         data: &rendering::RenderData)
     {
-        match data.main_texture {
-            Some(tex_id) => {
+        let tex = resource_manager.get_texture(data.main_texture);
+        let uniforms = uniform! {
+            matrix: self.matrix,
+            texture: tex
+        };
 
-                let tex = resource_manager.get_texture(tex_id);
-                let uniforms = uniform! {
-                    matrix: self.matrix,
-                    texture: tex
-                };
+        let vb = data.vertex_coords_buffer.as_ref().unwrap();
 
-                let vb = data.vertex_coords_buffer.as_ref().unwrap();
-                let tb = data.tex_coords_buffer.as_ref().unwrap();
-
-                frame.draw(
-                    (vb, tb),
-                    &self.index_buffer,
-                    &self.program,
-                    &uniforms,
-                    &Default::default()).unwrap();
-            }
-            _ => ()
-        }
+        frame.draw(
+            (vb, &data.tex_coords_buffer),
+            &self.index_buffer,
+            &self.program,
+            &uniforms,
+            &Default::default()).unwrap();
     }
 
     fn flush_frame(&self, frame: <GliumRenderer as RenderBackbend>::Frame) {

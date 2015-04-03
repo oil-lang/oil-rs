@@ -1,9 +1,11 @@
-use std::slice;
-use style::{StyledNode};
-use glium::Display;
+// ======================================== //
+//                INTERFACE                 //
+// ======================================== //
 
-use resource::ResourceManager;
-use layout::LayoutBuffer;
+pub mod backend;
+pub use self::view::View;
+
+mod view;
 
 #[derive(Copy, Debug)]
 pub enum TextureRule {
@@ -11,48 +13,90 @@ pub enum TextureRule {
     Repeat
 }
 
-pub use self::glutinglium::RenderData;
+// ======================================== //
+//                INTERNALS                 //
+// ======================================== //
 
-mod glutinglium;
+use std::num::ToPrimitive;
+use glium;
+use glium::Display;
+use image::{GenericImage};
 
-pub struct RenderBuffer(Box<[RenderData]>);
+use asset::ImageData;
+use layout::LayoutBox;
+use resource::{ResourceManager, ResourceId};
 
-impl RenderBuffer {
-    pub fn new(display: &Display, resource_manager: &ResourceManager, style_tree: &StyledNode) -> RenderBuffer {
-        // Create buffer.
-        let mut buffer = Vec::with_capacity(style_tree.tree_size());
+#[derive(Copy)]
+struct TexCoords {
+    tex_coords: [f32; 2],
+}
 
-        fill_buffer(display, resource_manager, &mut buffer, style_tree);
+#[derive(Copy)]
+struct Vertex {
+    position: [f32; 2],
+}
 
-        RenderBuffer(buffer.into_boxed_slice())
-    }
+implement_vertex!(Vertex, position);
+implement_vertex!(TexCoords, tex_coords);
 
-    pub fn update_buffers(&mut self, display: &Display, layout_buffer: &LayoutBuffer) {
-        for (data, boxi) in self.0.iter_mut().zip(layout_buffer.iter()) {
-            data.update_coords(display, &boxi);
+pub struct RenderData {
+    main_texture: ResourceId,
+    tex_coords_buffer: glium::VertexBuffer<TexCoords>,
+    vertex_coords_buffer: Option<glium::VertexBuffer<Vertex>>,
+    rule: TextureRule,
+}
+
+impl RenderData {
+
+    fn new(
+        display: &Display,
+        resource_manager: &ResourceManager,
+        image: ImageData,
+        rule: TextureRule)
+        -> RenderData
+    {
+        // TODO: Handle TextureRule::Repeat
+        let (iw, ih) = resource_manager.get_image_dimensions(image.img);
+        let (w_m, h_m) = (iw.to_f32().unwrap(), ih.to_f32().unwrap());
+        let x = image.offset_x / w_m;
+        let y = image.offset_y / h_m;
+        let xo = image.width  / w_m + x;
+        let yo = image.height / h_m + y;
+
+        let buffer = glium::VertexBuffer::new(display,
+            vec![
+                TexCoords { tex_coords: [ x, y ] },
+                TexCoords { tex_coords: [ x, yo] },
+                TexCoords { tex_coords: [xo, yo] },
+                TexCoords { tex_coords: [xo, y ] }
+            ]
+        );
+
+        RenderData {
+            main_texture: image.img,
+            tex_coords_buffer: buffer,
+            vertex_coords_buffer: None,
+            rule: rule,
         }
     }
 
-    pub fn iter(&self) -> slice::Iter<RenderData> {
-        self.0.iter()
-    }
-}
+    fn update_coords(&mut self, display: &Display, lb: &LayoutBox) {
+        // TODO: Look how to do a glMapBuffer instead of this when
+        // vertex_coords_buffer is Some(buffer).
+        // Note: for now  it should be acceptable as this is probably
+        //       not the bottle neck.
+        let x = lb.dim().content.x + lb.dim().margin.left;
+        let y = lb.dim().content.y + lb.dim().margin.top;
+        let height = lb.dim().content.height;
+        let width = lb.dim().content.width;
 
-fn fill_buffer(
-    display: &Display,
-    resource_manager: &ResourceManager,
-    vec: &mut Vec<RenderData>,
-    style_tree: &StyledNode)
-{
-    vec.push(
-        RenderData::new(
-            display,
-            resource_manager,
-            style_tree.get_background_image(),
-            style_tree.get_background_rule()
-        )
-    );
-    for kid in &style_tree.kids {
-        fill_buffer(display, resource_manager, vec, kid);
+        self.vertex_coords_buffer = Some(
+            glium::VertexBuffer::new(display, vec![
+                Vertex { position: [         x, y         ]},
+                Vertex { position: [         x, y + height]},
+                Vertex { position: [ x + width, y + height]},
+                Vertex { position: [ x + width, y         ]}
+            ])
+        );
     }
 }

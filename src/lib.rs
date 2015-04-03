@@ -20,20 +20,18 @@ pub mod style;
 pub mod deps;
 pub mod layout;
 pub mod rendering;
-pub mod backend;
 
 pub use self::report::ErrorReporter;
 pub use self::report::StdOutErrorReporter;
 pub use self::report::EmptyErrorReporter;
 pub use self::router::Router;
-pub use self::view::View;
+pub use self::rendering::View;
 pub use self::resource::ResourceManager;
 
 mod parsing;
 mod report;
 mod asset;
 mod router;
-mod view;
 mod resource;
 
 pub trait RenderBackbend {
