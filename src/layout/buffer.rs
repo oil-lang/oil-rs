@@ -29,11 +29,6 @@ impl LayoutBuffer {
         let res = LayoutBuffer::fill_buffer(&mut buffer, style_tree, true);
         assert_eq!(res as usize, size);
 
-        // Set last next_sibling to 0:
-        unsafe {
-            buffer.get_unchecked_mut(size - 1).set_next_sibling(0);
-        }
-
         LayoutBuffer(buffer.into_boxed_slice())
     }
 
@@ -41,12 +36,12 @@ impl LayoutBuffer {
 
         // First pass: compute max width first
         for root in LayoutBoxIterMut::new(&mut self.0) {
-            root.compute_max_width();
+            root.compute_layout_width(max_width);
         }
 
         // Second pass: compute actual layout then
         for root in LayoutBoxIterMut::new(&mut self.0) {
-            root.compute_layout(max_width, max_height);
+            root.compute_layout_height_and_position(max_height);
         }
     }
 
@@ -64,14 +59,20 @@ impl LayoutBuffer {
         last_child: bool) -> isize
     {
         let index = vec.len();
-
-        // Default next sibling (has children and last child)
-        unsafe {
-            vec.push(LayoutBox::new(style_tree, -1));
-        }
-
         let mut next_sibling: isize = 1;
         let mut kids = style_tree.kids.len();
+
+        // Default next sibling
+        unsafe {
+            // Las child with children.
+            if kids > 0 {
+                vec.push(LayoutBox::new(style_tree, -1));
+            // Last child with no more children.
+            } else {
+                vec.push(LayoutBox::new(style_tree, 0));
+            }
+        }
+
 
         for kid in &style_tree.kids {
             kids -= 1;

@@ -17,7 +17,6 @@ pub struct LayoutBox {
     dim: Dimensions,
     // Stores auto/fixed behaviors
     flags: DimFlags,
-    max_width: f32,
     next_sibling: isize,
 }
 
@@ -113,7 +112,6 @@ impl LayoutBox {
             },
             flags: flags,
             next_sibling: next_sibling,
-            max_width: 0f32,
         }
     }
 
@@ -143,8 +141,14 @@ impl LayoutBox {
         self.dim
     }
 
-    pub fn compute_max_width(&mut self)
+    /// This function compute the width for this node
+    /// and return the space it would have eaten if it had more space
+    /// than the one given.
+    ///
+    /// This can appear when this node has a child with a fixed width.
+    pub fn compute_layout_width(&mut self, space_available_for_self: f32) -> f32
     {
+        // Compute the extra part to remove
         let o = self.dim.padding.left
             + self.dim.padding.right
             + self.dim.margin.left
@@ -152,99 +156,137 @@ impl LayoutBox {
             + self.dim.border.left
             + self.dim.border.right;
 
-        // Compute max width by using the max width length of a line
+        // Compute the space available for each line
+        let space_available = if self.flags.has_width_fixed() {
+            self.dim.content.width
+        } else {
+            space_available_for_self - o
+        };
+
+        // Iterating variables
         let mut max = 0f32;
         let mut sum = 0f32;
-        for child in self.children_mut() {
-            // Compute child max width
-            child.compute_max_width();
-            sum += child.max_width;
+        let mut line_space_available = space_available;
 
-            if sum > max {
-                max = sum;
-            }
-            if child.flags.is_auto() {
-                sum = 0f32;
+        // Scope to reduce iter lifetime.
+        {
+            let mut iter = self.children_mut();
+            let mut option_next = iter.next();
+            let mut next_child = false;
+
+            loop {
+
+                if let Some(ref mut child) = option_next {
+
+                    // Recursive call: eat the space given
+                    let space_eaten = child.compute_layout_width(line_space_available);
+
+                    // If the child has not eaten more than given
+                    // then we just reduce the space available for the next child
+                    if line_space_available >= space_eaten {
+
+                        line_space_available -= space_eaten;
+                        sum += space_eaten;
+
+                        // Should we increase the max line size ?
+                        if sum > max {
+                            max = sum;
+                        }
+
+                        // If the child is auto then we simply restart with a new line
+                        if child.flags.is_auto() {
+                            sum = 0f32;
+                            line_space_available = space_available;
+                        }
+
+                        // We'll go see for the next child now.
+                        next_child = true;
+
+                    // Otherwise, we have to put the child on a new line
+                    // except if the child was alone on its line
+                    } else {
+
+                        // Am I alone ?
+                        if line_space_available == space_available {
+
+                            // This might be surprising, but here we want to
+                            // transmit back to our parent the child constraint.
+                            if sum > max {
+                                max = sum;
+                            }
+
+                            // Then start a new line:
+                            sum = 0f32;
+
+                            next_child = true;
+
+                        // If I wasn't alone, as I will be on a new line,
+                        // the recursion will be done again. This do have an overhead.
+                        }
+                    }
+
+                } else {
+                    break;
+                }
+
+                if next_child {
+
+                    // Go take care of the next child:
+                    option_next = iter.next();
+
+                    next_child = false;
+                }
             }
         }
 
-        // Assign max width for self.
-        self.max_width = if self.flags.has_width_fixed() {
+        // Assign min width for self.
+        if !self.flags.has_width_fixed() {
+            self.dim.content.width = if self.flags.has_width_auto() {
+                space_available
+            } else {
+                max.min(space_available)
+            }
+        };
+
+        // Compute the free space for margin in auto mode:
+        let s = space_available - self.dim.content.width;
+
+        // We can also compute the margins (left/right) if they're auto:
+        match (self.flags.has_margin_right_auto(), self.flags.has_margin_left_auto()) {
+            (true, true) => {
+                self.dim.margin.left  = s / 2f32;
+                self.dim.margin.right = s / 2f32;
+            }
+            (true, false) => {
+                self.dim.margin.left = s;
+            }
+            (false, true) => {
+                self.dim.margin.right = s;
+            }
+            _ => ()
+        }
+
+        if self.flags.has_width_fixed() {
             self.dim.content.width + o
         } else {
-            sum + o
-        };
+            max + o
+        }
     }
 
-    fn get_bigger_line_size(&self, max_width: f32) -> f32
-    {
-
-        let mut max = 0f32;
-        let mut current_line_width  = 0f32;
-
-        macro_rules! line_return {
-            ($max:ident, $current_line_width:ident) => ({
-                $max = $max.max($current_line_width);
-                $current_line_width  = 0f32;
-            });
-        }
-
-        for child in self.children() {
-            let child_full_width = child.max_width;
-
-            // Line return ?
-            if child_full_width + current_line_width > max_width {
-                line_return!(max, current_line_width);
-            }
-
-            current_line_width += child_full_width;
-
-            if child.flags.is_auto() {
-                line_return!(max, current_line_width);
-            }
-        }
-
-        max
-    }
-
-
     //
-    // TODO: FIXME Text nodes must have their size precomputed
+    // TODO: FIXME Text nodes must have their size precomputed somehow
     //
-    // PRECONDITONS: Everything initialized using PropertyName.
+    // PRECONDITONS: compute_width has been called
     //
-    pub fn compute_layout(
+    pub fn compute_layout_height_and_position(
         &mut self,
-        max_width: f32,
         max_height: f32)
     {
-        // We can compute directly the self.dim.width
-        // and the space for each line
-        let max_line_width  = max_width.min(self.get_bigger_line_size(max_width));
-
-        // Syntax sugar
-        let ref node = self.flags;
 
         // At this point we don't know self.dim.height / self.dim.width
         // positions
         let mut x = self.dim.content.x + self.dim.padding.left + self.dim.border.left;
         let mut y = self.dim.content.y + self.dim.padding.top  + self.dim.border.top;
-
-        // Child max width calculation
-        let child_max_width = if self.flags.has_width_fixed() {
-
-            // The max width will be the content width.
-            self.dim.content.width
-        } else {
-            // In that case, the width can be immediately computed as:
-            self.dim.content.width = max_line_width;
-
-            // The resulting max_width for children is:
-            max_width
-            - self.dim.padding.right - self.dim.padding.left
-            - self.dim.border.right  - self.dim.border.left
-            - self.dim.margin.right  - self.dim.margin.left
-        };
 
         // Equivalent rule for child max height:
         let child_max_height = if self.flags.has_height_fixed() {
@@ -280,9 +322,10 @@ impl LayoutBox {
                 while let Some(ref mut c) = $stack.pop() {
 
                     let s = $current_line_height - c.dim.content.height
-                        - c.dim.padding.right - c.dim.padding.left
-                        - c.dim.border.right  - c.dim.border.left
-                        - c.dim.margin.right  - c.dim.margin.left;
+                        - c.dim.padding.top - c.dim.padding.bottom
+                        - c.dim.border.top  - c.dim.border.bottom
+                        - c.dim.margin.top  - c.dim.margin.bottom;
+
                     // We compute the margin top / bottom
                     match (c.flags.has_margin_top_auto(), c.flags.has_margin_bottom_auto()) {
                         (true, true) => {
@@ -290,10 +333,10 @@ impl LayoutBox {
                             c.dim.margin.bottom = s / 2f32;
                         }
                         (true, false) => {
-                            c.dim.margin.left   = s;
+                            c.dim.margin.top   = s;
                         }
                         (false, true) => {
-                            c.dim.margin.right  = s;
+                            c.dim.margin.bottom  = s;
                         }
                         _ => ()
                     }
@@ -313,7 +356,7 @@ impl LayoutBox {
             let child_is_auto = child.flags.is_auto();
 
             // Line return ?
-            if child.max_width + current_line_width > child_max_width {
+            if child.dim.content.width + current_line_width > self.dim.content.width {
                 let ref d = self.dim;
                 line_return!(
                     stack,
@@ -327,8 +370,7 @@ impl LayoutBox {
             child.dim.content.x = x;
             child.dim.content.y = y;
 
-            child.compute_layout(child_max_width - current_line_width,
-                                 current_height_left);
+            child.compute_layout_height_and_position(current_height_left);
 
             current_line_width += child.dim.content.width
                 + child.dim.margin.left
@@ -361,32 +403,8 @@ impl LayoutBox {
             }
         }
 
-
-        // Now we do know self.dim.height / self.dim.width
-        // We just do some adjustement
-        if node.has_width_auto() {
-            self.dim.content.width = child_max_width;
-        }
-
+        // Finally: the height !
         self.dim.content.height =
             self.dim.content.height.max(child_max_height.min(accumulated_line_height));
-
-        // Compute the free space for margin in auto mode:
-        let s = max_width - self.dim.content.width;
-
-        // We can also compute the margins (left/right) if they're auto:
-        match (node.has_margin_right_auto(), node.has_margin_left_auto()) {
-            (true, true) => {
-                self.dim.margin.left  = s / 2f32;
-                self.dim.margin.right = s / 2f32;
-            }
-            (true, false) => {
-                self.dim.margin.left = s;
-            }
-            (false, true) => {
-                self.dim.margin.right = s;
-            }
-            _ => ()
-        }
     }
 }
