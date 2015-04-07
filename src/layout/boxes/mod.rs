@@ -176,6 +176,10 @@ impl LayoutBox {
 
             loop {
 
+                // This line is confusing...
+                // child has the type &mut &mut LayoutBox (one additional indirection)
+                // but in release both child, option_next and iter are optimized out.
+                // So I guess I shouldn't worry about that, or not ?
                 if let Some(ref mut child) = option_next {
 
                     // Recursive call: eat the space given

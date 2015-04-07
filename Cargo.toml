@@ -10,6 +10,13 @@ license = "MIT"
 keywords = ["ui", "opengl", "gamedev"]
 description = "User interface library oriented for games. It includes a user interface language: uil."
 
+[profile.release]
+opt-level = 3
+debug = true
+rpath = false
+lto = false
+debug-assertions = false
+
 [dependencies.xml-rs]
 # version = "*"
 git = "https://github.com/Nemikolh/xml-rs"
