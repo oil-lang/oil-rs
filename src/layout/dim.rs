@@ -2,7 +2,7 @@
 ///
 /// This code follows the css box model
 /// in naming and conventions. (all sizes are in pixels)
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct Dimensions {
     // Position of the content area relative to the viewport origin
     pub content: Rect,
@@ -11,7 +11,7 @@ pub struct Dimensions {
     pub margin: EdgeSizes,
 }
 
-#[derive(Copy, Default)]
+#[derive(Copy, Clone, Default)]
 pub struct Rect {
     pub x: f32,
     pub y: f32,
@@ -19,7 +19,7 @@ pub struct Rect {
     pub height: f32,
 }
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct EdgeSizes {
     pub left: f32,
     pub right: f32,

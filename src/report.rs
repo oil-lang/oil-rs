@@ -4,9 +4,9 @@ pub trait ErrorReporter: Copy {
     fn log(&self, msg: String);
 }
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct StdOutErrorReporter;
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct EmptyErrorReporter;
 
 

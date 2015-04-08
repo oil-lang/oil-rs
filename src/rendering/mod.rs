@@ -7,7 +7,7 @@ pub use self::view::View;
 
 mod view;
 
-#[derive(Copy, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub enum TextureRule {
     Fit,
     Repeat
@@ -26,12 +26,12 @@ use asset::ImageData;
 use layout::LayoutBox;
 use resource::{ResourceManager, ResourceId};
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 struct TexCoords {
     tex_coords: [f32; 2],
 }
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 struct Vertex {
     position: [f32; 2],
 }

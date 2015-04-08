@@ -1,6 +1,4 @@
-#![feature(convert)]
 #![feature(core, io)]
-#![feature(collections)]
 #![feature(plugin)]
 #![plugin(phf_macros)]
 
@@ -53,7 +51,7 @@ pub trait RenderBackbend {
     fn flush_frame(&self, frame: Self::Frame);
 }
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct Viewport {
     pub width: f32,
     pub height: f32,

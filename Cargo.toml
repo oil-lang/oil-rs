@@ -28,6 +28,7 @@ phf_macros = "*"
 
 [dependencies.glium]
 git = "https://github.com/tomaka/glium"
+features = ["default", "cgmath"]
 
 [dependencies.glium_macros]
 git = "https://github.com/tomaka/glium"

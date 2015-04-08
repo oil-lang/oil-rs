@@ -11,7 +11,7 @@ use phf;
 /// List of style properties
 ///
 /// If you do a change here, you must update STYLE_PROPERTIES
-#[derive(Copy, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 #[allow(non_camel_case_types)]
 pub enum PropertyName {
     // Absolute positioning properties
