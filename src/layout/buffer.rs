@@ -34,12 +34,17 @@ impl LayoutBuffer {
 
     pub fn compute_layout(&mut self, max_width: f32, max_height: f32) {
 
-        // First pass: compute max width first
+        // First pass: compute default width
         for root in LayoutBoxIterMut::new(&mut self.0) {
-            root.compute_layout_width(max_width);
+            root.compute_layout_defaut_width(max_width);
         }
 
-        // Second pass: compute actual layout then
+        // Second pass: compute auto margins and width auto
+        for root in LayoutBoxIterMut::new(&mut self.0) {
+            root.compute_layout_auto_width(max_width);
+        }
+
+        // Third pass: layout children and compute their height
         for root in LayoutBoxIterMut::new(&mut self.0) {
             root.compute_layout_height_and_position(max_height);
         }

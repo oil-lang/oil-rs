@@ -28,17 +28,18 @@ pub struct EdgeSizes {
 }
 
 bitflags! {
-    flags DimFlags: u32 {
+    flags DimFlags: u16 {
         // A text node is WIDTH_FIXED,
         // A node with a style fixed width is naturally WIDTH_FIXED
-        const ABSOLUTE_POSITIONING  = 0b10000000,
-        const HEIGHT_FIXED          = 0b01000000,
-        const WIDTH_FIXED           = 0b00100000,
-        const MARGIN_BOT_AUTO       = 0b00010000,
-        const MARGIN_TOP_AUTO       = 0b00001000,
-        const MARGIN_RIGHT_AUTO     = 0b00000100,
-        const MARGIN_LEFT_AUTO      = 0b00000010,
-        const WIDTH_AUTO            = 0b00000001,
+        const ABSOLUTE_POSITIONING  = 0b0001_0000_0000,
+        const MULTIPLE_LINES        = 0b0000_1000_0000,
+        const HEIGHT_FIXED          = 0b0000_0100_0000,
+        const WIDTH_FIXED           = 0b0000_0010_0000,
+        const MARGIN_BOT_AUTO       = 0b0000_0001_0000,
+        const MARGIN_TOP_AUTO       = 0b0000_0000_1000,
+        const MARGIN_RIGHT_AUTO     = 0b0000_0000_0100,
+        const MARGIN_LEFT_AUTO      = 0b0000_0000_0010,
+        const WIDTH_AUTO            = 0b0000_0000_0001,
         const MARGIN_X_AUTO         = MARGIN_LEFT_AUTO.bits
                                     | MARGIN_RIGHT_AUTO.bits,
         const MARGIN_Y_AUTO         = MARGIN_TOP_AUTO.bits
@@ -56,6 +57,11 @@ impl DimFlags {
     #[inline]
     pub fn has_width_auto(&self) -> bool {
         self.contains(WIDTH_AUTO)
+    }
+
+    #[inline]
+    pub fn has_multiple_lines(&self) -> bool {
+        self.contains(MULTIPLE_LINES)
     }
 
     #[inline]

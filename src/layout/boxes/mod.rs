@@ -146,7 +146,7 @@ impl LayoutBox {
     /// than the one given.
     ///
     /// This can appear when this node has a child with a fixed width.
-    pub fn compute_layout_width(&mut self, space_available_for_self: f32) -> f32
+    pub fn compute_layout_defaut_width(&mut self, space_available_for_self: f32) -> f32
     {
         // Compute the extra part to remove
         let o = self.dim.padding.left
@@ -168,6 +168,11 @@ impl LayoutBox {
         let mut sum = 0f32;
         let mut line_space_available = space_available;
 
+        // This flag tells wheter or not we have multiple lines
+        // It is used for the auto rules (not the expand ones).
+        let mut multiple_lines = false;
+        let mut new_line = false;
+
         // Scope to reduce iter lifetime.
         {
             let mut iter = self.children_mut();
@@ -182,8 +187,12 @@ impl LayoutBox {
                 // So I guess I shouldn't worry about that, or not ?
                 if let Some(ref mut child) = option_next {
 
+                    if new_line {
+                        multiple_lines = true;
+                    }
+
                     // Recursive call: eat the space given
-                    let space_eaten = child.compute_layout_width(line_space_available);
+                    let space_eaten = child.compute_layout_defaut_width(line_space_available);
 
                     // If the child has not eaten more than given
                     // then we just reduce the space available for the next child
@@ -200,6 +209,7 @@ impl LayoutBox {
                         // If the child is auto then we simply restart with a new line
                         if child.flags.is_auto() {
                             sum = 0f32;
+                            new_line = true;
                             line_space_available = space_available;
                         }
 
@@ -227,6 +237,8 @@ impl LayoutBox {
                         // If I wasn't alone, as I will be on a new line,
                         // the recursion will be done again. This do have an overhead.
                         }
+
+                        new_line = true;
                     }
 
                 } else {
@@ -243,14 +255,50 @@ impl LayoutBox {
             }
         }
 
-        // Assign min width for self.
+        // Set the multiple lines flags:
+        if multiple_lines {
+            self.flags  = self.flags | dim::MULTIPLE_LINES;
+        }
+
+        // Assign width for self.
         if !self.flags.has_width_fixed() {
-            self.dim.content.width = if self.flags.has_width_auto() {
-                space_available
-            } else {
-                max.min(space_available)
-            }
+            self.dim.content.width = max.min(space_available);
         };
+
+        if self.flags.has_width_fixed() {
+            self.dim.content.width + o
+        } else {
+            max + o
+        }
+    }
+
+    /// This function performs a tree traversal to compute the auto values
+    /// on nodes in the tree.
+    /// It should be called after compute_layout_default_width
+    pub fn compute_layout_auto_width(&mut self, space_available: f32)
+    {
+        let o = self.dim.padding.left
+            + self.dim.padding.right
+            + self.dim.margin.left
+            + self.dim.margin.right
+            + self.dim.border.left
+            + self.dim.border.right;
+
+        let space_available_for_child = if self.flags.has_multiple_lines() {
+            self.dim.content.width
+        } else {
+            space_available - o
+        };
+
+        for child in self.children_mut() {
+
+            child.compute_layout_auto_width(space_available_for_child);
+        }
+
+        // Assign min width for self.
+        if self.flags.has_width_auto() {
+            self.dim.content.width = space_available;
+        }
 
         // Compute the free space for margin in auto mode:
         let s = space_available - self.dim.content.width;
@@ -269,12 +317,6 @@ impl LayoutBox {
             }
             _ => ()
         }
-
-        if self.flags.has_width_fixed() {
-            self.dim.content.width + o
-        } else {
-            max + o
-        }
     }
 
     //
@@ -289,8 +331,14 @@ impl LayoutBox {
 
         // At this point we don't know self.dim.height / self.dim.width
         // positions
-        let mut x = self.dim.content.x + self.dim.padding.left + self.dim.border.left;
-        let mut y = self.dim.content.y + self.dim.padding.top  + self.dim.border.top;
+        let mut x = self.dim.content.x
+            + self.dim.padding.left
+            + self.dim.margin.left
+            + self.dim.border.left;
+        let mut y = self.dim.content.y
+            + self.dim.padding.top
+            + self.dim.margin.top
+            + self.dim.border.top;
 
         // Equivalent rule for child max height:
         let child_max_height = if self.flags.has_height_fixed() {
@@ -346,7 +394,7 @@ impl LayoutBox {
                     }
                 }
 
-                x = $d.content.x + $d.padding.left + $d.border.left;
+                x = $d.content.x + $d.padding.left + $d.border.left + $d.margin.left;
                 y += $current_line_height;
                 $accumulated_line_height += $current_line_height;
                 $current_height_left     -= $current_line_height;
@@ -374,13 +422,18 @@ impl LayoutBox {
             child.dim.content.x = x;
             child.dim.content.y = y;
 
-            child.compute_layout_height_and_position(current_height_left);
-
-            current_line_width += child.dim.content.width
+            // Update the x position:
+            let child_total_width = child.dim.content.width
                 + child.dim.margin.left
                 + child.dim.margin.right
                 + child.dim.border.left
                 + child.dim.border.right;
+
+            x += child_total_width;
+            current_line_width += child_total_width;
+
+            child.compute_layout_height_and_position(current_height_left);
+
 
             // Note: at this point child.margin (top, right) are either fixed
             // or zero (if they were auto). They will be computed in a later pass.
