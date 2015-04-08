@@ -1,7 +1,10 @@
 <view name="main">
-    WORST GAME EVER
     <group class="btns-group">
         <button class="btn-play" goto-view="play">Play</button>
-        <button class="btn-quit" action="quit">Quitter</button>
+        <button class="btn-one-line" action="quit">Options</button>
+        <button class="btn" action="quit">Foo</button>
+        <button class="btn" action="quit">Bar</button>
+        <button class="btn-one-line" action="quit">More Options</button>
+        <button class="btn-one-line" action="quit">Quit</button>
     </group>
 </view>
