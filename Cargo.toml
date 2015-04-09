@@ -8,7 +8,11 @@ repository = "https://github.com/uil-lang/uil-rs"
 readme = "README.md"
 license = "MIT"
 keywords = ["ui", "opengl", "gamedev"]
-description = "User interface library oriented for games. It includes a user interface language: uil."
+description = "User interface library oriented for games. It includes user interface languages."
+exclude = [
+    ".travis.yml",
+    "examples/*"
+]
 
 [profile.release]
 opt-level = 3
@@ -17,21 +21,15 @@ rpath = false
 lto = false
 debug-assertions = false
 
-[dependencies.xml-rs]
-# version = "*"
-git = "https://github.com/Nemikolh/xml-rs"
-
 [dependencies]
 bitflags = "0.1"
 phf = "*"
 phf_macros = "*"
+xml-rs = "*"
 
 [dependencies.glium]
-git = "https://github.com/tomaka/glium"
+version = "*"
 features = ["default", "cgmath"]
-
-[dependencies.glium_macros]
-git = "https://github.com/tomaka/glium"
 
 [dependencies.image]
 version = "*"

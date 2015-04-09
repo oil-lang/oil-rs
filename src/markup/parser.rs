@@ -107,7 +107,9 @@ impl<E, B> Parser<E, B>
 
                 match attr_name {
                     None => {
-                        let (row, col) = self.parser.get_cursor();
+                        // FIXME(Waiting the pull request on netvl/xml-rs to be merged)
+                        // let (row, col) = self.parser.get_cursor();
+                        let (row, col) = (0, 0);
                         self.err.log(
                             format!(
                                 "Warning {}:{} : `template` has no name add an \
@@ -132,7 +134,9 @@ impl<E, B> Parser<E, B>
                 Ok(())
             }
             _ => {
-                let (row, col) = self.parser.get_cursor();
+                // FIXME(Waiting the pull request on netvl/xml-rs to be merged)
+                // let (row, col) = self.parser.get_cursor();
+                let (row, col) = (0, 0);
                 self.err.log(
                     format!(
                         "Warning {}:{} : `{}` can't be at root level, \
@@ -159,7 +163,9 @@ impl<E, B> Parser<E, B>
             PROGRESS_BAR_TAG => tags::parse_pbar(attributes),
             REPEAT_TAG       => tags::parse_repeat(attributes),
             _ => {
-                let (row, col) = self.parser.get_cursor();
+                // FIXME(Waiting the pull request on netvl/xml-rs to be merged)
+                // let (row, col) = self.parser.get_cursor();
+                let (row, col) = (0, 0);
                 self.err.log(
                     format!("Warning {}:{} : Unknown tag `{}`", row+1, col+1, name)
                 );
@@ -204,7 +210,9 @@ impl<E, B> Parser<E, B>
     fn report_error_if_needed(&mut self,
                               parse_error: ParseError) -> ParseError
     {
-        let (row, col) = self.parser.get_cursor();
+        // FIXME(Waiting the pull request on netvl/xml-rs to be merged)
+        // let (row, col) = self.parser.get_cursor();
+        let (row, col) = (0, 0);
         match parse_error {
             (ErrorType::Fatal, ErrorStatus::NotReported(msg)) => {
                 self.err.log(
@@ -233,7 +241,9 @@ impl<E, B> Parser<E, B>
 
                     depth += 1;
 
-                    let (row, col) = self.parser.get_cursor();
+                    // FIXME(Waiting the pull request on netvl/xml-rs to be merged)
+                    // let (row, col) = self.parser.get_cursor();
+                    let (row, col) = (0, 0);
                     self.err.log(
                         format!("Warning {}:{}, `{}` has been ignored",
                                 row+1, col+1, name)
