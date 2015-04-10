@@ -33,10 +33,16 @@ pub enum Value {
 //    ColorValue(Rgba<u8>)
     Font(asset::FontData),
     Image(asset::ImageData),
-    KeywordAuto,
-    KeywordAbsolute,
-    KeywordFit,
-    KeywordRepeat,
+    Keyword(KwValue),
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum KwValue {
+    Auto,
+    Expand,
+    Absolute,
+    Fit,
+    Repeat
 }
 
 #[derive(Debug, Clone)]

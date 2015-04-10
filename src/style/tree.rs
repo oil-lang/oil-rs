@@ -4,6 +4,7 @@ use markup::Node;
 use rendering::TextureRule;
 use asset::ImageData;
 use super::Value;
+use super::KwValue;
 use super::Stylesheet;
 use super::Unit;
 use phf;
@@ -119,7 +120,7 @@ impl<'a> StyledNode<'a> {
 
     pub fn is_property_auto(&self, prop_name: PropertyName) -> bool {
         match self.property_values.get(&prop_name) {
-            Some(&Value::KeywordAuto) => {
+            Some(&Value::Keyword(v)) if v == KwValue::Auto => {
                 true
             },
             _ => false
@@ -128,8 +129,11 @@ impl<'a> StyledNode<'a> {
 
     pub fn get_background_rule(&self) -> Option<TextureRule> {
         match self.property_values.get(&PropertyName::BACKGROUND_IMAGE_RULE) {
-            Some(&Value::KeywordFit) => Some(TextureRule::Fit),
-            Some(&Value::KeywordRepeat) => Some(TextureRule::Repeat),
+            Some(&Value::Keyword(v)) => match v {
+                KwValue::Fit => Some(TextureRule::Fit),
+                KwValue::Repeat => Some(TextureRule::Repeat),
+                _ => None
+            },
             _ => None
         }
     }

@@ -1,12 +1,17 @@
 
 use report::ErrorReporter;
 use deps::StyleDefinitions;
+use deps::Constructor;
+use asset;
 use std::io::BufRead;
+use std::ops::Deref;
 use parsing::Error;
 use parsing::BufferConsumer;
 use resource::ResourceManager;
+use phf;
 
 use super::Value;
+use super::KwValue;
 use super::Rule;
 use super::Stylesheet;
 use super::Unit;
@@ -155,7 +160,7 @@ impl<'a, 'b, R, E, B> Parser<'a, 'b, R, E, B>
                     let path = try!(self.bc.consume_path());
                     match self.deps.defs.get(&path) {
                         Some(v) => {
-                            if let Some(val) = v.convert_to_style_value(self.resource_manager) {
+                            if let Some(val) = convert_to_style_value(v, self.resource_manager) {
                                 Ok(val)
                             } else {
                                 Err(self.bc.error_str(
@@ -168,40 +173,21 @@ impl<'a, 'b, R, E, B> Parser<'a, 'b, R, E, B>
                         ))
                     }
                 },
-                // TODO: Fix this: Keyword should
-                // be handled in a more generic way.
-                'a' => {
-                    let keyword = try!(self.bc.consume_identifier());
-                    if keyword == "auto" {
-                        Ok(Value::KeywordAuto)
-                    } else if keyword == "absolute" {
-                        Ok(Value::KeywordAbsolute)
-                    } else {
-                        Err(self.bc.error("Did you mean `auto` or `absolute`?"))
-                    }
-                }
-                'f' => {
-                    let keyword = try!(self.bc.consume_identifier());
-                    if keyword == "fit" {
-                        Ok(Value::KeywordFit)
-                    } else {
-                        Err(self.bc.error("Did you mean `fit`?"))
-                    }
-                }
-                'r' => {
-                    let keyword = try!(self.bc.consume_identifier());
-                    if keyword == "repeat" {
-                        Ok(Value::KeywordRepeat)
-                    } else {
-                        Err(self.bc.error("Did you mean `repeat`?"))
-                    }
-                }
                 '0'...'9' => {
                     let val = try!(self.bc.consume_number());
                     let unit = try!(self.consume_unit());
                     Ok(Value::Length(val, unit))
                 }
-                _ => Err(self.bc.error("Unknown value."))
+                _ => {
+                    let keyword = try!(self.bc.consume_identifier());
+                    if let Some(&k) = KEYWORDS.get(keyword.deref()) {
+                        Ok(Value::Keyword(k))
+                    } else {
+                        Err(self.bc.error_str(
+                            format!("Unknown keyword: `{}`", keyword)
+                        ))
+                    }
+                }
             },
             None => Err(self.bc.error("Unexpected end of input. Expected Value."))
         }
@@ -210,5 +196,29 @@ impl<'a, 'b, R, E, B> Parser<'a, 'b, R, E, B>
     fn consume_unit(&mut self) -> Result<Unit, Error> {
         try!(self.bc.consume_identifier());
         Ok(Unit::Px)
+    }
+}
+
+static KEYWORDS: phf::Map<&'static str, KwValue> = phf_map! {
+    "auto" => KwValue::Auto,
+    "expand" => KwValue::Expand,
+    "absolute" => KwValue::Absolute,
+    "fit" => KwValue::Fit,
+    "repeat" => KwValue::Repeat
+};
+
+fn convert_to_style_value<R>(ctor: &Constructor, resource_manager: &mut R)
+    -> Option<Value>
+    where R: ResourceManager
+{
+    match *ctor {
+        Constructor::Number(v) => Some(Value::Length(v, Unit::Px)),
+        Constructor::Quote(ref q) => match KEYWORDS.get(q.deref()) {
+            Some(&k) => Some(Value::Keyword(k)),
+            _ => None
+        },
+        Constructor::Font(..) => Some(Value::Font(asset::FontData::new(ctor))),
+        Constructor::Image(..) => Some(Value::Image(asset::ImageData::new(ctor, resource_manager))),
+        Constructor::None => None,
     }
 }

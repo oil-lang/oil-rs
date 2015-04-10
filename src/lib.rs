@@ -19,7 +19,6 @@ extern crate glutin;
 pub mod markup;
 pub mod style;
 pub mod deps;
-pub mod layout;
 pub mod rendering;
 pub mod resource;
 
@@ -29,6 +28,7 @@ pub use self::report::EmptyErrorReporter;
 pub use self::router::Router;
 pub use self::rendering::View;
 
+mod layout;
 mod parsing;
 mod report;
 mod asset;

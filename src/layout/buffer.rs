@@ -50,14 +50,6 @@ impl LayoutBuffer {
         }
     }
 
-    pub fn iter(&self) -> slice::Iter<LayoutBox> {
-        self.0.iter()
-    }
-
-    pub fn iter_mut(&mut self) -> slice::IterMut<LayoutBox> {
-        self.0.iter_mut()
-    }
-
     fn fill_buffer(
         vec: &mut Vec<LayoutBox>,
         style_tree: &StyledNode,

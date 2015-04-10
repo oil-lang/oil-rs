@@ -8,9 +8,7 @@ use std::path::{PathBuf, Path};
 use std::fs::File;
 
 use report::ErrorReporter;
-use style;
 use asset;
-use resource::ResourceManager;
 
 /// Convenient function to parse a style from a BufRead.
 ///
@@ -91,23 +89,4 @@ pub enum Constructor {
     /// Image(path, width, height, offset-x, offset-y)
     Image(PathBuf, Option<f32>, Option<f32>, Option<f32>, Option<f32>),
     // Add other construtor here...
-}
-
-impl Constructor {
-    pub fn convert_to_style_value<R>(&self, resource_manager: &mut R)
-        -> Option<style::Value>
-        where R: ResourceManager
-    {
-        // TODO: FIXME
-        // A string should be converted into Keyword(String),
-        // once the modification is done to style::Value.
-        //
-        match *self {
-            Constructor::Number(v) => Some(style::Value::Length(v, style::Unit::Px)),
-            Constructor::Quote(..) => Some(style::Value::KeywordAuto),
-            Constructor::Font(..) => Some(style::Value::Font(asset::FontData::new(self))),
-            Constructor::Image(..) => Some(style::Value::Image(asset::ImageData::new(self, resource_manager))),
-            Constructor::None => None,
-        }
-    }
 }
