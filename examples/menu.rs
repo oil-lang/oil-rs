@@ -1,5 +1,3 @@
-#![feature(old_io, std_misc)]
-
 extern crate glutin;
 extern crate glium;
 extern crate image;
@@ -9,10 +7,9 @@ extern crate uil;
 use std::io::BufReader;
 use std::fs::File;
 use std::path::Path;
-use glium::DisplayBuild;
-use std::old_io::timer;
-use std::time::duration::Duration;
+use std::thread;
 
+use glium::DisplayBuild;
 use uil::RenderBackbend;
 
 fn main() {
@@ -94,19 +91,22 @@ pub enum Action {
 pub fn start_loop<F>(mut callback: F) where F: FnMut() -> Action {
     let mut accumulator = 0;
     let mut previous_clock = clock_ticks::precise_time_ns();
+
     loop {
         match callback() {
             Action::Stop => break,
             Action::Continue => ()
         };
+
         let now = clock_ticks::precise_time_ns();
         accumulator += now - previous_clock;
         previous_clock = now;
+
         const FIXED_TIME_STAMP: u64 = 16666667;
         while accumulator >= FIXED_TIME_STAMP {
             accumulator -= FIXED_TIME_STAMP;
-            // if you have a game, update the state here
         }
-        timer::sleep(Duration::nanoseconds((FIXED_TIME_STAMP - accumulator) as i64));
+
+        thread::sleep_ms(((FIXED_TIME_STAMP - accumulator) / 1000000) as u32);
     }
 }
