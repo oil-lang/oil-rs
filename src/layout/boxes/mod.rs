@@ -295,21 +295,21 @@ impl LayoutBox {
     /// It should be called after compute_layout_default_width
     pub fn compute_layout_auto_width(&mut self, space_available: f32)
     {
-        let o = self.dim.padding.left
-            + self.dim.padding.right
-            + self.dim.margin.left
-            + self.dim.margin.right
-            + self.dim.border.left
-            + self.dim.border.right;
-
         for child in self.children_mut() {
 
             child.compute_layout_auto_width(self.dim.content.width);
         }
 
-        // Assign min width for self.
+        // Resolve auto width for self.
         if self.flags.has_width_auto() {
-            self.dim.content.width = space_available;
+            let o = self.dim.padding.left
+                + self.dim.padding.right
+                + self.dim.margin.left
+                + self.dim.margin.right
+                + self.dim.border.left
+                + self.dim.border.right;
+
+            self.dim.content.width = space_available - o;
         }
 
         // Compute the free space for margin in auto mode:

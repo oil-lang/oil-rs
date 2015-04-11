@@ -1,4 +1,3 @@
-use std::slice;
 use std::ops::Deref;
 use super::LayoutBox;
 use super::boxes::{LayoutBoxIterMut};

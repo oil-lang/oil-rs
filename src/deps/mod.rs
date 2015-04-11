@@ -8,7 +8,6 @@ use std::path::{PathBuf, Path};
 use std::fs::File;
 
 use report::ErrorReporter;
-use asset;
 
 /// Convenient function to parse a style from a BufRead.
 ///
