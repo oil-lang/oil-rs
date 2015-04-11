@@ -118,9 +118,17 @@ impl<'a> StyledNode<'a> {
         }
     }
 
+    pub fn is_property_expand(&self, prop_name: PropertyName) -> bool {
+        self.is_property_eq_kw(prop_name, KwValue::Expand)
+    }
+
     pub fn is_property_auto(&self, prop_name: PropertyName) -> bool {
+        self.is_property_eq_kw(prop_name, KwValue::Auto)
+    }
+
+    pub fn is_property_eq_kw(&self, prop_name: PropertyName, kw: KwValue) -> bool {
         match self.property_values.get(&prop_name) {
-            Some(&Value::Keyword(v)) if v == KwValue::Auto => {
+            Some(&Value::Keyword(v)) if v == kw => {
                 true
             },
             _ => false

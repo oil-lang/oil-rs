@@ -49,6 +49,18 @@ impl LayoutBox {
             flags = flags | dim::WIDTH_AUTO;
         }
 
+        if node.is_property_expand(PropertyName::WIDTH) {
+            flags = flags | dim::WIDTH_EXPAND;
+        }
+
+        if node.is_property_expand(PropertyName::MARGIN_LEFT) {
+            flags = flags | dim::MARGIN_LEFT_EXPAND;
+        }
+
+        if node.is_property_expand(PropertyName::MARGIN_RIGHT) {
+            flags = flags | dim::MARGIN_RIGHT_EXPAND;
+        }
+
         let padding_left = node.size_prop(PropertyName::PADDING_LEFT);
         let padding_right = node.size_prop(PropertyName::PADDING_RIGHT);
         let padding_top = node.size_prop(PropertyName::PADDING_TOP);
@@ -168,11 +180,6 @@ impl LayoutBox {
         let mut sum = 0f32;
         let mut line_space_available = space_available;
 
-        // This flag tells wheter or not we have multiple lines
-        // It is used for the auto rules (not the expand ones).
-        let mut multiple_lines = false;
-        let mut new_line = false;
-
         // Scope to reduce iter lifetime.
         {
             let mut iter = self.children_mut();
@@ -186,10 +193,6 @@ impl LayoutBox {
                 // but in release both child, option_next and iter are optimized out.
                 // So I guess I shouldn't worry about that, or not ?
                 if let Some(ref mut child) = option_next {
-
-                    if new_line {
-                        multiple_lines = true;
-                    }
 
                     // Recursive call: eat the space given
                     let space_eaten = child.compute_layout_defaut_width(line_space_available);
@@ -209,7 +212,6 @@ impl LayoutBox {
                         // If the child is auto then we simply restart with a new line
                         if child.flags.is_auto() {
                             sum = 0f32;
-                            new_line = true;
                             line_space_available = space_available;
                         }
 
@@ -238,7 +240,6 @@ impl LayoutBox {
                         // the recursion will be done again. This do have an overhead.
                         }
 
-                        new_line = true;
                     }
 
                 } else {
@@ -255,15 +256,32 @@ impl LayoutBox {
             }
         }
 
-        // Set the multiple lines flags:
-        if multiple_lines {
-            self.flags  = self.flags | dim::MULTIPLE_LINES;
-        }
-
         // Assign width for self.
         if !self.flags.has_width_fixed() {
-            self.dim.content.width = max.min(space_available);
+            self.dim.content.width = if self.flags.has_width_expand() {
+                space_available
+            } else {
+                max.min(space_available)
+            }
         };
+
+        // Compute the free space for margin in expand mode:
+        let s = space_available - self.dim.content.width;
+
+        // We can also compute the margins (left/right) if they're auto:
+        match (self.flags.has_margin_right_expand(), self.flags.has_margin_left_expand()) {
+            (true, true) => {
+                self.dim.margin.left  = s / 2f32;
+                self.dim.margin.right = s / 2f32;
+            }
+            (true, false) => {
+                self.dim.margin.left = s;
+            }
+            (false, true) => {
+                self.dim.margin.right = s;
+            }
+            _ => ()
+        }
 
         if self.flags.has_width_fixed() {
             self.dim.content.width + o
@@ -284,15 +302,9 @@ impl LayoutBox {
             + self.dim.border.left
             + self.dim.border.right;
 
-        let space_available_for_child = if self.flags.has_multiple_lines() {
-            self.dim.content.width
-        } else {
-            space_available - o
-        };
-
         for child in self.children_mut() {
 
-            child.compute_layout_auto_width(space_available_for_child);
+            child.compute_layout_auto_width(self.dim.content.width);
         }
 
         // Assign min width for self.

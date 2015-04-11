@@ -1,7 +1,7 @@
 
 .btns-group {
-    margin-left: auto;
-    margin-right: auto;
+    margin-left: expand;
+    margin-right: expand;
 }
 
 .btn-play {
