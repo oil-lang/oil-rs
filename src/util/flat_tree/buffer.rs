@@ -1,4 +1,5 @@
 use std::ops::Deref;
+use std::ops::DerefMut;
 use super::TreeNode;
 use super::FlatTreeIter;
 use super::FlatTreeIterMut;
@@ -14,6 +15,13 @@ impl<T> Deref for FlatTree<T> {
     }
 }
 
+impl<T> DerefMut for FlatTree<T> {
+
+    fn deref_mut<'a>(&'a mut self) -> &'a mut [TreeNode<T>] {
+        self.0.deref_mut()
+    }
+}
+
 impl<T> FlatTree<T> {
 
     pub fn new<F, N>(root: &N, cap: usize, node_producer: F) -> FlatTree<T>
@@ -22,9 +30,38 @@ impl<T> FlatTree<T> {
     {
         let mut buffer = Vec::with_capacity(cap);
 
-        FlatTree::fill_buffer(&mut buffer, root, &node_producer, true);
+        FlatTree::fill_buffer(
+            &mut buffer,
+            &mut None,
+            &mut 0,
+            root,
+            &node_producer,
+            true
+        );
 
         FlatTree(buffer.into_boxed_slice())
+    }
+
+    pub fn new_with_lookup_table<F, N>(
+        root: &N,
+        cap: usize,
+        node_producer: F) -> (FlatTree<T>, Box<[usize]>)
+        where N: HasChildren,
+              F: Fn(&N) -> Option<T>
+    {
+        let mut buffer = Vec::with_capacity(cap);
+        let mut lookup_table = Some(Vec::with_capacity(cap));
+
+        FlatTree::fill_buffer(
+            &mut buffer,
+            &mut lookup_table,
+            &mut 0,
+            root,
+            &node_producer,
+            true
+        );
+
+        (FlatTree(buffer.into_boxed_slice()), lookup_table.unwrap().into_boxed_slice())
     }
 
     pub fn tree_iter<'a>(&'a self) -> FlatTreeIter<'a, T> {
@@ -37,6 +74,8 @@ impl<T> FlatTree<T> {
 
     fn fill_buffer<F, N>(
         vec: &mut Vec<TreeNode<T>>,
+        lookup_table: &mut Option<Vec<usize>>,
+        current_index: &mut usize,
         node: &N,
         node_producer: &F,
         last_child: bool) -> isize
@@ -61,11 +100,21 @@ impl<T> FlatTree<T> {
                 }
             }
 
+            // Set values for lookup_table
+            match lookup_table.as_mut() {
+                Some(ref mut lookup_indices) => {
+                    lookup_indices.push(*current_index);
+                },
+                _ => (),
+            }
+            *current_index += 1;
 
             for kid in node.children() {
                 kids -= 1;
                 next_sibling += FlatTree::fill_buffer(
                     vec,
+                    lookup_table,
+                    current_index,
                     kid,
                     node_producer.clone(),
                     kids == 0
@@ -82,7 +131,26 @@ impl<T> FlatTree<T> {
 
         } else {
             // Child is ignored and all its sub tree.
+            // Increment the index.
+            increment_index(current_index, node);
+
+            // Returns the next_sibling increment value
             0
         }
+    }
+
+}
+
+// ======================================== //
+//                  HELPERS                 //
+// ======================================== //
+
+fn increment_index<N>(current_index: &mut usize, node: &N)
+    where N: HasChildren
+{
+    *current_index += 1;
+
+    for kid in node.children() {
+        increment_index(current_index, kid);
     }
 }
