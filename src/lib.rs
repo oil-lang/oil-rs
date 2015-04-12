@@ -33,6 +33,7 @@ mod parsing;
 mod report;
 mod asset;
 mod router;
+mod util;
 
 pub trait RenderBackbend {
     type Frame;

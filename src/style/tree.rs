@@ -1,5 +1,8 @@
 use std::collections::HashMap;
 use std::ops::Deref;
+use phf;
+
+use util::flat_tree::HasChildren;
 use markup::Node;
 use rendering::TextureRule;
 use asset::ImageData;
@@ -7,7 +10,6 @@ use super::Value;
 use super::KwValue;
 use super::Stylesheet;
 use super::Unit;
-use phf;
 
 /// List of style properties
 ///
@@ -102,6 +104,13 @@ pub fn build_style_tree<'a, 'b>(node: &'a Node, stylesheet: &'b Stylesheet) -> S
     styled_node
 }
 
+
+impl<'a> HasChildren for StyledNode<'a> {
+
+    fn children(&self) -> &Vec<StyledNode<'a>> {
+        &self.kids
+    }
+}
 
 impl<'a> StyledNode<'a> {
 
