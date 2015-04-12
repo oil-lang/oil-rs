@@ -6,6 +6,7 @@ use style::{StyledNode, PropertyName};
 
 /// Reexport
 pub use self::buffer::LayoutBuffer;
+pub use self::buffer::LayoutNode;
 
 mod buffer;
 

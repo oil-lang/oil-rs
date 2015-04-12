@@ -34,6 +34,7 @@ mod report;
 mod asset;
 mod router;
 mod util;
+mod focus;
 
 pub trait RenderBackbend {
     type Frame;

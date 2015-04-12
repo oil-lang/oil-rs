@@ -3,6 +3,7 @@ use glium::Display;
 
 use resource::ResourceManager;
 use layout::LayoutBuffer;
+use focus::FocusBuffer;
 use super::render::RenderBuffer;
 use markup;
 use RenderBackbend;
@@ -11,6 +12,7 @@ use style;
 
 pub struct View {
     dirty_flags: bool,
+    focus_data: FocusBuffer,
     layout_data: LayoutBuffer,
     render_data: RenderBuffer,
 }
@@ -27,6 +29,7 @@ impl View {
     {
         let stylenode = style::build_style_tree(view, stylesheet);
         let layout_buffer = LayoutBuffer::new(&stylenode);
+        let focus_buffer = FocusBuffer::new(&stylenode);
         let render_buffer = RenderBuffer::new(display, resource_manager, &stylenode);
 
         View {
@@ -41,6 +44,7 @@ impl View {
         if self.dirty_flags {
             self.layout_data.compute_layout(vp.width, vp.height);
             self.render_data.update_nodes(display, &self.layout_data);
+            self.focus_data.update_nodes(&self.layout_data);
             self.dirty_flags = false;
         }
     }

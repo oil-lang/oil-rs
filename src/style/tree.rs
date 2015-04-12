@@ -57,7 +57,7 @@ pub enum PropertyName {
 }
 
 pub struct StyledNode<'a> {
-    node: &'a Node,
+    pub node: &'a Node,
     property_values: HashMap<PropertyName, Value>,
     pub kids: Vec<StyledNode<'a>>,
 }
