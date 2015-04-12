@@ -1,21 +1,18 @@
-use style::{StyledNode};
+use style::StyledNode;
 use glium::Display;
 
 use resource::ResourceManager;
 use layout::LayoutBuffer;
+use super::render::RenderBuffer;
 use markup;
 use RenderBackbend;
 use Viewport;
 use style;
 
-use super::RenderData;
-use super::TextureRule;
-
 pub struct View {
     dirty_flags: bool,
     layout_data: LayoutBuffer,
-    render_data: Box<[RenderData]>,
-    lookup_indices: Box<[usize]>,
+    render_data: RenderBuffer,
 }
 
 impl View {
@@ -30,23 +27,20 @@ impl View {
     {
         let stylenode = style::build_style_tree(view, stylesheet);
         let layout_buffer = LayoutBuffer::new(&stylenode);
-        let (render_buffer, lookup_table) = create_render_buffer_and_lookup_table(
-            display,
-            resource_manager,
-            &stylenode
-        );
+        let render_buffer = RenderBuffer::new(display, resource_manager, &stylenode);
+
         View {
             dirty_flags: true,
             layout_data: layout_buffer,
             render_data: render_buffer,
-            lookup_indices: lookup_table,
+            focus_data: focus_buffer,
         }
     }
 
     pub fn update(&mut self, display: &Display, vp: Viewport) {
         if self.dirty_flags {
             self.layout_data.compute_layout(vp.width, vp.height);
-            self.update_buffers(display);
+            self.render_data.update_nodes(display, &self.layout_data);
             self.dirty_flags = false;
         }
     }
@@ -63,82 +57,8 @@ impl View {
             backend.render_element(resource_manager, frame, data);
         }
     }
-
-    fn update_buffers(&mut self, display: &Display) {
-        let ref layout_data = self.layout_data;
-        for (data, &i) in self.render_data.iter_mut().zip(self.lookup_indices.iter()) {
-            // This part is always safe because the initialization step
-            // ensure that:
-            //       self.layout_data.len() >= self.render_data
-            let boxi = unsafe { layout_data.get_unchecked(i) };
-            data.update_coords(display, &boxi);
-        }
-    }
-
 }
 
-// ======================================== //
-//                  HELPERS                 //
-// ======================================== //
-
-fn create_render_buffer_and_lookup_table<R>(
-    display: &Display,
-    resource_manager: &R,
-    style_tree: &StyledNode) -> (Box<[RenderData]>, Box<[usize]>)
-    where R: ResourceManager
-{
-    // Create buffer with the magic number.
-    // TODO: Stop magic, use real life example.
-    let mut buffer = Vec::with_capacity(10);
-    let mut lookup_table = Vec::with_capacity(10);
-
-    fill_buffer(
-        display,
-        resource_manager,
-        &mut buffer,
-        &mut lookup_table,
-        &mut 0,
-        style_tree
-    );
-
-    (buffer.into_boxed_slice(), lookup_table.into_boxed_slice())
-}
-
-
-fn fill_buffer<R>(
-    display: &Display,
-    resource_manager: &R,
-    buffer: &mut Vec<RenderData>,
-    lookup_table: &mut Vec<usize>,
-    layout_box_ref: &mut usize,
-    style_tree: &StyledNode)
-    where R: ResourceManager
-{
-    if let Some(img) = style_tree.get_background_image() {
-
-        let rule = style_tree.get_background_rule().unwrap_or(TextureRule::Fit);
-
-        buffer.push(
-            RenderData::new(
-                display,
-                resource_manager,
-                img,
-                rule
-            )
-        );
-
-        lookup_table.push(
-            *layout_box_ref
-        );
-
-    }
-    *layout_box_ref += 1;
-
-    for kid in &style_tree.kids {
-        fill_buffer(display, resource_manager, buffer, lookup_table,
-            layout_box_ref, kid);
-    }
-}
 
 // ======================================== //
 //                   TESTS                  //

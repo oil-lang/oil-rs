@@ -6,6 +6,7 @@ pub mod backend;
 pub use self::view::View;
 
 mod view;
+mod render;
 
 #[derive(Copy, Clone, Debug)]
 pub enum TextureRule {
