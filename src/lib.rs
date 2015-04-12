@@ -6,6 +6,7 @@
 extern crate bitflags;
 extern crate xml;
 extern crate phf;
+extern crate num;
 
 #[macro_use]
 extern crate glium;

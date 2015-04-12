@@ -1,4 +1,3 @@
-use std::num::Float;
 
 use super::dim::{self, DimFlags};
 use super::{Dimensions, EdgeSizes, Rect};

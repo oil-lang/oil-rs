@@ -1,4 +1,3 @@
-use style::StyledNode;
 use glium::Display;
 
 use resource::ResourceManager;

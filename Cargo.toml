@@ -26,6 +26,7 @@ bitflags = "0.1"
 phf = "*"
 phf_macros = "*"
 xml-rs = "*"
+num = "*"
 
 [dependencies.glium]
 version = "*"
