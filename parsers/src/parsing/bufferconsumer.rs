@@ -1,4 +1,5 @@
-use num::traits::Num;
+use std::f32;
+use std::num::FromStrRadix;
 use std::io::BufRead;
 use std::io::Chars;
 use super::Error;
