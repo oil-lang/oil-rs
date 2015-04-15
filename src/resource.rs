@@ -23,7 +23,10 @@ pub fn create_resource_manager<'a>(display: &'a Display) -> ResourceManagerImpl 
     ResourceManagerImpl::new(display)
 }
 
-pub fn create_stateless() -> NullResourceManager {
+/// Create a ResourceManager that does nothing.
+/// Usefull when you know that you won't have any resources
+/// or that your program will stop after parsing.
+pub fn create_null_manager() -> NullResourceManager {
     NullResourceManager
 }
 

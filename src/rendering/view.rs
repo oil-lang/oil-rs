@@ -176,7 +176,7 @@ mod test {
     #[test]
     fn lookup_table_should_contain_correct_indices() {
 
-        let mut fake_resource_manager = resource::create_stateless();
+        let mut fake_resource_manager = resource::create_null_manager();
         let stylesheet = stylesheet(
             ".btn { background-image: $toto; }",
             &mut fake_resource_manager);
