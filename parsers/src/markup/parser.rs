@@ -82,7 +82,7 @@ impl<E, B> Parser<E, B>
             }
         }
 
-        Library::new(self.err, views, templates)
+        Library::new(self.err.clone(), views, templates)
     }
 
     fn parse_view(&mut self) -> Result<View, ParseError>
