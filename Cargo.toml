@@ -1,7 +1,7 @@
 
 [package]
 name = "uil"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Nemikolh <joan.varvenne@gmail.com>"]
 homepage = "http://uil-lang.github.io/"
 repository = "https://github.com/uil-lang/uil-rs"
@@ -31,11 +31,11 @@ num = "*"
 
 [dependencies.uil_parsers]
 path = "./parsers"
-version = "=0.0.2"
+version = "=0.0.3"
 
 [dependencies.uil_shared]
 path = "./shared"
-version = "=0.0.2"
+version = "=0.0.3"
 
 [dependencies.glium]
 version = "*"
