@@ -1,21 +1,21 @@
 
 use report::ErrorReporter;
-use deps::StyleDefinitions;
-use deps::Constructor;
-use asset;
+use uil_shared::deps::StyleDefinitions;
+use uil_shared::deps::Constructor;
+use uil_shared::asset;
 use std::io::BufRead;
 use std::ops::Deref;
 use parsing::Error;
 use parsing::BufferConsumer;
-use resource::ResourceManager;
+use uil_shared::resource::BasicResourceManager;
 use phf;
 
-use super::Value;
-use super::KwValue;
-use super::Rule;
-use super::Stylesheet;
-use super::Unit;
-use super::Declaration;
+use uil_shared::style::Value;
+use uil_shared::style::KwValue;
+use uil_shared::style::Rule;
+use uil_shared::style::Stylesheet;
+use uil_shared::style::Unit;
+use uil_shared::style::Declaration;
 
 /// Parser
 pub struct Parser<'a, 'b, R: 'b, E, B> {
@@ -28,7 +28,7 @@ pub struct Parser<'a, 'b, R: 'b, E, B> {
 impl<'a, 'b, R, E, B> Parser<'a, 'b, R, E, B>
     where E: ErrorReporter,
           B: BufRead,
-          R: ResourceManager
+          R: BasicResourceManager
 {
 
     pub fn new(
@@ -209,7 +209,7 @@ static KEYWORDS: phf::Map<&'static str, KwValue> = phf_map! {
 
 fn convert_to_style_value<R>(ctor: &Constructor, resource_manager: &mut R)
     -> Option<Value>
-    where R: ResourceManager
+    where R: BasicResourceManager
 {
     match *ctor {
         Constructor::Number(v) => Some(Value::Length(v, Unit::Px)),

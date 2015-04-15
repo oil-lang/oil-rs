@@ -4,3 +4,9 @@ addons:
   apt:
     packages:
     - libxxf86vm-dev
+
+script:
+    - cargo build -v
+    - cargo test -v
+    - cd parsers/
+    - cargo test -v

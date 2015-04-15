@@ -6,8 +6,8 @@ use report::ErrorReporter;
 use parsing::BufferConsumer;
 use parsing::Error;
 
-use super::Constructor;
-use super::StyleDefinitions;
+use uil_shared::deps::Constructor;
+use uil_shared::deps::StyleDefinitions;
 
 pub struct Parser<E, B> {
     err: E,

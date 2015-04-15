@@ -3,7 +3,7 @@ use std::fmt::{self, Debug};
 use std::path::Path;
 
 use deps::Constructor;
-use resource::{ResourceManager, ResourceId};
+use resource::{BasicResourceManager, ResourceId};
 
 #[derive(Debug, Clone)]
 pub struct FontData;
@@ -40,7 +40,7 @@ impl ImageData {
         image_ctor: &Constructor,
         resource_manager: &mut R)
         -> ImageData
-        where R: ResourceManager
+        where R: BasicResourceManager
     {
         if let Constructor::Image(ref path, width, height, offset_x, offset_y)
                 = *image_ctor

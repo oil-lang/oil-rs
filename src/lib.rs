@@ -1,10 +1,8 @@
-#![feature(core, io)]
 #![feature(plugin)]
 #![plugin(phf_macros)]
 
 #[macro_use]
 extern crate bitflags;
-extern crate xml;
 extern crate phf;
 extern crate num;
 
@@ -12,27 +10,26 @@ extern crate num;
 extern crate glium;
 extern crate image;
 extern crate cgmath;
+extern crate uil_parsers;
+extern crate uil_shared;
 
 #[cfg(test)]
 extern crate glutin;
 
-// TODO: Export only minimum
 pub mod markup;
 pub mod style;
 pub mod deps;
 pub mod rendering;
 pub mod resource;
 
-pub use self::report::ErrorReporter;
-pub use self::report::StdOutErrorReporter;
-pub use self::report::EmptyErrorReporter;
+// Reexport
+pub use uil_parsers::ErrorReporter;
+pub use uil_parsers::StdOutErrorReporter;
+pub use uil_parsers::EmptyErrorReporter;
 pub use self::router::Router;
 pub use self::rendering::View;
 
 mod layout;
-mod parsing;
-mod report;
-mod asset;
 mod router;
 mod util;
 mod focus;
