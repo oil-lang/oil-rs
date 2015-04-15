@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use markup::Node;
 use rendering::TextureRule;
-use asset::ImageData;
+use uil_shared::asset::ImageData;
 use super::Value;
 use super::KwValue;
 use super::Stylesheet;

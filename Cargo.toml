@@ -25,17 +25,21 @@ debug-assertions = false
 bitflags = "0.1"
 phf = "*"
 phf_macros = "*"
-xml-rs = "*"
+image = "*"
+cgmath = "*"
+num = "*"
+
+[dependencies.uil_parsers]
+path = "./parsers"
+version = "=0.0.1"
+
+[dependencies.uil_shared]
+path = "./shared"
+version = "=0.0.1"
 
 [dependencies.glium]
 version = "*"
 features = ["default", "cgmath"]
-
-[dependencies.image]
-version = "*"
-
-[dependencies.cgmath]
-version = "*"
 
 [dev-dependencies.glutin]
 version = "*"

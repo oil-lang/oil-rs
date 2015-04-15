@@ -17,12 +17,12 @@ pub enum TextureRule {
 //                INTERNALS                 //
 // ======================================== //
 
-use std::num::ToPrimitive;
+use num::traits::ToPrimitive;
 use glium;
 use glium::Display;
 use image::{GenericImage};
 
-use asset::ImageData;
+use uil_shared::asset::ImageData;
 use layout::LayoutBox;
 use resource::{ResourceManager, ResourceId};
 
