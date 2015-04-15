@@ -14,3 +14,4 @@ pub use uil_shared::markup::{
 
 pub use uil_parsers::markup::Library;
 pub use uil_parsers::markup::MAIN_VIEW_NAME;
+pub use uil_parsers::markup::parse;
