@@ -29,8 +29,8 @@ mod lib;
 /// # Example:
 ///
 /// ```
-/// use uil::StdOutErrorReporter;
-/// use uil::markup;
+/// use uil_parsers::StdOutErrorReporter;
+/// use uil_parsers::markup;
 ///
 /// let reader = std::io::BufReader::new(
 ///     "<view name=\"toto\">\

@@ -153,22 +153,22 @@ mod test {
     use glium::DisplayBuild;
     use markup::{self, Node};
     use style::{self, Stylesheet};
-    use deps::{Constructor, StyleDefinitions};
-    use super::create_render_buffer_and_lookup_table;
-    use report;
+    use uil_shared::deps::{Constructor, StyleDefinitions};
+    use uil_parsers::{StdOutErrorReporter};
     use resource::{self, ResourceManager};
+    use super::create_render_buffer_and_lookup_table;
 
     fn stylesheet<R: ResourceManager>(st: &str, r: &mut R) -> Stylesheet {
         let reader = BufReader::new(st.as_bytes());
         let mut defs = StyleDefinitions::new();
         defs.insert("toto".to_string(),
             Constructor::Image(PathBuf::new(), None, None, None, None));
-        style::parse(report::StdOutErrorReporter, reader, &defs, r)
+        style::parse(StdOutErrorReporter, reader, &defs, r)
     }
 
     fn markup_tree(mk: &str) -> markup::Node {
         let reader = BufReader::new(mk.as_bytes());
-        let lib = markup::parse(report::StdOutErrorReporter, reader);
+        let lib = markup::parse(StdOutErrorReporter, reader);
         let (_, root) = lib.views.into_iter().next().unwrap();
         root
     }
