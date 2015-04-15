@@ -1,4 +1,4 @@
-
+use std::f32;
 use std::num::FromStrRadix;
 use std::io::BufRead;
 use std::io::Chars;
@@ -38,7 +38,7 @@ impl<B> BufferConsumer<B>
 
     pub fn consume_number(&mut self) -> Result<f32, Error> {
         let num: String = try!(self.consume_while(is_numeric));
-        FromStrRadix::from_str_radix(&num, 10)
+        f32::from_str_radix(&num, 10)
             .map_err(|err| {
                 Error::new(self.row, self.col, format!("Incorrect float value: {}", err))
             })

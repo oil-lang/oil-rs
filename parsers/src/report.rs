@@ -1,12 +1,12 @@
 
-pub trait ErrorReporter: Copy {
+pub trait ErrorReporter: Clone {
 
     fn log(&self, msg: String);
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct StdOutErrorReporter;
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct EmptyErrorReporter;
 
 

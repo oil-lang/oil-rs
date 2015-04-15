@@ -1,33 +1,15 @@
 
-pub use self::rules::Stylesheet;
-pub use self::rules::Rule;
-pub use self::rules::Declaration;
-pub use self::rules::Value;
-pub use self::rules::KwValue;
-pub use self::rules::Unit;
 pub use self::tree::StyledNode;
 pub use self::tree::PropertyName;
 pub use self::tree::build_style_tree;
 
-mod rules;
-mod parser;
+pub use uil_parsers::style::parse;
+
+pub use uil_shared::style::Stylesheet;
+pub use uil_shared::style::Rule;
+pub use uil_shared::style::Declaration;
+pub use uil_shared::style::Value;
+pub use uil_shared::style::KwValue;
+pub use uil_shared::style::Unit;
+
 mod tree;
-
-use report::ErrorReporter;
-use deps::StyleDefinitions;
-use resource::ResourceManager;
-use std::io::BufRead;
-
-/// Convenient function to parse a style.
-pub fn parse<'a, 'b, R, E, B>(
-    reporter: E,
-    reader: B,
-    defs: &'a StyleDefinitions,
-    resource_manager: &'b mut R) -> Stylesheet
-    where E: ErrorReporter,
-          B: BufRead,
-          R: ResourceManager
-{
-    let mut parser = parser::Parser::new(reporter, reader, defs, resource_manager);
-    parser.parse()
-}

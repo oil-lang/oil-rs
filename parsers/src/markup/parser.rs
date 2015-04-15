@@ -6,6 +6,7 @@ use std::io::BufRead;
 
 use std::collections::HashMap;
 use ErrorReporter;
+use uil_shared;
 
 use super::HasNodeChildren;
 use super::Library;
@@ -23,6 +24,13 @@ use super::LINE_INPUT_TAG;
 use super::PROGRESS_BAR_TAG;
 use super::REPEAT_TAG;
 use super::MAIN_VIEW_NAME;
+
+use uil_shared::markup::{
+    Node,
+    View,
+    Template,
+    NodeType
+};
 
 /// Parser
 pub struct Parser<E, B: BufRead> {
@@ -74,30 +82,28 @@ impl<E, B> Parser<E, B>
             }
         }
 
-        Library::new(self.err, views, templates)
+        Library::new(self.err.clone(), views, templates)
     }
 
-    fn parse_view(&mut self) -> Result<tags::View, ParseError>
+    fn parse_view(&mut self) -> Result<View, ParseError>
     {
-        // TODO: FIXME
-        let mut view = tags::new_view(None);
+        let mut view = uil_shared::markup::new_view(None);
 
         try!(self.parse_loop(VIEW_TAG, &mut view));
         Ok(view)
     }
 
-    fn parse_template_decl(&mut self) -> Result<tags::Template, ParseError>
+    fn parse_template_decl(&mut self) -> Result<Template, ParseError>
     {
-        // TODO: FIXME
-        let mut template = tags::new_template(None);
+        let mut template = uil_shared::markup::new_template(None);
 
         try!(self.parse_loop(TEMPLATE_TAG, &mut template));
         Ok(template)
     }
 
     fn parse_root_tag(&mut self,
-                      views: &mut HashMap<String, tags::View>,
-                      templates: &mut HashMap<String, tags::Template>,
+                      views: &mut HashMap<String, View>,
+                      templates: &mut HashMap<String, Template>,
                       name: &str,
                       attributes: &Vec<OwnedAttribute>) -> Result<(), ParseError>
     {
@@ -151,13 +157,13 @@ impl<E, B> Parser<E, B>
     fn parse_tag(&mut self,
                  name: &str,
                  attributes: &Vec<OwnedAttribute>)
-                 -> Result<Option<tags::Node>, ParseError>
+                 -> Result<Option<Node>, ParseError>
     {
         let ignore_child = name == TEMPLATE_TAG;
 
         let node_type = match name {
             TEMPLATE_TAG     => tags::parse_template(attributes),
-            GROUP_TAG        => Ok(tags::NodeType::Group),
+            GROUP_TAG        => Ok(NodeType::Group),
             BUTTON_TAG       => tags::parse_button(attributes),
             LINE_INPUT_TAG   => tags::parse_linput(attributes),
             PROGRESS_BAR_TAG => tags::parse_pbar(attributes),
@@ -189,7 +195,7 @@ impl<E, B> Parser<E, B>
             }
             Ok(nt) => {
                 let classes = lookup_name("class", attributes);
-                let mut node = tags::Node::new(classes, nt);
+                let mut node = Node::new(classes, nt);
 
                 if ignore_child {
 
@@ -268,7 +274,7 @@ impl<E, B> Parser<E, B>
 
     fn parse_loop(&mut self,
                 tag: &str,
-                parent: &mut tags::Node)
+                parent: &mut Node)
                 -> Result<(), ParseError>
     {
         loop {
@@ -298,9 +304,9 @@ impl<E, B> Parser<E, B>
                 XmlEvent::Characters( text ) => {
 
                     parent.add(
-                        Some(tags::Node::new(
+                        Some(Node::new(
                             None,
-                            tags::NodeType::Text(text)
+                            NodeType::Text(text)
                         ))
                     );
                 }
