@@ -18,6 +18,12 @@ pub struct LayoutBox {
     flags: DimFlags,
 }
 
+pub struct LayoutBoxRepeat {
+    dim: Dimensions,
+    flags: DimFlags,
+    repeater: LayoutBuffer,
+}
+
 // ======================================== //
 //                 INTERFACE                //
 // ======================================== //

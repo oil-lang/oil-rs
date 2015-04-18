@@ -38,7 +38,7 @@ fn find_matching_children<'a>(parent: &'a FocusNode, bounds: &Rect) -> &'a Focus
     }
 }
 
-fn find_parent_for_right_neighbour<'a>(from: &'a FocusNode, current: &FocusNode, bounds: &Rect) -> &'a FocusNode {
+fn find_parent_for_right_neighbour<'a>(from: &'a FocusNode, current: &'a FocusNode, bounds: &Rect) -> &'a FocusNode {
 
     // Look for parent
     match current.parent() {

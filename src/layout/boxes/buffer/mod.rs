@@ -1,9 +1,16 @@
-
 use util::flat_tree::FlatTree;
 use util::flat_tree::TreeNode;
 use std::ops::Deref;
 use super::LayoutBox;
 use style::StyledNode;
+
+
+
+mod repeat_node;
+mod simple_node;
+
+
+
 
 pub struct LayoutBuffer(FlatTree<LayoutBox>);
 pub type LayoutNode = TreeNode<LayoutBox>;
@@ -232,9 +239,7 @@ fn compute_layout_auto_width(this: &mut LayoutNode, space_available: f32)
 //
 // PRECONDITONS: compute_width has been called
 //
-fn compute_layout_height_and_position(
-    this: &mut LayoutNode,
-    max_height: f32)
+fn compute_layout_height_and_position(this: &mut LayoutNode, max_height: f32)
 {
 
     // At this point we don't know this.dim.height / this.dim.width
@@ -267,104 +272,107 @@ fn compute_layout_height_and_position(
     let mut current_height_left = child_max_height;
     let mut accumulated_line_height = 0f32;
 
-    // Used for margin (top/bottom)
-    let mut stack: Vec<&mut TreeNode<LayoutBox>> = Vec::with_capacity(4);
+    // Reduced scope for stack (borrowck problem otherwise)
+    {
+        // Used for margin (top/bottom)
+        let mut stack: Vec<&mut TreeNode<LayoutBox>> = Vec::with_capacity(4);
 
-    macro_rules! line_return {
+        macro_rules! line_return {
 
-        ($stack:ident,
-         $current_line_height:ident,
-         $current_line_width:ident,
-         $current_height_left:ident,
-         $accumulated_line_height:ident,
-         $d:ident) => ({
+            ($stack:ident,
+             $current_line_height:ident,
+             $current_line_width:ident,
+             $current_height_left:ident,
+             $accumulated_line_height:ident,
+             $d:ident) => ({
 
-            while let Some(ref mut c) = $stack.pop() {
+                while let Some(ref mut c) = $stack.pop() {
 
-                let s = $current_line_height - c.dim.content.height
-                    - c.dim.padding.top - c.dim.padding.bottom
-                    - c.dim.border.top  - c.dim.border.bottom
-                    - c.dim.margin.top  - c.dim.margin.bottom;
+                    let s = $current_line_height - c.dim.content.height
+                        - c.dim.padding.top - c.dim.padding.bottom
+                        - c.dim.border.top  - c.dim.border.bottom
+                        - c.dim.margin.top  - c.dim.margin.bottom;
 
-                // We compute the margin top / bottom
-                match (c.flags.has_margin_top_auto(), c.flags.has_margin_bottom_auto()) {
-                    (true, true) => {
-                        c.dim.margin.top    = s / 2f32;
-                        c.dim.margin.bottom = s / 2f32;
+                    // We compute the margin top / bottom
+                    match (c.flags.has_margin_top_auto(), c.flags.has_margin_bottom_auto()) {
+                        (true, true) => {
+                            c.dim.margin.top    = s / 2f32;
+                            c.dim.margin.bottom = s / 2f32;
+                        }
+                        (true, false) => {
+                            c.dim.margin.top   = s;
+                        }
+                        (false, true) => {
+                            c.dim.margin.bottom  = s;
+                        }
+                        _ => ()
                     }
-                    (true, false) => {
-                        c.dim.margin.top   = s;
-                    }
-                    (false, true) => {
-                        c.dim.margin.bottom  = s;
-                    }
-                    _ => ()
                 }
+
+                x = $d.content.x + $d.padding.left + $d.border.left + $d.margin.left;
+                y += $current_line_height;
+                $accumulated_line_height += $current_line_height;
+                $current_height_left     -= $current_line_height;
+                $current_line_width   = 0f32;
+                $current_line_height  = 0f32;
+            });
+        }
+
+        for child in this.children_mut() {
+
+            let child_is_auto = child.flags.is_auto();
+
+            // Line return ?
+            if child.dim.content.width + current_line_width > this.dim.content.width {
+                let ref d = this.dim;
+                line_return!(
+                    stack,
+                    current_line_height,
+                    current_line_width,
+                    current_height_left,
+                    accumulated_line_height,
+                    d);
             }
 
-            x = $d.content.x + $d.padding.left + $d.border.left + $d.margin.left;
-            y += $current_line_height;
-            $accumulated_line_height += $current_line_height;
-            $current_height_left     -= $current_line_height;
-            $current_line_width   = 0f32;
-            $current_line_height  = 0f32;
-        });
-    }
+            child.dim.content.x = x;
+            child.dim.content.y = y;
 
-    for child in this.children_mut() {
+            // Update the x position:
+            let child_total_width = child.dim.content.width
+                + child.dim.margin.left
+                + child.dim.margin.right
+                + child.dim.border.left
+                + child.dim.border.right;
 
-        let child_is_auto = child.flags.is_auto();
+            x += child_total_width;
+            current_line_width += child_total_width;
 
-        // Line return ?
-        if child.dim.content.width + current_line_width > this.dim.content.width {
-            let ref d = this.dim;
-            line_return!(
-                stack,
-                current_line_height,
-                current_line_width,
-                current_height_left,
-                accumulated_line_height,
-                d);
-        }
-
-        child.dim.content.x = x;
-        child.dim.content.y = y;
-
-        // Update the x position:
-        let child_total_width = child.dim.content.width
-            + child.dim.margin.left
-            + child.dim.margin.right
-            + child.dim.border.left
-            + child.dim.border.right;
-
-        x += child_total_width;
-        current_line_width += child_total_width;
-
-        compute_layout_height_and_position(child, current_height_left);
+            compute_layout_height_and_position(child, current_height_left);
 
 
-        // Note: at this point child.margin (top, right) are either fixed
-        // or zero (if they were auto). They will be computed in a later pass.
-        current_line_height = current_line_height.max(child.dim.content.height
-            + child.dim.margin.top
-            + child.dim.margin.bottom
-            + child.dim.border.top
-            + child.dim.border.bottom
-        );
+            // Note: at this point child.margin (top, right) are either fixed
+            // or zero (if they were auto). They will be computed in a later pass.
+            current_line_height = current_line_height.max(child.dim.content.height
+                + child.dim.margin.top
+                + child.dim.margin.bottom
+                + child.dim.border.top
+                + child.dim.border.bottom
+            );
 
-        if child.flags.has_margin_top_or_bot_auto() {
-            stack.push(child);
-        }
+            if child.flags.has_margin_top_or_bot_auto() {
+                stack.push(child);
+            }
 
-        if child_is_auto {
-            let ref d = this.dim;
-            line_return!(
-                stack,
-                current_line_height,
-                current_line_width,
-                current_height_left,
-                accumulated_line_height,
-                d);
+            if child_is_auto {
+                let ref d = this.dim;
+                line_return!(
+                    stack,
+                    current_line_height,
+                    current_line_width,
+                    current_height_left,
+                    accumulated_line_height,
+                    d);
+            }
         }
     }
 

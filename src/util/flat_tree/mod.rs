@@ -47,7 +47,7 @@ impl<T> TreeNode<T> {
         self.next_sibling = next_sibling;
     }
 
-    pub fn children<'a>(&'a self) -> FlatTreeIter<T> {
+    pub fn children<'a>(&'a self) -> FlatTreeIter<'a, T> {
         if self.next_sibling > 1 || self.next_sibling == -1 {
             unsafe { FlatTreeIter::new_with_firstchild(self) }
         } else {
@@ -55,7 +55,7 @@ impl<T> TreeNode<T> {
         }
     }
 
-    pub fn children_mut<'a>(&'a self) -> FlatTreeIterMut<T> {
+    pub fn children_mut<'a>(&'a self) -> FlatTreeIterMut<'a, T> {
         if self.next_sibling > 1 || self.next_sibling == -1 {
             unsafe { FlatTreeIterMut::new_with_firstchild(self) }
         } else {
@@ -68,7 +68,7 @@ impl<T> TreeNode<T> {
 /// Mutable iterator over LayoutBuffer
 pub struct FlatTreeIterMut<'a, T: 'a> {
     current: *mut TreeNode<T>,
-    _marker: marker::PhantomData<&'a mut FlatTree<T>>,
+    _marker: marker::PhantomData<&'a mut TreeNode<T>>,
 }
 
 impl<'a, T> FlatTreeIterMut<'a, T> {
@@ -96,10 +96,10 @@ impl<'a, T> FlatTreeIterMut<'a, T> {
     }
 }
 
-impl<'b, 'a, T> Iterator for FlatTreeIterMut<'b, T> {
+impl<'a, T> Iterator for FlatTreeIterMut<'a, T> {
     type Item = &'a mut TreeNode<T>;
 
-    fn next(&mut self) -> Option<&mut TreeNode<T>> {
+    fn next(&mut self) -> Option<&'a mut TreeNode<T>> {
         if self.current.is_null() {
             None
         } else {
@@ -119,7 +119,7 @@ impl<'b, 'a, T> Iterator for FlatTreeIterMut<'b, T> {
 /// Immutable iterator over FlatTree
 pub struct FlatTreeIter<'a, T: 'a> {
     current: *const TreeNode<T>,
-    _marker: marker::PhantomData<&'a FlatTree<T>>,
+    _marker: marker::PhantomData<&'a TreeNode<T>>,
 }
 
 impl<'a, T> FlatTreeIter<'a, T> {
@@ -148,10 +148,10 @@ impl<'a, T> FlatTreeIter<'a, T> {
     }
 }
 
-impl<'a, 'b, T> Iterator for FlatTreeIter<'b, T> {
+impl<'a, T> Iterator for FlatTreeIter<'a, T> {
     type Item = &'a TreeNode<T>;
 
-    fn next(&mut self) -> Option<&TreeNode<T>> {
+    fn next(&mut self) -> Option<&'a TreeNode<T>> {
         if self.current.is_null() {
             None
         } else {
