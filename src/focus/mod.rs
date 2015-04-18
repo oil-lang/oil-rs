@@ -9,20 +9,32 @@ use self::tagged_tree::TaggedNode;
 use std::default::Default;
 
 mod tagged_tree;
+mod focus_right;
+mod focus_left;
+mod focus_down;
+mod focus_up;
+
+// Reexports
+pub use self::focus_up::focusUp;
+pub use self::focus_down::focusDown;
+pub use self::focus_left::focusLeft;
+pub use self::focus_right::focusRight;
 
 pub struct FocusAcceptor {
     // The parent of this node.
     parent: *const FocusNode,
+    is_acceptor: bool,
     line_number: usize,
     bounds: Rect,
 }
 
 impl FocusAcceptor {
 
-    fn new() -> FocusAcceptor {
+    fn new(node: &TaggedNode) -> FocusAcceptor {
         FocusAcceptor {
             parent: ptr::null_mut(),
             line_number: 0,
+            is_acceptor: node.is_acceptor,
             bounds: Default::default(),
         }
     }
@@ -40,6 +52,9 @@ pub type FocusNode = TreeNode<FocusAcceptor>;
 
 pub struct FocusBuffer {
     buffer: FlatTree<FocusAcceptor>,
+    // TODO: this should be part of
+    //       FlatTree. It is an implementation
+    //       details of FlatTree.
     lookup_indices: Box<[usize]>,
 }
 
@@ -74,7 +89,15 @@ impl FocusBuffer {
             //
             // See RenderBuffer#update_nodes
             let boxi = unsafe { layout_data.get_unchecked(i) };
-            focus.bounds = boxi.dim().content;
+            let ref rec = boxi.dim().content;
+            focus.bounds = Rect {
+                x: rec.x,
+                y: rec.y,
+                width: rec.width + boxi.dim().margin.left + boxi.dim().border.left
+                    + boxi.dim().margin.right + boxi.dim().border.right,
+                height: rec.height + boxi.dim().margin.top + boxi.dim().border.top
+                    + boxi.dim().margin.bottom + boxi.dim().border.bottom,
+            }
         }
 
         // Resolve line numbers
@@ -85,8 +108,8 @@ impl FocusBuffer {
 }
 
 fn converter(tagged_node: &TaggedNode) -> Option<FocusAcceptor> {
-    if tagged_node.is_acceptor {
-        Some(FocusAcceptor::new())
+    if tagged_node.is_acceptor || tagged_node.has_children_acceptors {
+        Some(FocusAcceptor::new(tagged_node))
     } else {
         None
     }
