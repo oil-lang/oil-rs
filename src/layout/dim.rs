@@ -1,3 +1,5 @@
+use super::Rect;
+
 /// Dimensions for the box model.
 ///
 /// This code follows the css box model
@@ -9,14 +11,6 @@ pub struct Dimensions {
     pub padding: EdgeSizes,
     pub border: EdgeSizes,
     pub margin: EdgeSizes,
-}
-
-#[derive(Copy, Clone, Default)]
-pub struct Rect {
-    pub x: f32,
-    pub y: f32,
-    pub width: f32,
-    pub height: f32,
 }
 
 #[derive(Copy, Clone)]
