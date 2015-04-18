@@ -4,6 +4,7 @@ use super::TreeNode;
 use super::FlatTreeIter;
 use super::FlatTreeIterMut;
 use super::HasChildren;
+use std::mem;
 
 pub struct FlatTree<T>(Box<[TreeNode<T>]>);
 
@@ -62,6 +63,20 @@ impl<T> FlatTree<T> {
         );
 
         (FlatTree(buffer.into_boxed_slice()), lookup_table.unwrap().into_boxed_slice())
+    }
+
+    /// Returns the index of the given node in this tree.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if the node given does not belong to this tree.
+    pub fn index(&self, node: &TreeNode<T>) -> usize {
+        let index = (&self.0.deref()[0] as *const TreeNode<T> as usize - node as *const TreeNode<T> as usize) /
+            mem::size_of::<TreeNode<T>>();
+        // If the diff is not in the range [0, len) then this is a bug.
+        assert_eq!(index < self.0.len(), true);
+        // Return diff
+        index
     }
 
     pub fn tree_iter<'a>(&'a self) -> FlatTreeIter<'a, T> {
