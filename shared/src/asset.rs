@@ -1,4 +1,3 @@
-use std::num::ToPrimitive;
 use std::fmt::{self, Debug};
 use std::path::Path;
 
@@ -47,8 +46,8 @@ impl ImageData {
         {
             let image = resource_manager.get_texture_id(&Path::new(path));
             let (iw, ih) = resource_manager.get_image_dimensions(image);
-            let w = width.unwrap_or(iw.to_f32().unwrap());
-            let h = height.unwrap_or(ih.to_f32().unwrap());
+            let w = width.unwrap_or(iw as f32);
+            let h = height.unwrap_or(ih as f32);
             let x = offset_x.unwrap_or(0f32);
             let y = offset_y.unwrap_or(0f32);
 
