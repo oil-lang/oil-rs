@@ -19,3 +19,8 @@ impl Ord for F32Ord {
 }
 
 impl Eq for F32Ord {}
+
+#[inline]
+pub fn ref_eq<T>(a: &T, b: &T) -> bool {
+    a as *const T == b as *const T
+}

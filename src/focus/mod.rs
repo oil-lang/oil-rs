@@ -9,16 +9,13 @@ use self::tagged_tree::TaggedNode;
 use std::default::Default;
 
 mod tagged_tree;
-mod focus_right;
-mod focus_left;
-mod focus_down;
-mod focus_up;
+mod direction;
 
 // Reexports
-pub use self::focus_up::focusUp;
-pub use self::focus_down::focusDown;
-pub use self::focus_left::focusLeft;
-pub use self::focus_right::focusRight;
+pub use self::direction::focusUp;
+pub use self::direction::focusDown;
+pub use self::direction::focusLeft;
+pub use self::direction::focusRight;
 
 pub struct FocusAcceptor {
     // The parent of this node.
