@@ -3,6 +3,7 @@ use std::collections::HashSet;
 #[derive(PartialEq, Clone, Debug)]
 pub enum NodeType {
     Text(String),
+    Binding(String),
     Group,
     Button(ButtonData),
     LineInput(LineInputData),

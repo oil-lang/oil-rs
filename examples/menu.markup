@@ -1,4 +1,5 @@
 <view name="main">
+    Welcome {{player.name}} to UIL!
     <group class="btns-group">
         <button class="btn-play" goto-view="play">Play</button>
         <button class="btn-one-line" action="quit">Options</button>

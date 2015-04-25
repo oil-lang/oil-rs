@@ -86,7 +86,7 @@ impl<B> BufferConsumer<B>
                     self.consume_any_char();
                     result.push(c);
                 }
-                None => return Err(self.error("Unexpected end of stream"))
+                None => return Ok(result),
             }
         }
     }
