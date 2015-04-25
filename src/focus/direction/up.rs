@@ -6,12 +6,12 @@ use focus::FocusNode;
 /// index by doing:
 ///
 /// ```ignore
-///     let to = focus::focusUp(from);
+///     let to = focus::focus_up(from);
 ///     let index = focus_buffer.original_tree_index(to);
 ///
 ///     // ...
 /// ```
 ///
-pub fn focusUp(from: &FocusNode) -> &FocusNode {
+pub fn focus_up(from: &FocusNode) -> &FocusNode {
     unimplemented!();
 }

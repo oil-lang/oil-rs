@@ -2,7 +2,7 @@ use glium::Display;
 
 use resource::ResourceManager;
 use layout::LayoutBuffer;
-use focus::FocusBuffer;
+use focus::{self, FocusBuffer};
 use super::render::RenderBuffer;
 use markup;
 use RenderBackbend;
@@ -12,6 +12,7 @@ use style;
 pub struct View {
     dirty_flags: bool,
     focus_data: FocusBuffer,
+    focus_node: isize,
     layout_data: LayoutBuffer,
     render_data: RenderBuffer,
 }
@@ -35,6 +36,7 @@ impl View {
             dirty_flags: true,
             layout_data: layout_buffer,
             render_data: render_buffer,
+            focus_node: focus_buffer.first_acceptor_index(),
             focus_data: focus_buffer,
         }
     }
@@ -59,6 +61,42 @@ impl View {
         for data in self.render_data.iter() {
             backend.render_element(resource_manager, frame, data);
         }
+    }
+
+    pub fn focus_up(&mut self) {
+        assert!(self.focus_node >= 0);
+        assert!((self.focus_node as usize) < self.focus_data.len());
+
+        self.focus_node = self.focus_data.node_as_index(
+            focus::focus_up(&self.focus_data[self.focus_node])
+        );
+    }
+
+    pub fn focus_down(&mut self) {
+        assert!(self.focus_node >= 0);
+        assert!((self.focus_node as usize) < self.focus_data.len());
+
+        self.focus_node = self.focus_data.node_as_index(
+            focus::focus_down(&self.focus_data[self.focus_node])
+        );
+    }
+
+    pub fn focus_right(&mut self) {
+        assert!(self.focus_node >= 0);
+        assert!((self.focus_node as usize) < self.focus_data.len());
+
+        self.focus_node = self.focus_data.node_as_index(
+            focus::focus_right(&self.focus_data[self.focus_node])
+        );
+    }
+
+    pub fn focus_left(&mut self) {
+        assert!(self.focus_node >= 0);
+        assert!((self.focus_node as usize) < self.focus_data.len());
+
+        self.focus_node = self.focus_data.node_as_index(
+            focus::focus_left(&self.focus_data[self.focus_node])
+        );
     }
 }
 

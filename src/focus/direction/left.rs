@@ -8,13 +8,13 @@ use super::find_parent_or_neighbour;
 /// index by doing:
 ///
 /// ```ignore
-///     let to = focus::focusLeft(from);
+///     let to = focus::focus_left(from);
 ///     let index = focus_buffer.original_tree_index(to);
 ///
 ///     // ...
 /// ```
 ///
-pub fn focusLeft(from: &FocusNode) -> &FocusNode {
+pub fn focus_left(from: &FocusNode) -> &FocusNode {
     assert_eq!(from.is_acceptor, true);
     find_parent_or_neighbour(from, from, &from.bounds, find_left_neighbour)
 }

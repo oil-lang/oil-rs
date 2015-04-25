@@ -3,10 +3,10 @@ use layout::Rect;
 use util::F32Ord;
 use util::ref_eq;
 
-pub use self::up::focusUp;
-pub use self::down::focusDown;
-pub use self::left::focusLeft;
-pub use self::right::focusRight;
+pub use self::up::focus_up;
+pub use self::down::focus_down;
+pub use self::left::focus_left;
+pub use self::right::focus_right;
 
 mod down;
 mod up;
