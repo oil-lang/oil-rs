@@ -1,6 +1,7 @@
 use std::f32;
 use std::ptr;
 use std::mem;
+use std::ops::{Index, Deref};
 
 use util::flat_tree::{FlatTree, TreeNode};
 use layout::{LayoutBuffer, Rect};
@@ -9,16 +10,13 @@ use self::tagged_tree::TaggedNode;
 use std::default::Default;
 
 mod tagged_tree;
-mod focus_right;
-mod focus_left;
-mod focus_down;
-mod focus_up;
+mod direction;
 
 // Reexports
-pub use self::focus_up::focusUp;
-pub use self::focus_down::focusDown;
-pub use self::focus_left::focusLeft;
-pub use self::focus_right::focusRight;
+pub use self::direction::focus_up;
+pub use self::direction::focus_down;
+pub use self::direction::focus_left;
+pub use self::direction::focus_right;
 
 pub struct FocusAcceptor {
     // The parent of this node.
@@ -58,6 +56,24 @@ pub struct FocusBuffer {
     lookup_indices: Box<[usize]>,
 }
 
+impl Deref for FocusBuffer {
+    type Target = FlatTree<FocusAcceptor>;
+
+    fn deref<'a>(&'a self) -> &'a FlatTree<FocusAcceptor> {
+        &self.buffer
+    }
+}
+
+impl Index<isize> for FocusBuffer {
+
+    type Output = FocusNode;
+
+    fn index<'a>(&'a self, _index: isize) -> &'a FocusNode {
+        assert!(_index > 0);
+        &self.buffer[_index as usize]
+    }
+}
+
 impl FocusBuffer {
 
     pub fn new(root: &StyledNode) -> FocusBuffer {
@@ -78,6 +94,14 @@ impl FocusBuffer {
             buffer: tree,
             lookup_indices: lookup_table,
         }
+    }
+
+    pub fn first_acceptor<'a>(&'a self) -> Option<&'a FocusNode> {
+        self.buffer.iter().skip_while(|&a| !a.is_acceptor).next()
+    }
+
+    pub fn first_acceptor_index<'a>(&'a self) -> isize {
+        self.first_acceptor().map_or(-1, |n| self.buffer.node_as_index(n) as isize)
     }
 
     pub fn update_nodes(&mut self, layout_data: &LayoutBuffer) {

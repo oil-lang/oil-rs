@@ -70,11 +70,13 @@ impl<T> FlatTree<T> {
     /// # Panics
     ///
     /// This method panics if the node given does not belong to this tree.
-    pub fn index(&self, node: &TreeNode<T>) -> usize {
-        let index = (&self.0.deref()[0] as *const TreeNode<T> as usize - node as *const TreeNode<T> as usize) /
-            mem::size_of::<TreeNode<T>>();
+    pub fn node_as_index(&self, node: &TreeNode<T>) -> isize {
+        let index = (&self.0.deref()[0] as *const TreeNode<T> as usize
+            - node as *const TreeNode<T> as usize) as isize /
+            mem::size_of::<TreeNode<T>>() as isize;
         // If the diff is not in the range [0, len) then this is a bug.
-        assert_eq!(index < self.0.len(), true);
+        assert!((index as usize) < self.0.len());
+        assert!(index > 0);
         // Return diff
         index
     }

@@ -47,6 +47,30 @@ impl Router {
         }
     }
 
+    pub fn focus_up(&mut self) {
+        if let Some(&mut (_, ref mut view)) = self.stack.last_mut() {
+            view.borrow_mut().focus_up();
+        }
+    }
+
+    pub fn focus_right(&mut self) {
+        if let Some(&mut (_, ref mut view)) = self.stack.last_mut() {
+            view.borrow_mut().focus_right();
+        }
+    }
+
+    pub fn focus_left(&mut self) {
+        if let Some(&mut (_, ref mut view)) = self.stack.last_mut() {
+            view.borrow_mut().focus_left();
+        }
+    }
+
+    pub fn focus_down(&mut self) {
+        if let Some(&mut (_, ref mut view)) = self.stack.last_mut() {
+            view.borrow_mut().focus_down();
+        }
+    }
+
     pub fn from_library_and_stylesheet<R, E>(
         display: &Display,
         resource_manager:  &R,
