@@ -1,5 +1,5 @@
 
-use std::collections::HashMap;
+use std::collections::hash_map::{HashMap,Keys};
 use std::rc::Rc;
 use std::cell::RefCell;
 use glium::Display;
@@ -24,6 +24,10 @@ impl Router {
             stack: Vec::new(),
             views: HashMap::new(),
         }
+    }
+
+    pub fn iter_name_views(&self) -> Keys<String,Rc<RefCell<View>>> {
+        self.views.keys()
     }
 
     pub fn goto_view(&mut self, name: String) -> Result<(), &str> {

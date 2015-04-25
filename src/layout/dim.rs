@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use super::Rect;
 
 /// Dimensions for the box model.
