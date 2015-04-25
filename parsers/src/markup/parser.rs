@@ -2,7 +2,7 @@
 use xml::reader::EventReader;
 use xml::reader::events::*;
 use xml::attribute::OwnedAttribute;
-use std::io::BufRead;
+use std::io::Read;
 
 use std::collections::HashMap;
 use ErrorReporter;
@@ -34,14 +34,14 @@ use uil_shared::markup::{
 };
 
 /// Parser
-pub struct Parser<E, B: BufRead> {
+pub struct Parser<E, B: Read> {
     err: E,
     parser: EventReader<B>,
 }
 
 impl<E, B> Parser<E, B>
     where E: ErrorReporter,
-          B: BufRead
+          B: Read
 {
 
     pub fn new(reporter: E, reader: B) -> Parser<E, B> {

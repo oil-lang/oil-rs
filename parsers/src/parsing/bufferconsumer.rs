@@ -1,5 +1,5 @@
 use std::f32;
-use std::io::BufRead;
+use std::io::Read;
 use std::io::Chars;
 use super::Error;
 
@@ -12,7 +12,7 @@ pub struct BufferConsumer<B> {
 }
 
 impl<B> BufferConsumer<B>
-    where B: BufRead
+    where B: Read
 {
     pub fn new(reader: B) -> BufferConsumer<B> {
         BufferConsumer {
