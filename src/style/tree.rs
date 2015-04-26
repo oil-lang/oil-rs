@@ -10,6 +10,8 @@ use super::Value;
 use super::KwValue;
 use super::Stylesheet;
 use super::Unit;
+use super::Rule;
+use super::SelectorState;
 
 /// List of style properties
 ///
@@ -59,6 +61,7 @@ pub enum PropertyName {
 pub struct StyledNode<'a> {
     pub node: &'a Node,
     property_values: HashMap<PropertyName, Value>,
+    focus_property_values: HashMap<PropertyName, Value>,
     pub kids: Vec<StyledNode<'a>>,
 }
 
@@ -123,19 +126,20 @@ impl<'a> StyledNode<'a> {
         StyledNode {
             node: node,
             property_values: HashMap::new(),
+            focus_property_values: HashMap::new(),
             kids: kids
         }
     }
 
-    pub fn is_property_expand(&self, prop_name: PropertyName) -> bool {
-        self.is_property_eq_kw(prop_name, KwValue::Expand)
+    pub fn has_property_expand(&self, prop_name: PropertyName) -> bool {
+        self.has_property_eq_kw(prop_name, KwValue::Expand)
     }
 
-    pub fn is_property_auto(&self, prop_name: PropertyName) -> bool {
-        self.is_property_eq_kw(prop_name, KwValue::Auto)
+    pub fn has_property_auto(&self, prop_name: PropertyName) -> bool {
+        self.has_property_eq_kw(prop_name, KwValue::Auto)
     }
 
-    pub fn is_property_eq_kw(&self, prop_name: PropertyName, kw: KwValue) -> bool {
+    pub fn has_property_eq_kw(&self, prop_name: PropertyName, kw: KwValue) -> bool {
         match self.property_values.get(&prop_name) {
             Some(&Value::Keyword(v)) if v == kw => {
                 true
@@ -175,7 +179,7 @@ impl<'a> StyledNode<'a> {
         }
     }
 
-    pub fn size_prop(&self, prop_name: PropertyName) -> f32 {
+    pub fn size_of_prop(&self, prop_name: PropertyName) -> f32 {
         use self::PropertyName::MARGIN;
         use self::PropertyName::PADDING;
         use self::PropertyName::BORDER;
@@ -224,6 +228,7 @@ impl<'a> StyledNode<'a> {
     fn set_properties(&mut self, style: &Stylesheet) {
         let classes = self.node.classes();
         let ref mut properties = self.property_values;
+        let ref mut focus_properties = self.focus_property_values;
         // We loop over rules because at some
         // point, we might want to sort them based
         // on specificity in the same way that it is done
@@ -234,15 +239,16 @@ impl<'a> StyledNode<'a> {
             // FIXME:
             // using deref instead of as_ref because
             // of an inference problem.
-            if classes.contains(rule.selector.deref()) {
+            if classes.contains(rule.selector.name.deref()) {
                 // Loop over declaration in the rule.
                 // If some properties are declared multiple times
                 // the order matters here.
-                for dec in rule.declarations.iter() {
-
-                    if let Some(property) = STYLE_PROPERTIES.get(dec.name.deref()) {
-
-                        properties.insert(*property, dec.value.clone());
+                match rule.selector.state {
+                    SelectorState::Focus => {
+                        StyledNode::set_properties_for_hashmap(properties, rule);
+                    }
+                    SelectorState::Default => {
+                        StyledNode::set_properties_for_hashmap(focus_properties, rule);
                     }
                 }
             }
@@ -250,6 +256,19 @@ impl<'a> StyledNode<'a> {
 
         for kid in self.kids.iter_mut() {
             kid.set_properties(style);
+        }
+    }
+
+    fn set_properties_for_hashmap(
+        properties: &mut HashMap<PropertyName, Value>,
+        rule: &Rule)
+    {
+        for dec in rule.declarations.iter() {
+
+            if let Some(property) = STYLE_PROPERTIES.get(dec.name.deref()) {
+
+                properties.insert(*property, dec.value.clone());
+            }
         }
     }
 }

@@ -2,15 +2,30 @@
 use asset;
 //use color::alpha::Rgba;
 
+#[derive(Debug)]
 pub struct Stylesheet {
     pub rules: Vec<Rule>,
 }
 
+#[derive(Debug)]
 pub struct Rule {
-    pub selector: String,
+    pub selector: Selector,
     pub declarations: Vec<Declaration>,
 }
 
+#[derive(Copy, Clone, Debug)]
+pub enum SelectorState {
+    Default,
+    Focus
+}
+
+#[derive(Debug)]
+pub struct Selector {
+    pub name: String,
+    pub state: SelectorState
+}
+
+#[derive(Debug)]
 pub struct Declaration {
     pub name: String,
     pub value: Value,

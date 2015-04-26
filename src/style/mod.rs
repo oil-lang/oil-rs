@@ -11,5 +11,7 @@ pub use uil_shared::style::Declaration;
 pub use uil_shared::style::Value;
 pub use uil_shared::style::KwValue;
 pub use uil_shared::style::Unit;
+pub use uil_shared::style::Selector;
+pub use uil_shared::style::SelectorState;
 
 mod tree;

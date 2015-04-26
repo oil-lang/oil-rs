@@ -10,12 +10,16 @@ use parsing::BufferConsumer;
 use uil_shared::resource::BasicResourceManager;
 use phf;
 
-use uil_shared::style::Value;
-use uil_shared::style::KwValue;
-use uil_shared::style::Rule;
-use uil_shared::style::Stylesheet;
-use uil_shared::style::Unit;
-use uil_shared::style::Declaration;
+use uil_shared::style::{
+    Value,
+    KwValue,
+    Rule,
+    Stylesheet,
+    Unit,
+    Declaration,
+    Selector,
+    SelectorState
+};
 
 /// Parser
 pub struct Parser<'a, 'b, R: 'b, E, B> {
@@ -114,14 +118,34 @@ impl<'a, 'b, R, E, B> Parser<'a, 'b, R, E, B>
         })
     }
 
-    fn parse_selector(&mut self) -> Result<String, Error> {
+    fn parse_selector(&mut self) -> Result<Selector, Error> {
 
         try!(self.bc.consume_whitespace());
         match self.bc.consume_any_char() {
             Some('.') => (),
             _ => return Err(self.bc.error("Selector must start with a `.`"))
         }
-        self.bc.consume_identifier()
+        let name = try!(self.bc.consume_identifier());
+        let state = match self.bc.consume_any_char() {
+            Some(':') => {
+                let state = try!(self.bc.consume_word());
+                if let Some(&s) = KEYWORDS_SELECTOR_STATE.get(state.deref()) {
+                    Some(s)
+                } else {
+                    // TODO: Use a warning instead.
+                    return Err(self.bc.error_str(
+                        format!("Unknown selector state: `{}`", state)
+                    ))
+                }
+            },
+            _ => None,
+        };
+
+        if let Some(s) = state {
+            Ok(Selector { name: name, state: s })
+        } else {
+            Ok(Selector { name: name, state: SelectorState::Default })
+        }
     }
 
     fn parse_declaration(&mut self) -> Result<Declaration, Error> {
@@ -205,6 +229,10 @@ static KEYWORDS: phf::Map<&'static str, KwValue> = phf_map! {
     "absolute" => KwValue::Absolute,
     "fit" => KwValue::Fit,
     "repeat" => KwValue::Repeat
+};
+
+static KEYWORDS_SELECTOR_STATE: phf::Map<&'static str, SelectorState> = phf_map! {
+    "focus" => SelectorState::Focus
 };
 
 fn convert_to_style_value<R>(ctor: &Constructor, resource_manager: &mut R)

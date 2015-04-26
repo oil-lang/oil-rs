@@ -64,39 +64,43 @@ impl View {
     }
 
     pub fn focus_up(&mut self) {
-        assert!(self.focus_node >= 0);
-        assert!((self.focus_node as usize) < self.focus_data.len());
+        if self.focus_node >= 0 {
+            assert!((self.focus_node as usize) < self.focus_data.len());
 
-        self.focus_node = self.focus_data.node_as_index(
-            focus::focus_up(&self.focus_data[self.focus_node])
-        );
+            self.focus_node = self.focus_data.node_as_index(
+                focus::focus_up(&self.focus_data[self.focus_node])
+            );
+        }
     }
 
     pub fn focus_down(&mut self) {
-        assert!(self.focus_node >= 0);
-        assert!((self.focus_node as usize) < self.focus_data.len());
+        if self.focus_node >= 0 {
+            assert!((self.focus_node as usize) < self.focus_data.len());
 
-        self.focus_node = self.focus_data.node_as_index(
-            focus::focus_down(&self.focus_data[self.focus_node])
-        );
+            self.focus_node = self.focus_data.node_as_index(
+                focus::focus_down(&self.focus_data[self.focus_node])
+            );
+        }
     }
 
     pub fn focus_right(&mut self) {
-        assert!(self.focus_node >= 0);
-        assert!((self.focus_node as usize) < self.focus_data.len());
+        if self.focus_node >= 0 {
+            assert!((self.focus_node as usize) < self.focus_data.len());
 
-        self.focus_node = self.focus_data.node_as_index(
-            focus::focus_right(&self.focus_data[self.focus_node])
-        );
+            self.focus_node = self.focus_data.node_as_index(
+                focus::focus_right(&self.focus_data[self.focus_node])
+            );
+        }
     }
 
     pub fn focus_left(&mut self) {
-        assert!(self.focus_node >= 0);
-        assert!((self.focus_node as usize) < self.focus_data.len());
+        if self.focus_node >= 0 {
+            assert!((self.focus_node as usize) < self.focus_data.len());
 
-        self.focus_node = self.focus_data.node_as_index(
-            focus::focus_left(&self.focus_data[self.focus_node])
-        );
+            self.focus_node = self.focus_data.node_as_index(
+                focus::focus_left(&self.focus_data[self.focus_node])
+            );
+        }
     }
 }
 

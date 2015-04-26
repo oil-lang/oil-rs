@@ -37,52 +37,52 @@ impl LayoutBox {
     fn new(node: &StyledNode) -> LayoutBox {
         let mut flags = DimFlags::empty();
 
-        if node.is_property_auto(PropertyName::MARGIN_LEFT) {
+        if node.has_property_auto(PropertyName::MARGIN_LEFT) {
             flags = flags | dim::MARGIN_LEFT_AUTO;
         }
 
-        if node.is_property_auto(PropertyName::MARGIN_RIGHT) {
+        if node.has_property_auto(PropertyName::MARGIN_RIGHT) {
             flags = flags | dim::MARGIN_RIGHT_AUTO;
         }
 
-        if node.is_property_auto(PropertyName::MARGIN_TOP) {
+        if node.has_property_auto(PropertyName::MARGIN_TOP) {
             flags = flags | dim::MARGIN_TOP_AUTO;
         }
 
-        if node.is_property_auto(PropertyName::MARGIN_BOTTOM) {
+        if node.has_property_auto(PropertyName::MARGIN_BOTTOM) {
             flags = flags | dim::MARGIN_BOT_AUTO;
         }
 
-        if node.is_property_auto(PropertyName::WIDTH) {
+        if node.has_property_auto(PropertyName::WIDTH) {
             flags = flags | dim::WIDTH_AUTO;
         }
 
-        if node.is_property_expand(PropertyName::WIDTH) {
+        if node.has_property_expand(PropertyName::WIDTH) {
             flags = flags | dim::WIDTH_EXPAND;
         }
 
-        if node.is_property_expand(PropertyName::MARGIN_LEFT) {
+        if node.has_property_expand(PropertyName::MARGIN_LEFT) {
             flags = flags | dim::MARGIN_LEFT_EXPAND;
         }
 
-        if node.is_property_expand(PropertyName::MARGIN_RIGHT) {
+        if node.has_property_expand(PropertyName::MARGIN_RIGHT) {
             flags = flags | dim::MARGIN_RIGHT_EXPAND;
         }
 
-        let padding_left = node.size_prop(PropertyName::PADDING_LEFT);
-        let padding_right = node.size_prop(PropertyName::PADDING_RIGHT);
-        let padding_top = node.size_prop(PropertyName::PADDING_TOP);
-        let padding_bottom = node.size_prop(PropertyName::PADDING_BOTTOM);
+        let padding_left = node.size_of_prop(PropertyName::PADDING_LEFT);
+        let padding_right = node.size_of_prop(PropertyName::PADDING_RIGHT);
+        let padding_top = node.size_of_prop(PropertyName::PADDING_TOP);
+        let padding_bottom = node.size_of_prop(PropertyName::PADDING_BOTTOM);
 
-        let margin_left = node.size_prop(PropertyName::MARGIN_LEFT);
-        let margin_right = node.size_prop(PropertyName::MARGIN_RIGHT);
-        let margin_top = node.size_prop(PropertyName::MARGIN_TOP);
-        let margin_bottom = node.size_prop(PropertyName::MARGIN_BOTTOM);
+        let margin_left = node.size_of_prop(PropertyName::MARGIN_LEFT);
+        let margin_right = node.size_of_prop(PropertyName::MARGIN_RIGHT);
+        let margin_top = node.size_of_prop(PropertyName::MARGIN_TOP);
+        let margin_bottom = node.size_of_prop(PropertyName::MARGIN_BOTTOM);
 
-        let border_left = node.size_prop(PropertyName::BORDER_LEFT);
-        let border_right = node.size_prop(PropertyName::BORDER_RIGHT);
-        let border_top = node.size_prop(PropertyName::BORDER_TOP);
-        let border_bottom = node.size_prop(PropertyName::BORDER_BOTTOM);
+        let border_left = node.size_of_prop(PropertyName::BORDER_LEFT);
+        let border_right = node.size_of_prop(PropertyName::BORDER_RIGHT);
+        let border_top = node.size_of_prop(PropertyName::BORDER_TOP);
+        let border_bottom = node.size_of_prop(PropertyName::BORDER_BOTTOM);
 
         let width = match node.size_prop_as_opt(PropertyName::WIDTH) {
             Some(w) => {
