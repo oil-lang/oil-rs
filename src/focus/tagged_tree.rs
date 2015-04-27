@@ -1,4 +1,4 @@
-use util::flat_tree::HasChildren;
+use util::HasChildren;
 use markup::NodeType;
 use style::StyledNode;
 

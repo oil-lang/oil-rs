@@ -1,25 +1,32 @@
 use std::ops::Deref;
 use std::ops::DerefMut;
+use std::iter::Zip;
+use std::slice::{Iter, IterMut};
+use std::ops::RangeFrom;
+use std::mem;
+
+use util::HasChildren;
 use super::TreeNode;
 use super::FlatTreeIter;
 use super::FlatTreeIterMut;
-use super::HasChildren;
-use std::mem;
 
-pub struct FlatTree<T>(Box<[TreeNode<T>]>);
+pub struct FlatTree<T> {
+    buffer: Box<[TreeNode<T>]>,
+    lookup_indices: Option<Box<[usize]>>,
+}
 
 impl<T> Deref for FlatTree<T> {
     type Target = [TreeNode<T>];
 
     fn deref<'a>(&'a self) -> &'a [TreeNode<T>] {
-        self.0.deref()
+        self.buffer.deref()
     }
 }
 
 impl<T> DerefMut for FlatTree<T> {
 
     fn deref_mut<'a>(&'a mut self) -> &'a mut [TreeNode<T>] {
-        self.0.deref_mut()
+        self.buffer.deref_mut()
     }
 }
 
@@ -40,13 +47,16 @@ impl<T> FlatTree<T> {
             true
         );
 
-        FlatTree(buffer.into_boxed_slice())
+        FlatTree {
+            buffer: buffer.into_boxed_slice(),
+            lookup_indices: None,
+        }
     }
 
     pub fn new_with_lookup_table<F, N>(
         root: &N,
         cap: usize,
-        node_producer: F) -> (FlatTree<T>, Box<[usize]>)
+        node_producer: F) -> FlatTree<T>
         where N: HasChildren,
               F: Fn(&N) -> Option<T>
     {
@@ -62,31 +72,58 @@ impl<T> FlatTree<T> {
             true
         );
 
-        (FlatTree(buffer.into_boxed_slice()), lookup_table.unwrap().into_boxed_slice())
+        FlatTree {
+            buffer: buffer.into_boxed_slice(),
+            lookup_indices: Some(lookup_table.unwrap().into_boxed_slice())
+        }
     }
 
-    /// Returns the index of the given node in this tree.
+    /// Returns the index of the given node in the original tree.
     ///
     /// # Panics
     ///
     /// This method panics if the node given does not belong to this tree.
+    pub fn node_as_global_index(&self, node: &TreeNode<T>) -> isize {
+        if let Some(ref tb) = self.lookup_indices {
+            tb[self.node_as_index(node) as usize] as isize
+        } else {
+            self.node_as_index(node)
+        }
+    }
+
     pub fn node_as_index(&self, node: &TreeNode<T>) -> isize {
-        let index = (&self.0.deref()[0] as *const TreeNode<T> as usize
-            - node as *const TreeNode<T> as usize) as isize /
+        let index = (node as *const TreeNode<T> as usize
+            - self.buffer.get(0).unwrap() as *const TreeNode<T> as usize) as isize /
             mem::size_of::<TreeNode<T>>() as isize;
         // If the diff is not in the range [0, len) then this is a bug.
-        assert!((index as usize) < self.0.len());
-        assert!(index > 0);
+        assert!((index as usize) < self.buffer.len());
+        assert!(index >= 0);
         // Return diff
         index
     }
 
+    pub fn enumerate_lookup_indices_mut<'a>(&'a mut self)
+        -> Option<Zip<Iter<usize>, IterMut<'a, TreeNode<T>>>>
+    {
+        if let Some(ref tb) = self.lookup_indices {
+            Some(tb.iter().zip(self.buffer.iter_mut()))
+        } else {
+            None
+        }
+    }
+
+    pub fn enumerate_mut<'a>(& 'a mut self)
+        -> Zip<RangeFrom<usize>, IterMut<'a, TreeNode<T>>>
+    {
+        (0..).zip(self.buffer.iter_mut())
+    }
+
     pub fn tree_iter<'a>(&'a self) -> FlatTreeIter<'a, T> {
-        FlatTreeIter::new(&self.0)
+        FlatTreeIter::new(&self.buffer)
     }
 
     pub fn tree_iter_mut<'a>(&'a mut self) -> FlatTreeIterMut<'a, T> {
-        FlatTreeIterMut::new(&mut self.0)
+        FlatTreeIterMut::new(&mut self.buffer)
     }
 
     fn fill_buffer<F, N>(

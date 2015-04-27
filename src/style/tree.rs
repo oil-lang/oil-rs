@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use phf;
 
-use util::flat_tree::HasChildren;
+use util::HasChildren;
 use markup::Node;
 use rendering::TextureRule;
 use uil_shared::asset::ImageData;

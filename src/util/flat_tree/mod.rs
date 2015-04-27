@@ -8,11 +8,6 @@ pub use self::buffer::FlatTree;
 
 mod buffer;
 
-pub trait HasChildren {
-
-    fn children(&self) -> &Vec<Self>;
-}
-
 pub struct TreeNode<T> {
     data: T,
     next_sibling: isize,

@@ -50,10 +50,6 @@ pub type FocusNode = TreeNode<FocusAcceptor>;
 
 pub struct FocusBuffer {
     buffer: FlatTree<FocusAcceptor>,
-    // TODO: this should be part of
-    //       FlatTree. It is an implementation
-    //       details of FlatTree.
-    lookup_indices: Box<[usize]>,
 }
 
 impl Deref for FocusBuffer {
@@ -80,8 +76,7 @@ impl FocusBuffer {
 
         let tagged_tree = TaggedNode::new(root);
 
-        let (mut tree, lookup_table) =
-            FlatTree::new_with_lookup_table(&tagged_tree, 10, converter);
+        let mut tree = FlatTree::new_with_lookup_table(&tagged_tree, 10, converter);
 
         // Resolve parents
         for node in tree.tree_iter_mut() {
@@ -91,8 +86,7 @@ impl FocusBuffer {
         }
 
         FocusBuffer {
-            buffer: tree,
-            lookup_indices: lookup_table,
+            buffer: tree
         }
     }
 
@@ -106,7 +100,7 @@ impl FocusBuffer {
 
     pub fn update_nodes(&mut self, layout_data: &LayoutBuffer) {
 
-        for (focus, &i) in self.buffer.iter_mut().zip(self.lookup_indices.iter()) {
+        for (&i, focus) in self.buffer.enumerate_lookup_indices_mut().unwrap() {
             // This part is always safe because the initialization step
             // ensure that:
             //       self.layout_data.len() >= self.render_data
