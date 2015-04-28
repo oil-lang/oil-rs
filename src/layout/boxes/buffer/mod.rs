@@ -275,7 +275,7 @@ fn compute_layout_height_and_position(this: &mut LayoutNode, max_height: f32)
     // Reduced scope for stack (borrowck problem otherwise)
     {
         // Used for margin (top/bottom)
-        let mut stack: Vec<&mut TreeNode<LayoutBox>> = Vec::with_capacity(4);
+        let mut stack: Vec<&mut LayoutNode> = Vec::with_capacity(4);
 
         macro_rules! line_return {
 

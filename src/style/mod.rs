@@ -1,9 +1,10 @@
 
 pub use self::tree::StyledNode;
-pub use self::tree::PropertyName;
 pub use self::tree::build_style_tree;
 
 pub use uil_parsers::style::parse;
+
+pub use uil_shared::properties::PropertyName;
 
 pub use uil_shared::style::Stylesheet;
 pub use uil_shared::style::Rule;

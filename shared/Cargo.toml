@@ -8,3 +8,7 @@ repository = "https://github.com/uil-lang/uil-rs"
 license = "MIT"
 keywords = ["ui", "parser"]
 description = "Support code shared by uil libraries."
+
+[dependencies]
+phf = "*"
+phf_macros = "*"
