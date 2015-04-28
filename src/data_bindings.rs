@@ -5,6 +5,8 @@ use std::cell::RefCell;
 
 use router::Router;
 
+pub type IteratingClosure = for <'a> FnMut(&mut Iterator<Item=&'a mut DBStore>);
+
 macro_rules! declare_data_binding {
     ($name:ident {
         $($field:ident:$type_field:ty),*
@@ -53,7 +55,7 @@ pub struct StoreValue {
     data: String,
 }
 
-pub trait DBStore: ::std::fmt::Debug {
+pub trait DBStore {
     fn get_value(&self, k: &str) -> Option<StoreValue>;
     fn set_value(&mut self, k: &str, value: StoreValue) -> Option<StoreValue>;
 }
@@ -108,10 +110,11 @@ impl <'a> DBStore for Box<DBStore + 'a> {
     }
 }
 
-#[derive(Default,Debug)]
+#[derive(Default)]
 struct DataBinderScope {
     values: HashMap<String,StoreValue>,
     stores: HashMap<String,Box<DBStore>>,
+    iterators: HashMap<String,Box<IsRepeatable>>,
 }
 
 impl DBStore for DataBinderScope {
@@ -157,6 +160,23 @@ impl DataBinderScope {
             None => Ok(()),
         }
     }
+
+    fn register_iterator(&mut self, prefix: String, iterable: Box<IsRepeatable + 'static>)
+        -> Result<(),Box<IsRepeatable + 'static>> {
+        match self.iterators.insert(prefix, iterable) {
+            Some(old) => Err(old),
+            None => Ok(()),
+        }
+    }
+
+    fn iter(&self, k: &str, closure: &mut IteratingClosure) -> bool {
+        match self.iterators.get(k) {
+            None => return false,
+            Some(it) => {
+                it.iter(closure)
+            }
+        }
+    }
 }
 
 #[derive(Default)]
@@ -189,11 +209,11 @@ impl DataBinderContext {
         }
     }
 
-    pub fn register_global_store<T>(&mut self, prefix: String, value: Rc<RefCell<T>>)
+    pub fn register_global_store<T>(&mut self, prefix: String, value: &Rc<RefCell<T>>)
     where T: DBStore + 'static {
         let v = Box::new(Proxy::new(value));
-        if let Err(old) = self.global.register_store(prefix.clone(), v) {
-            println!("WARNING: overriding global object {} (old value {:?})", prefix, old);
+        if let Err(_) = self.global.register_store(prefix.clone(), v) {
+            println!("WARNING: overriding global object {}", prefix);
         }
     }
 
@@ -210,19 +230,51 @@ impl DataBinderContext {
         }
     }
 
-    pub fn register_store<T>(&mut self, view: &str, prefix: String, value: Rc<RefCell<T>>) -> Result<(),String>
+    pub fn register_store<T>(&mut self, view: &str, prefix: String, value: &Rc<RefCell<T>>) -> Result<(),String>
     where T: DBStore + 'static {
         match self.views.get_mut(view) {
             None => Err(format!("Could not find view {}", view)),
             Some(view_scope) => {
                 let v = Box::new(Proxy::new(value));
-                if let Err(old) = view_scope.register_store(prefix.clone(), v) {
+                if let Err(_) = view_scope.register_store(prefix.clone(), v) {
                     // Don't throw an error, just print a warning
-                    println!("WARNING: View {}: overriding object {} (old value {:?})", view, prefix, old);
+                    println!("WARNING: View {}: overriding object {}", view, prefix);
                 }
                 Ok(())
             }
         }
+    }
+
+    pub fn register_iterator<T>(&mut self, view: &str, key: String, iterator: &Rc<RefCell<Vec<T>>>) -> Result<(),String>
+    where T: DBStore + 'static {
+        match self.views.get_mut(view) {
+            None => Err(format!("Could not find view {}", view)),
+            Some(view_scope) => {
+                let v = Box::new(RepeatProxy::new(iterator));
+                if let Err(_) = view_scope.register_iterator(key.clone(), v) {
+                    // Don't throw an error, just print a warning
+                    println!("WARNING: View {}: overriding iterator {}", view, key);
+                }
+                Ok(())
+            }
+        }
+    }
+
+    pub fn register_global_iterator<T>(&mut self, key: String, iterator: &Rc<RefCell<Vec<T>>>)
+    where T: DBStore + 'static {
+        let v = Box::new(RepeatProxy::new(iterator));
+        if let Err(_) = self.global.register_iterator(key.clone(), v) {
+            println!("WARNING: re-registering global iterator {}", key);
+        }
+    }
+
+    pub fn iter(&self, k: &str, closure: &mut IteratingClosure) -> bool {
+        if let Some(view_scope) = self.views.get(&self.current_view) {
+            if view_scope.iter(k, closure) {
+                return true;
+            }
+        }
+        self.global.iter(k, closure)
     }
 
     fn register_view(&mut self, view: String) {
@@ -294,10 +346,39 @@ where T: DBStore {
 }
 
 impl <T: DBStore> Proxy<T> {
-    fn new(value: Rc<RefCell<T>>) -> Proxy<T> {
+    fn new(value: &Rc<RefCell<T>>) -> Proxy<T> {
         Proxy {
             data: value.downgrade(),
         }
+    }
+}
+
+trait IsRepeatable {
+    fn iter(&self, closure: &mut IteratingClosure) -> bool;
+}
+
+pub struct RepeatProxy<T> {
+    cell: Weak<RefCell<Vec<T>>>,
+}
+
+impl <T> RepeatProxy<T> {
+    fn new(cell: &Rc<RefCell<Vec<T>>>) -> RepeatProxy<T> {
+        RepeatProxy {
+            cell: cell.downgrade(),
+        }
+    }
+}
+
+impl <T: DBStore + 'static> IsRepeatable for RepeatProxy<T> {
+    fn iter(&self, closure: &mut IteratingClosure) -> bool {
+        let reference = match self.cell.upgrade() {
+            Some(r) => r,
+            None => return false,
+        };
+        let mut guard = reference.borrow_mut();
+        let mut iter = guard.iter_mut().map(|item| item as &mut DBStore);
+        closure(&mut iter);
+        true
     }
 }
 
@@ -369,8 +450,7 @@ mod test {
     fn register_global_player() {
         let mut context = DataBinderContext::default();
         let player = Rc::new(RefCell::new(Player{pv: 42, xp: 100}));
-        // Clone the Rc, as it will get downgraded to Weak when registered
-        context.register_global_store("player".to_string(), player.clone());
+        context.register_global_store("player".to_string(), &player);
         assert_eq!(context.get_value("player.pv").unwrap().data, "42");
         assert_eq!(context.get_value("player.xp").unwrap().data, "100");
     }
@@ -389,7 +469,7 @@ mod test {
         context.register_view("foo".to_string());
         let player = Rc::new(RefCell::new(Player{pv: 42, xp: 100}));
         // Clone the Rc, as it will get downgraded to Weak when registered
-        context.register_store("foo", "player".to_string(), player.clone()).unwrap();
+        context.register_store("foo", "player".to_string(), &player).unwrap();
 
         // Not in the correct view
         assert!(context.get_value("player.pv").is_none());
@@ -417,7 +497,7 @@ mod test {
         assert_eq!(context.get_value("player.pv").unwrap().data, "12");
         let player = Rc::new(RefCell::new(Player{pv: 42, xp: 100}));
         // Clone the Rc, as it will get downgraded to Weak when registered
-        context.register_global_store("player".to_string(), player.clone());
+        context.register_global_store("player".to_string(), &player);
         assert_eq!(context.get_value("player.pv").unwrap().data, "42");
     }
 
@@ -445,5 +525,25 @@ mod test {
         // In view "bar" -> get bar specific value
         context.switch_to_view("bar".to_string());
         assert_eq!(context.get_value("option.width").unwrap().data, "bar_value");
+    }
+
+    #[test]
+    fn global_iterator() {
+        let mut context = DataBinderContext::default();
+        let players = Rc::new(RefCell::new(vec![Player{pv: 1, xp: 11}, Player{pv: 2, xp: 22}]));
+        context.register_global_iterator("game.friends".to_string(), &players);
+        let result = context.iter("game.friends", &mut |iterator| {
+            let first = iterator.next().unwrap();
+            assert_eq!(first.get_value("pv").unwrap().data, "1");
+            assert_eq!(first.get_value("xp").unwrap().data, "11");
+            let second = iterator.next().unwrap();
+            assert_eq!(second.get_value("pv").unwrap().data, "2");
+            assert_eq!(second.get_value("xp").unwrap().data, "22");
+            second.set_value("xp", StoreValue{data: "42".to_string()});
+            assert_eq!(second.get_value("xp").unwrap().data, "42");
+            let third = iterator.next();
+            assert!(third.is_none());
+        });
+        assert!(result);
     }
 }
