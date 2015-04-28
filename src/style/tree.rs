@@ -245,10 +245,10 @@ impl<'a> StyledNode<'a> {
                 // the order matters here.
                 match rule.selector.state {
                     SelectorState::Focus => {
-                        StyledNode::set_properties_for_hashmap(properties, rule);
+                        StyledNode::set_properties_for_hashmap(focus_properties, rule);
                     }
                     SelectorState::Default => {
-                        StyledNode::set_properties_for_hashmap(focus_properties, rule);
+                        StyledNode::set_properties_for_hashmap(properties, rule);
                     }
                 }
             }
