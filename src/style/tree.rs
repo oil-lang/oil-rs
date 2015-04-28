@@ -66,7 +66,7 @@ pub fn build_style_tree<'a, 'b>(node: &'a Node, stylesheet: &'b Stylesheet) -> S
 
 impl<'a> HasChildren for StyledNode<'a> {
 
-    fn children(&self) -> &Vec<StyledNode<'a>> {
+    fn children<'b>(&'b self) -> &'b [StyledNode<'a>] {
         &self.kids
     }
 }

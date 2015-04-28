@@ -10,7 +10,7 @@ pub struct TaggedNode {
 
 impl HasChildren for TaggedNode {
 
-    fn children(& self) -> &Vec<TaggedNode> {
+    fn children<'a>(&'a self) -> &'a [TaggedNode] {
         &self.kids
     }
 }

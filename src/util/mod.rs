@@ -31,5 +31,5 @@ pub fn ref_eq<T>(a: &T, b: &T) -> bool {
 
 pub trait HasChildren {
 
-    fn children(&self) -> &Vec<Self>;
+    fn children<'a>(&'a self) -> &'a [Self];
 }

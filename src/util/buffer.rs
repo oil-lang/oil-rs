@@ -115,3 +115,91 @@ impl<T> BufferFromTree<T> {
     }
 
 }
+
+// ======================================== //
+//                   TESTS                  //
+// ======================================== //
+
+#[cfg(test)]
+mod test {
+
+    use std::cell::Cell;
+    use super::*;
+    use util::HasChildren;
+
+    #[derive(Default)]
+    struct SomeTree {
+        kids: Vec<SomeTree>,
+    }
+
+    struct NodeData;
+
+    impl HasChildren for SomeTree {
+        fn children<'a>(&'a self) -> &'a [SomeTree] {
+            &self.kids
+        }
+    }
+
+    fn create_buffer_from_some_tree() -> BufferFromTree<NodeData>
+    {
+        let mut root = SomeTree::default();
+        let mut child = SomeTree::default();
+        root.kids.push(SomeTree::default());
+        child.kids.push(SomeTree::default());
+        child.kids.push(SomeTree::default());
+        root.kids.push(child);
+        root.kids.push(SomeTree::default());
+        let index = Cell::new(0);
+        let producer = |_: &SomeTree| {
+            if index.get() % 2 == 0 {
+                index.set(index.get() + 1);
+                Some(NodeData)
+            } else {
+                index.set(index.get() + 1);
+                None
+            }
+        };
+
+        BufferFromTree::new_with_lookup_table(&root, 8, &producer)
+    }
+
+    #[test]
+    fn lookup_table_length_should_eq_buffer_length() {
+        let flatmapping = create_buffer_from_some_tree();
+        let test = flatmapping.lookup_indices.unwrap();
+        assert_eq!(test.len(), flatmapping.buffer.len());
+    }
+
+    #[test]
+    fn lookup_table_contains_correct_indices() {
+        let flatmapping = create_buffer_from_some_tree();
+        let test = flatmapping.lookup_indices.unwrap();
+        assert_eq!(test[0], 0);
+        assert_eq!(test[1], 2);
+        assert_eq!(test[2], 4);
+        assert_eq!(test.len(), 3);
+    }
+
+    #[test]
+    fn enumerate_mut_should_give_buffer_index() {
+        let mut flatmapping = create_buffer_from_some_tree();
+        let mut index = 0;
+        for (i, _) in flatmapping.enumerate_mut() {
+            assert_eq!(i, index);
+            index += 1;
+        }
+    }
+
+    #[test]
+    fn enumerate_lookup_indices_mut_should_give_original_index() {
+        let mut flatmapping = create_buffer_from_some_tree();
+        let mut index = 0;
+        let mut indices = vec![0; flatmapping.buffer.len()].into_boxed_slice();
+        indices.clone_from_slice(flatmapping.lookup_indices.as_ref().unwrap());
+        for (&i, _) in flatmapping.enumerate_lookup_indices_mut().unwrap() {
+            assert_eq!(i, indices[index]);
+            index += 1;
+        }
+    }
+
+}
