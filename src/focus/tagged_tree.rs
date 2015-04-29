@@ -19,7 +19,7 @@ impl TaggedNode {
 
     pub fn new(node: &StyledNode) -> TaggedNode {
 
-        let mut children = Vec::with_capacity(node.kids.len());
+        let mut children = Vec::with_capacity(node.children().len());
         let mut has_children_acceptors = false;
         // For now, the only node focus acceptor is `button`.
         let is_acceptor = if let NodeType::Button(_) = node.node.node_type {
@@ -28,7 +28,7 @@ impl TaggedNode {
             false
         };
 
-        for kid in node.kids.iter() {
+        for kid in node.children().iter() {
             let child = TaggedNode::new(kid);
             has_children_acceptors |= child.is_acceptor | child.has_children_acceptors;
             children.push(child);

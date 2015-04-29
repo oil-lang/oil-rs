@@ -16,7 +16,9 @@ pub struct Rule {
 #[derive(Copy, Clone, Debug)]
 pub enum SelectorState {
     Default,
-    Focus
+    Focus,
+    Hover,
+    Creation
 }
 
 #[derive(Debug)]

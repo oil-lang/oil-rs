@@ -52,8 +52,8 @@ impl LayoutBuffer {
     }
 }
 
-fn converter(style_tree: &StyledNode) -> Option<LayoutBox> {
-    Some(LayoutBox::new(style_tree))
+fn converter(node: &StyledNode) -> Option<LayoutBox> {
+    Some(LayoutBox::new(node))
 }
 
 /// This function compute the width for this node

@@ -18,7 +18,7 @@ pub struct StyledNode<'a> {
     pub node: &'a Node,
     property_values: HashMap<PropertyName, Value>,
     focus_property_values: HashMap<PropertyName, Value>,
-    pub kids: Vec<StyledNode<'a>>,
+    kids: Vec<StyledNode<'a>>,
 }
 
 // ======================================== //
@@ -206,6 +206,7 @@ impl<'a> StyledNode<'a> {
                     SelectorState::Default => {
                         StyledNode::set_properties_for_hashmap(properties, rule);
                     }
+                    _ => (),
                 }
             }
         }

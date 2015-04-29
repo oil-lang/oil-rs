@@ -232,7 +232,9 @@ static KEYWORDS: phf::Map<&'static str, KwValue> = phf_map! {
 };
 
 static KEYWORDS_SELECTOR_STATE: phf::Map<&'static str, SelectorState> = phf_map! {
-    "focus" => SelectorState::Focus
+    "focus" => SelectorState::Focus,
+    "hover" => SelectorState::Hover,
+    "creation" => SelectorState::Creation,
 };
 
 fn convert_to_style_value<R>(ctor: &Constructor, resource_manager: &mut R)
