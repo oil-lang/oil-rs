@@ -1,4 +1,3 @@
-#![feature(core)]
 #![feature(io)]
 #![feature(plugin)]
 #![plugin(phf_macros)]
