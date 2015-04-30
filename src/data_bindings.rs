@@ -5,7 +5,7 @@ use std::cell::RefCell;
 
 use router::Router;
 
-pub type IteratingClosure = for <'a> FnMut(&mut Iterator<Item=&'a mut DBStore>);
+pub type IteratingClosure<'b> = for <'a> FnMut(&mut Iterator<Item=&'a mut DBStore>) + 'b;
 
 macro_rules! declare_data_binding {
     ($name:ident {
@@ -532,17 +532,24 @@ mod test {
         let mut context = DataBinderContext::default();
         let players = Rc::new(RefCell::new(vec![Player{pv: 1, xp: 11}, Player{pv: 2, xp: 22}]));
         context.register_global_iterator("game.friends".to_string(), &players);
+        let mut iteration = 0;
         let result = context.iter("game.friends", &mut |iterator| {
-            let first = iterator.next().unwrap();
-            assert_eq!(first.get_value("pv").unwrap().data, "1");
-            assert_eq!(first.get_value("xp").unwrap().data, "11");
-            let second = iterator.next().unwrap();
-            assert_eq!(second.get_value("pv").unwrap().data, "2");
-            assert_eq!(second.get_value("xp").unwrap().data, "22");
-            second.set_value("xp", StoreValue{data: "42".to_string()});
-            assert_eq!(second.get_value("xp").unwrap().data, "42");
-            let third = iterator.next();
-            assert!(third.is_none());
+            for store in iterator {
+                iteration += 1;
+                match iteration {
+                    1 => {
+                        assert_eq!(store.get_value("pv").unwrap().data, "1");
+                        assert_eq!(store.get_value("xp").unwrap().data, "11");
+                    }
+                    2 => {
+                        assert_eq!(store.get_value("pv").unwrap().data, "2");
+                        assert_eq!(store.get_value("xp").unwrap().data, "22");
+                        store.set_value("xp", StoreValue{data: "42".to_string()});
+                        assert_eq!(store.get_value("xp").unwrap().data, "42");
+                    }
+                    _ => panic!("Too many iterations"),
+                }
+            }
         });
         assert!(result);
     }
