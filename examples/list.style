@@ -1,0 +1,11 @@
+
+.btn {
+    width: 100px;
+    height: 40px;
+    background-image: $btn.notselected;
+    background-image-rule: fit;
+}
+
+.btn:focus {
+    background-image: $btn.selected;
+}
