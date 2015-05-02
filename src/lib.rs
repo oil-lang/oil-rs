@@ -1,4 +1,4 @@
-#![feature(collections)]
+#![feature(collections)] // Used by tests
 #![feature(core)]
 #![feature(std_misc)]
 #![feature(plugin)]

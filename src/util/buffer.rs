@@ -63,6 +63,44 @@ impl<T> BufferFromTree<T> {
         }
     }
 
+    pub fn from_buffer<U, F>(from: &BufferFromTree<U>, mut converter: F) -> BufferFromTree<T>
+        where F: FnMut(&U) -> Option<T>
+    {
+        let mut buffer = Vec::with_capacity(from.buffer.len());
+        let mut lookup_indices = Vec::with_capacity(from.buffer.len());
+
+        if from.lookup_indices.is_some() {
+            for (&i, f) in from.enumerate_lookup_indices().unwrap() {
+                if let Some(c) = converter(f) {
+                    buffer.push(c);
+                    lookup_indices.push(i);
+                }
+            }
+        } else {
+            for (i, f) in from.enumerate() {
+                if let Some(c) = converter(f) {
+                    buffer.push(c);
+                    lookup_indices.push(i);
+                }
+            }
+        }
+
+        BufferFromTree {
+            buffer: buffer.into_boxed_slice(),
+            lookup_indices: Some(lookup_indices.into_boxed_slice())
+        }
+    }
+
+    pub fn enumerate_lookup_indices<'a>(&'a self)
+        -> Option<Zip<Iter<usize>, Iter<'a, T>>>
+    {
+        if let Some(ref tb) = self.lookup_indices {
+            Some(tb.iter().zip(self.buffer.iter()))
+        } else {
+            None
+        }
+    }
+
     pub fn enumerate_lookup_indices_mut<'a>(&'a mut self)
         -> Option<Zip<Iter<usize>, IterMut<'a, T>>>
     {
@@ -73,7 +111,15 @@ impl<T> BufferFromTree<T> {
         }
     }
 
-    pub fn enumerate_mut<'a>(& 'a mut self) -> Zip<RangeFrom<usize>, IterMut<'a,T>> {
+    pub fn enumerate<'a>(&'a self)
+        -> Zip<RangeFrom<usize>, Iter<'a, T>>
+    {
+        (0..).zip(self.buffer.iter())
+    }
+
+    pub fn enumerate_mut<'a>(& 'a mut self)
+        -> Zip<RangeFrom<usize>, IterMut<'a,T>>
+    {
         (0..).zip(self.buffer.iter_mut())
     }
 

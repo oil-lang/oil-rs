@@ -2,9 +2,10 @@ use std::ops::Deref;
 use glium::Display;
 
 use layout::LayoutBuffer;
-use style::StyledNode;
 use resource::ResourceManager;
 use util::BufferFromTree;
+use state::StateBuffer;
+use state::StateData;
 
 use super::RenderData;
 use super::TextureRule;
@@ -26,16 +27,12 @@ impl RenderBuffer {
     pub fn new<R>(
         display: &Display,
         resource_manager: &R,
-        style_tree: &StyledNode) -> RenderBuffer
+        state_buffer: &StateBuffer) -> RenderBuffer
         where R: ResourceManager
     {
-        // Create buffer with the magic number.
-        // TODO: Stop magic, use real life example.
-        let size = 10;
-
-        let node_producer = |style_tree: &StyledNode| {
-            if let Some(img) = style_tree.get_background_image() {
-                let rule = style_tree.get_background_rule().unwrap_or(TextureRule::Fit);
+        let node_producer = |state: &StateData| {
+            if let Some(img) = state.get_background_image() {
+                let rule = state.get_background_rule().unwrap_or(TextureRule::Fit);
                 Some(RenderData::new(
                     display,
                     resource_manager,
@@ -48,9 +45,8 @@ impl RenderBuffer {
         };
 
         RenderBuffer {
-            render_data: BufferFromTree::new_with_lookup_table(
-                style_tree,
-                size,
+            render_data: BufferFromTree::from_buffer(
+                state_buffer,
                 node_producer
             )
         }

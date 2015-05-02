@@ -2,8 +2,8 @@ use util::flat_tree::FlatTree;
 use util::flat_tree::TreeNode;
 use std::ops::Deref;
 use super::LayoutBox;
-use style::StyledNode;
-
+use markup::Node;
+use state::StateBuffer;
 
 
 mod repeat_node;
@@ -26,11 +26,18 @@ impl Deref for LayoutBuffer {
 
 impl LayoutBuffer {
 
-    pub fn new(style_tree: &StyledNode) -> LayoutBuffer {
+    pub fn new(style_tree: &Node) -> LayoutBuffer {
 
         let size = style_tree.tree_size();
 
         LayoutBuffer(FlatTree::new(style_tree, size, converter))
+    }
+
+    pub fn update_from_state(&mut self, state_buffer: &StateBuffer) {
+
+        for (lb, state) in self.0.iter_mut().zip(state_buffer.iter()) {
+            lb.update_from_state(state);
+        }
     }
 
     pub fn compute_layout(&mut self, max_width: f32, max_height: f32) {
@@ -52,8 +59,8 @@ impl LayoutBuffer {
     }
 }
 
-fn converter(node: &StyledNode) -> Option<LayoutBox> {
-    Some(LayoutBox::new(node))
+fn converter(_: &Node) -> Option<LayoutBox> {
+    Some(LayoutBox::default())
 }
 
 /// This function compute the width for this node

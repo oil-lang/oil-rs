@@ -5,7 +5,7 @@ use std::ops::{Index, Deref};
 
 use util::flat_tree::{FlatTree, TreeNode};
 use layout::{LayoutBuffer, Rect};
-use style::StyledNode;
+use markup::Node;
 use self::tagged_tree::TaggedNode;
 use std::default::Default;
 
@@ -72,7 +72,7 @@ impl Index<isize> for FocusBuffer {
 
 impl FocusBuffer {
 
-    pub fn new(root: &StyledNode) -> FocusBuffer {
+    pub fn new(root: &Node) -> FocusBuffer {
 
         let tagged_tree = TaggedNode::new(root);
 

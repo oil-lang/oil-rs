@@ -15,3 +15,12 @@ pub use uil_shared::markup::{
 pub use uil_parsers::markup::Library;
 pub use uil_parsers::markup::MAIN_VIEW_NAME;
 pub use uil_parsers::markup::parse;
+
+use util::HasChildren;
+
+impl HasChildren for Node {
+
+    fn children<'b>(&'b self) -> &'b [Node] {
+        &self.children
+    }
+}

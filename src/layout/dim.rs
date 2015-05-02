@@ -5,7 +5,7 @@ use super::Rect;
 ///
 /// This code follows the css box model
 /// in naming and conventions. (all sizes are in pixels)
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct Dimensions {
     // Position of the content area relative to the viewport origin
     pub content: Rect,
@@ -14,7 +14,7 @@ pub struct Dimensions {
     pub margin: EdgeSizes,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct EdgeSizes {
     pub left: f32,
     pub right: f32,
@@ -23,6 +23,7 @@ pub struct EdgeSizes {
 }
 
 bitflags! {
+    #[derive(Default)]
     flags DimFlags: u16 {
         // A text node is WIDTH_FIXED,
         // A node with a style fixed width is naturally WIDTH_FIXED

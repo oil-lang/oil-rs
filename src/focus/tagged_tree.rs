@@ -1,6 +1,6 @@
 use util::HasChildren;
 use markup::NodeType;
-use style::StyledNode;
+use markup::Node;
 
 pub struct TaggedNode {
     pub is_acceptor: bool,
@@ -17,18 +17,18 @@ impl HasChildren for TaggedNode {
 
 impl TaggedNode {
 
-    pub fn new(node: &StyledNode) -> TaggedNode {
+    pub fn new(node: &Node) -> TaggedNode {
 
-        let mut children = Vec::with_capacity(node.children().len());
+        let mut children = Vec::with_capacity(node.children.len());
         let mut has_children_acceptors = false;
         // For now, the only node focus acceptor is `button`.
-        let is_acceptor = if let NodeType::Button(_) = node.node.node_type {
+        let is_acceptor = if let NodeType::Button(_) = node.node_type {
             true
         } else {
             false
         };
 
-        for kid in node.children().iter() {
+        for kid in node.children.iter() {
             let child = TaggedNode::new(kid);
             has_children_acceptors |= child.is_acceptor | child.has_children_acceptors;
             children.push(child);
