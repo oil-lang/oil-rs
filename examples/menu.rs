@@ -64,7 +64,7 @@ fn main() {
         let vp = uil::Viewport { width: width as f32, height: height as f32 };
 
         // Update views
-        router.update(&display, vp);
+        router.update(&display, &resource_manager, vp);
 
         // Render views
         let mut f = renderer.prepare_frame(vp);

@@ -5,6 +5,7 @@ use layout::LayoutBuffer;
 use state::StateBuffer;
 use focus::{self, FocusBuffer};
 use super::render::RenderBuffer;
+use uil_shared::style::SelectorState;
 use uil_shared::style::Stylesheet;
 use markup;
 use RenderBackbend;
@@ -44,11 +45,19 @@ impl View {
         }
     }
 
-    pub fn update(&mut self, display: &Display, vp: Viewport) {
+    pub fn update<R>(
+        &mut self,
+        display: &Display,
+        resource_manager: &R,
+        vp: Viewport)
+        where R: ResourceManager
+    {
         if self.dirty_flags {
+            self.set_state_for_focused_node();
             self.layout_data.update_from_state(&self.state_data);
             self.layout_data.compute_layout(vp.width, vp.height);
-            self.render_data.update_nodes(display, &self.layout_data);
+            self.render_data.update_from_state(display, resource_manager, &self.state_data);
+            self.render_data.update_from_layout(display, &self.layout_data);
             self.focus_data.update_nodes(&self.layout_data);
             self.dirty_flags = false;
         }
@@ -71,9 +80,12 @@ impl View {
         if self.focus_node >= 0 {
             assert!((self.focus_node as usize) < self.focus_data.len());
 
+            self.remove_state_for_focused_node();
             self.focus_node = self.focus_data.node_as_index(
-                focus::focus_up(&self.focus_data[self.focus_node])
+                focus::focus_up(self.focus_data.get(self.focus_node as usize).unwrap())
             );
+
+            self.dirty_flags = true;
         }
     }
 
@@ -81,9 +93,12 @@ impl View {
         if self.focus_node >= 0 {
             assert!((self.focus_node as usize) < self.focus_data.len());
 
+            self.remove_state_for_focused_node();
             self.focus_node = self.focus_data.node_as_index(
-                focus::focus_down(&self.focus_data[self.focus_node])
+                focus::focus_down(self.focus_data.get(self.focus_node as usize).unwrap())
             );
+
+            self.dirty_flags = true
         }
     }
 
@@ -91,9 +106,12 @@ impl View {
         if self.focus_node >= 0 {
             assert!((self.focus_node as usize) < self.focus_data.len());
 
+            self.remove_state_for_focused_node();
             self.focus_node = self.focus_data.node_as_index(
-                focus::focus_right(&self.focus_data[self.focus_node])
+                focus::focus_right(self.focus_data.get(self.focus_node as usize).unwrap())
             );
+
+            self.dirty_flags = true;
         }
     }
 
@@ -101,10 +119,29 @@ impl View {
         if self.focus_node >= 0 {
             assert!((self.focus_node as usize) < self.focus_data.len());
 
+            self.remove_state_for_focused_node();
             self.focus_node = self.focus_data.node_as_index(
-                focus::focus_left(&self.focus_data[self.focus_node])
+                focus::focus_left(self.focus_data.get(self.focus_node as usize).unwrap())
             );
+
+            self.dirty_flags = true;
         }
+    }
+
+    fn set_state_for_focused_node(&mut self) {
+        self.state_data.get_mut(self.focus_data.node_as_global_index(
+                self.focus_data.get(self.focus_node as usize).unwrap()
+            ) as usize)
+            .unwrap()
+            .set_current_state(SelectorState::Focus);
+    }
+
+    fn remove_state_for_focused_node(&mut self) {
+        self.state_data.get_mut(self.focus_data.node_as_global_index(
+                self.focus_data.get(self.focus_node as usize).unwrap()
+            ) as usize)
+            .unwrap()
+            .set_current_state(SelectorState::Default);
     }
 }
 

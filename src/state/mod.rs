@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 use util::BufferFromTree;
 use uil_shared::asset::ImageData;
@@ -24,6 +24,13 @@ impl Deref for StateBuffer {
 
     fn deref<'a>(&'a self) -> &'a BufferFromTree<StateData> {
         &self.state_data
+    }
+}
+
+impl DerefMut for StateBuffer {
+
+    fn deref_mut<'a>(&'a mut self) -> &'a mut BufferFromTree<StateData> {
+        &mut self.state_data
     }
 }
 

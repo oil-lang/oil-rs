@@ -86,9 +86,11 @@ impl Router {
         router
     }
 
-    pub fn update(&mut self, display: &Display, vp: Viewport) {
+    pub fn update<R>(&mut self, display: &Display, resource_manager: &R, vp: Viewport)
+        where R: ResourceManager
+    {
         for &mut (_, ref mut v) in self.stack.iter_mut() {
-            v.borrow_mut().update(display, vp);
+            v.borrow_mut().update(display, resource_manager, vp);
         }
     }
 

@@ -52,7 +52,25 @@ impl RenderBuffer {
         }
     }
 
-    pub fn update_nodes(&mut self, display: &Display, layout_data: &LayoutBuffer) {
+    pub fn update_from_state<R: ResourceManager>(
+        &mut self,
+        display: &Display,
+        resource_manager: &R,
+        state_data: &StateBuffer)
+    {
+
+        for (&i, data) in self.render_data.enumerate_lookup_indices_mut().unwrap() {
+
+            let state = unsafe { state_data.get_unchecked(i) };
+
+            if let Some(img) = state.get_background_image() {
+
+                data.update_texture(display, resource_manager, img);
+            }
+        }
+    }
+
+    pub fn update_from_layout(&mut self, display: &Display, layout_data: &LayoutBuffer) {
 
         for (&i, data) in self.render_data.enumerate_lookup_indices_mut().unwrap() {
             // This part is always safe because the initialization step

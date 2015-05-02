@@ -1,7 +1,7 @@
 use std::iter::Zip;
 use std::slice::{Iter, IterMut};
 use std::ops::RangeFrom;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 use super::HasChildren;
 
@@ -15,6 +15,13 @@ impl<T> Deref for BufferFromTree<T> {
 
     fn deref<'a>(&'a self) -> &'a [T] {
         self.buffer.deref()
+    }
+}
+
+impl<T> DerefMut for BufferFromTree<T> {
+
+    fn deref_mut<'a>(&'a mut self) -> &'a mut [T] {
+        self.buffer.deref_mut()
     }
 }
 
@@ -168,7 +175,6 @@ impl<T> BufferFromTree<T> {
 
 #[cfg(test)]
 mod test {
-
     use std::cell::Cell;
     use super::*;
     use util::HasChildren;
@@ -240,8 +246,7 @@ mod test {
     fn enumerate_lookup_indices_mut_should_give_original_index() {
         let mut flatmapping = create_buffer_from_some_tree();
         let mut index = 0;
-        let mut indices = vec![0; flatmapping.buffer.len()].into_boxed_slice();
-        indices.clone_from_slice(flatmapping.lookup_indices.as_ref().unwrap());
+        let indices = flatmapping.lookup_indices.as_ref().unwrap().to_vec();
         for (&i, _) in flatmapping.enumerate_lookup_indices_mut().unwrap() {
             assert_eq!(i, indices[index]);
             index += 1;
