@@ -78,7 +78,9 @@ mod test {
     use glutin::WindowBuilder;
     use glium::DisplayBuild;
     use markup::{self, Node};
-    use style::{self, Stylesheet};
+    use style;
+    use state::StateBuffer;
+    use uil_shared::style::Stylesheet;
     use uil_shared::deps::{Constructor, StyleDefinitions};
     use uil_parsers::{StdOutErrorReporter};
     use resource::{self, ResourceManager};
@@ -112,7 +114,7 @@ mod test {
                 <button class=\"btn\"></button>\
             </view>
             ");
-        let style_tree = style::build_style_tree(&root, &stylesheet);
+        let state_buffer = StateBuffer::new(&root, &stylesheet);
 
         // FIXME(This match is here to have the travis test pass)
         if let Some(fake_display) = WindowBuilder::new()
@@ -122,7 +124,7 @@ mod test {
             let mut buffer = RenderBuffer::new(
                 &fake_display,
                 &fake_resource_manager,
-                &style_tree
+                &state_buffer
             );
 
             assert_eq!(buffer.render_data.len(), 2);
