@@ -2,10 +2,15 @@ use std::rc::{Rc,Weak};
 use std::collections::HashMap;
 use std::collections::hash_state::HashState;
 use std::cell::RefCell;
+use std::error::Error;
 
 use router::Router;
 
+use self::DataBindingError::*;
+
 pub type IteratingClosure<'b> = for <'a> FnMut(&mut Iterator<Item=&'a mut DBStore>) + 'b;
+
+pub type BindingResult<T> = Result<T,DataBindingError>;
 
 macro_rules! declare_data_binding {
     ($name:ident {
@@ -23,26 +28,48 @@ macro_rules! declare_data_binding {
         impl DBStore for $name {
             fn get_value(&self, k: &str) -> Option<StoreValue> {
                 match k {
-                    $(stringify!($key) => Some(StoreValue{data: self.$field.to_string()}),)*
+                    $(stringify!($key) => Some(StoreValue::from(self.$field.clone())),)*
                     _ => None,
                 }
             }
             fn set_value(&mut self, k: &str, value: StoreValue) -> Option<StoreValue> {
-                use std::str::FromStr;
                 match k {
                     $(stringify!($key) => {
-                        match <$type_field as FromStr>::from_str(&value.data) {
-                            Ok(value) => {
-                                self.$field = value;
-                                None
-                            }
-                            Err(..) => {
-                                println!("WARNING: Failed to parse data binding {} as {}", &value.data, stringify!($type_field));
-                                Some(value)
-                            }
-                        }
+                        self.$field = value.into();
+                        None
                     })*
                     _ => Some(value),
+                }
+            }
+        }
+
+        impl BulkGet for [$name] {
+            fn compare_and_update(&self, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool> {
+                match k {
+                    $(stringify!($key) => {
+                        let mut has_changed = false;
+                        if output.len() != self.len() {
+                            has_changed = true;
+                            if output.len() > self.len() {
+                                output.truncate(self.len());
+                            } else {
+                                let len = output.len();
+                                output.reserve(self.len() - len);
+                            }
+                        }
+                        for (element, old_value) in self.iter().zip(output.iter_mut()) {
+                            let new_value: StoreValue = element.$field.clone().into();
+                            if new_value != *old_value {
+                                has_changed = true;
+                                *old_value = new_value;
+                            }
+                        }
+                        for input in self.iter().skip(output.len()) {
+                            (*output).push(input.$field.clone().into());
+                        }
+                        Ok(has_changed)
+                    })*
+                    _ => Err(DataBindingError::KeyNotFound(format!(": {} for type {}", k, stringify!($name)))),
                 }
             }
         }
@@ -50,9 +77,89 @@ macro_rules! declare_data_binding {
         )
 }
 
-#[derive(Clone,Debug)]
-pub struct StoreValue {
-    data: String,
+#[derive(Clone,Eq,PartialEq,Debug)]
+pub enum DataBindingError {
+    DanglingReference(String),
+    IteratorNotFound(String),
+    KeyNotFound(String),
+    ViewNotFound(String),
+}
+
+impl Error for DataBindingError {
+    fn description(&self) -> &str {
+        match *self {
+            DanglingReference(_) => "Dangling data binding reference",
+            IteratorNotFound(_) => "Repeat iterator not found",
+            KeyNotFound(_) => "Key not found",
+            ViewNotFound(_) => "View not found",
+        }
+    }
+}
+
+impl ::std::fmt::Display for DataBindingError {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        try!(self.description().fmt(f));
+        let details = match *self {
+            DanglingReference(ref s) => s,
+            IteratorNotFound(ref s) => s,
+            KeyNotFound(ref s) => s,
+            ViewNotFound(ref s) => s,
+        };
+        details.fmt(f)
+    }
+}
+
+// TODO: Implement Eq and PartialEq manually to compare Strings and Integers
+#[derive(Clone,Debug,Eq,PartialEq)]
+pub enum StoreValue {
+    String(String),
+    Integer(i64),
+}
+
+impl From<i64> for StoreValue {
+    fn from(i: i64) -> StoreValue {
+        StoreValue::Integer(i)
+    }
+}
+
+impl Into<i64> for StoreValue {
+    fn into(self) -> i64 {
+        use std::str::FromStr;
+        match self {
+            StoreValue::String(data) => {
+                match i64::from_str(&data) {
+                    Ok(i) => i,
+                    Err(error) => {
+                        println!("ERROR: Parsing to integer error {}", error);
+                        0
+                    }
+                }
+            }
+            StoreValue::Integer(i) => i,
+        }
+    }
+}
+
+impl From<String> for StoreValue {
+    fn from(s: String) -> StoreValue {
+        StoreValue::String(s)
+    }
+}
+
+impl Into<String> for StoreValue {
+    fn into(self) -> String {
+        match self {
+            StoreValue::String(data) => {
+                data
+            }
+            StoreValue::Integer(i) => i.to_string(),
+        }
+    }
+}
+
+
+pub trait BulkGet {
+    fn compare_and_update(&self, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool>;
 }
 
 pub trait DBStore {
@@ -177,6 +284,13 @@ impl DataBinderScope {
             }
         }
     }
+
+    fn compare_and_update(&self, iterator: &str, key: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool> {
+        match self.iterators.get(iterator) {
+            None => Err(DataBindingError::IteratorNotFound(format!(": {}", iterator))),
+            Some(it) => it.compare_and_update(key, output),
+        }
+    }
 }
 
 #[derive(Default)]
@@ -217,9 +331,9 @@ impl DataBinderContext {
         }
     }
 
-    pub fn register_value(&mut self, view: &str, key: String, value: StoreValue) -> Result<(),String> {
+    pub fn register_value(&mut self, view: &str, key: String, value: StoreValue) -> BindingResult<()> {
         match self.views.get_mut(view) {
-            None => Err(format!("Could not find view {}", view)),
+            None => Err(DataBindingError::ViewNotFound(format!(": {}", view))),
             Some(view_scope) => {
                 if let Err(old) = view_scope.register_value(key.clone(), value) {
                     // Don't throw an error, just print a warning
@@ -230,10 +344,10 @@ impl DataBinderContext {
         }
     }
 
-    pub fn register_store<T>(&mut self, view: &str, prefix: String, value: &Rc<RefCell<T>>) -> Result<(),String>
+    pub fn register_store<T>(&mut self, view: &str, prefix: String, value: &Rc<RefCell<T>>) -> BindingResult<()>
     where T: DBStore + 'static {
         match self.views.get_mut(view) {
-            None => Err(format!("Could not find view {}", view)),
+            None => Err(DataBindingError::ViewNotFound(format!(": {}", view))),
             Some(view_scope) => {
                 let v = Box::new(Proxy::new(value));
                 if let Err(_) = view_scope.register_store(prefix.clone(), v) {
@@ -245,10 +359,11 @@ impl DataBinderContext {
         }
     }
 
-    pub fn register_iterator<T>(&mut self, view: &str, key: String, iterator: &Rc<RefCell<Vec<T>>>) -> Result<(),String>
-    where T: DBStore + 'static {
+    pub fn register_iterator<T>(&mut self, view: &str, key: String, iterator: &Rc<RefCell<Vec<T>>>) -> BindingResult<()>
+    where T: DBStore + 'static,
+          [T]: BulkGet {
         match self.views.get_mut(view) {
-            None => Err(format!("Could not find view {}", view)),
+            None => Err(DataBindingError::ViewNotFound(format!(": {}", view))),
             Some(view_scope) => {
                 let v = Box::new(RepeatProxy::new(iterator));
                 if let Err(_) = view_scope.register_iterator(key.clone(), v) {
@@ -261,20 +376,12 @@ impl DataBinderContext {
     }
 
     pub fn register_global_iterator<T>(&mut self, key: String, iterator: &Rc<RefCell<Vec<T>>>)
-    where T: DBStore + 'static {
+    where T: DBStore + 'static,
+          [T]: BulkGet {
         let v = Box::new(RepeatProxy::new(iterator));
         if let Err(_) = self.global.register_iterator(key.clone(), v) {
             println!("WARNING: re-registering global iterator {}", key);
         }
-    }
-
-    pub fn iter(&self, k: &str, closure: &mut IteratingClosure) -> bool {
-        if let Some(view_scope) = self.views.get(&self.current_view) {
-            if view_scope.iter(k, closure) {
-                return true;
-            }
-        }
-        self.global.iter(k, closure)
     }
 
     fn register_view(&mut self, view: String) {
@@ -286,6 +393,8 @@ impl DataBinderContext {
 pub trait DBCLookup {
     fn get_value(&self, k: &str) -> Option<StoreValue>;
     fn set_value(&mut self, k: &str, value: StoreValue);
+    fn iter(&self, k: &str, closure: &mut IteratingClosure) -> bool;
+    fn compare_and_update(&self, iterator: &str, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool>;
 }
 
 impl DBCLookup for DataBinderContext {
@@ -321,6 +430,26 @@ impl DBCLookup for DataBinderContext {
             }
         }
     }
+
+    fn iter(&self, k: &str, closure: &mut IteratingClosure) -> bool {
+        if let Some(view_scope) = self.views.get(&self.current_view) {
+            if view_scope.iter(k, closure) {
+                return true;
+            }
+        }
+        self.global.iter(k, closure)
+    }
+
+    fn compare_and_update(&self, iterator: &str, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool> {
+        if let Some(view_scope) = self.views.get(&self.current_view) {
+            match view_scope.compare_and_update(iterator, k, output) {
+                Err(IteratorNotFound(..)) => {} // Normal operation
+                Err(e) => return Err(e),
+                Ok(out) => return Ok(out),
+            }
+        }
+        self.global.compare_and_update(iterator, k, output)
+    }
 }
 
 #[derive(Debug)]
@@ -355,6 +484,7 @@ impl <T: DBStore> Proxy<T> {
 
 trait IsRepeatable {
     fn iter(&self, closure: &mut IteratingClosure) -> bool;
+    fn compare_and_update(&self, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool>;
 }
 
 pub struct RepeatProxy<T> {
@@ -369,7 +499,9 @@ impl <T> RepeatProxy<T> {
     }
 }
 
-impl <T: DBStore + 'static> IsRepeatable for RepeatProxy<T> {
+impl <T> IsRepeatable for RepeatProxy<T>
+where T: DBStore + 'static,
+      [T]: BulkGet {
     fn iter(&self, closure: &mut IteratingClosure) -> bool {
         let reference = match self.cell.upgrade() {
             Some(r) => r,
@@ -379,6 +511,15 @@ impl <T: DBStore + 'static> IsRepeatable for RepeatProxy<T> {
         let mut iter = guard.iter_mut().map(|item| item as &mut DBStore);
         closure(&mut iter);
         true
+    }
+
+    fn compare_and_update(&self, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool> {
+        let reference = match self.cell.upgrade() {
+            Some(r) => r,
+            None => return Err(DataBindingError::DanglingReference(format!(": {}", k))),
+        };
+        let guard = reference.borrow_mut();
+        (*guard).compare_and_update(k, output)
     }
 }
 
@@ -435,47 +576,62 @@ mod test {
     use super::*;
 #[derive(Debug)]
     struct Player {
-        pv: usize,
-        xp: usize,
+        name: String,
+        pv: i64,
+        xp: i64,
+    }
+
+    impl Player {
+        fn new<T: ToString>(name: T, pv: i64, xp: i64) -> Player {
+            Player {
+                name: name.to_string(),
+                pv: pv,
+                xp: xp,
+            }
+        }
+
+        fn new_rc<T: ToString>(name: T, pv: i64, xp: i64) -> Rc<RefCell<Player>> {
+            Rc::new(RefCell::new(Player::new(name, pv, xp)))
+        }
     }
 
     declare_data_binding! {
         Player {
-            pv: usize,
-            xp: usize
+            name: String,
+            pv: i64,
+            xp: i64
         }
     }
 
     #[test]
     fn register_global_player() {
         let mut context = DataBinderContext::default();
-        let player = Rc::new(RefCell::new(Player{pv: 42, xp: 100}));
+        let player = Player::new_rc("Vaelden", 42, 100);
         context.register_global_store("player".to_string(), &player);
-        assert_eq!(context.get_value("player.pv").unwrap().data, "42");
-        assert_eq!(context.get_value("player.xp").unwrap().data, "100");
+        assert_eq!(context.get_value("player.pv").unwrap(), StoreValue::Integer(42));
+        assert_eq!(context.get_value("player.xp").unwrap(), StoreValue::Integer(100));
     }
 
     #[test]
     fn register_global_value() {
         let mut context = DataBinderContext::default();
         context.register_global_value("option.width".to_string(),
-            StoreValue{data: "42".to_string()});
-        assert_eq!(context.get_value("option.width").unwrap().data, "42");
+            StoreValue::Integer(42));
+        assert_eq!(context.get_value("option.width").unwrap(), StoreValue::Integer(42));
     }
 
     #[test]
     fn register_view_player() {
         let mut context = DataBinderContext::default();
         context.register_view("foo".to_string());
-        let player = Rc::new(RefCell::new(Player{pv: 42, xp: 100}));
-        // Clone the Rc, as it will get downgraded to Weak when registered
+        let player = Player::new_rc("Vaelden", 42, 100);
         context.register_store("foo", "player".to_string(), &player).unwrap();
 
         // Not in the correct view
         assert!(context.get_value("player.pv").is_none());
         context.switch_to_view("foo".to_string());
-        assert_eq!(context.get_value("player.pv").unwrap().data, "42");
-        assert_eq!(context.get_value("player.xp").unwrap().data, "100");
+        assert_eq!(context.get_value("player.pv").unwrap(), StoreValue::Integer(42));
+        assert_eq!(context.get_value("player.xp").unwrap(), StoreValue::Integer(100));
     }
 
     #[test]
@@ -483,22 +639,21 @@ mod test {
         let mut context = DataBinderContext::default();
         context.register_view("foo".to_string());
         context.register_value("foo", "option.width".to_string(),
-            StoreValue{data: "42".to_string()}).unwrap();
+            StoreValue::Integer(42)).unwrap();
         assert!(context.get_value("option.width").is_none());
         context.switch_to_view("foo".to_string());
-        assert_eq!(context.get_value("option.width").unwrap().data, "42");
+        assert_eq!(context.get_value("option.width").unwrap(), StoreValue::Integer(42));
     }
 
     #[test]
     fn masking_value_by_object() {
         let mut context = DataBinderContext::default();
         context.register_global_value("player.pv".to_string(),
-            StoreValue{data: "12".to_string()});
-        assert_eq!(context.get_value("player.pv").unwrap().data, "12");
-        let player = Rc::new(RefCell::new(Player{pv: 42, xp: 100}));
-        // Clone the Rc, as it will get downgraded to Weak when registered
+            StoreValue::Integer(12));
+        assert_eq!(context.get_value("player.pv").unwrap(), StoreValue::Integer(12));
+        let player = Player::new_rc("Vaelden", 42, 100);
         context.register_global_store("player".to_string(), &player);
-        assert_eq!(context.get_value("player.pv").unwrap().data, "42");
+        assert_eq!(context.get_value("player.pv").unwrap(), StoreValue::Integer(42));
     }
 
     #[test]
@@ -510,27 +665,27 @@ mod test {
         context.register_view(bar.clone());
         context.register_view("foobar".to_string());
         context.register_value("foo", "option.width".to_string(),
-            StoreValue{data: "foo_value".to_string()}).unwrap();
+            StoreValue::String("foo_value".to_string())).unwrap();
         context.register_value("bar", "option.width".to_string(),
-            StoreValue{data: "bar_value".to_string()}).unwrap();
+            StoreValue::String("bar_value".to_string())).unwrap();
         context.register_global_value("option.width".to_string(),
-            StoreValue{data: "global_value".to_string()});
+            StoreValue::String("global_value".to_string()));
 
         // In view "foobar" -> get global value
         context.switch_to_view("foobar".to_string());
-        assert_eq!(context.get_value("option.width").unwrap().data, "global_value");
+        assert_eq!(context.get_value("option.width").unwrap(), StoreValue::String("global_value".to_string()));
         // In view "foo" -> get foo specific value
         context.switch_to_view("foo".to_string());
-        assert_eq!(context.get_value("option.width").unwrap().data, "foo_value");
+        assert_eq!(context.get_value("option.width").unwrap(), StoreValue::String("foo_value".to_string()));
         // In view "bar" -> get bar specific value
         context.switch_to_view("bar".to_string());
-        assert_eq!(context.get_value("option.width").unwrap().data, "bar_value");
+        assert_eq!(context.get_value("option.width").unwrap(), StoreValue::String("bar_value".to_string()));
     }
 
     #[test]
     fn global_iterator() {
         let mut context = DataBinderContext::default();
-        let players = Rc::new(RefCell::new(vec![Player{pv: 1, xp: 11}, Player{pv: 2, xp: 22}]));
+        let players = Rc::new(RefCell::new(vec![Player::new("Vaelden", 1, 11), Player::new("Nemikolh", 2, 22)]));
         context.register_global_iterator("game.friends".to_string(), &players);
         let mut iteration = 0;
         let result = context.iter("game.friends", &mut |iterator| {
@@ -538,19 +693,67 @@ mod test {
                 iteration += 1;
                 match iteration {
                     1 => {
-                        assert_eq!(store.get_value("pv").unwrap().data, "1");
-                        assert_eq!(store.get_value("xp").unwrap().data, "11");
+                        assert_eq!(store.get_value("pv").unwrap(), StoreValue::Integer(1));
+                        assert_eq!(store.get_value("xp").unwrap(), StoreValue::Integer(11));
                     }
                     2 => {
-                        assert_eq!(store.get_value("pv").unwrap().data, "2");
-                        assert_eq!(store.get_value("xp").unwrap().data, "22");
-                        store.set_value("xp", StoreValue{data: "42".to_string()});
-                        assert_eq!(store.get_value("xp").unwrap().data, "42");
+                        assert_eq!(store.get_value("pv").unwrap(), StoreValue::Integer(2));
+                        assert_eq!(store.get_value("xp").unwrap(), StoreValue::Integer(22));
+                        store.set_value("xp", StoreValue::Integer(42));
+                        assert_eq!(store.get_value("xp").unwrap(), StoreValue::Integer(42));
                     }
                     _ => panic!("Too many iterations"),
                 }
             }
         });
         assert!(result);
+        let mut result_vec = Vec::new();
+        assert!(context.compare_and_update("game.friends", "pv", &mut result_vec).unwrap());
+        assert_eq!(result_vec, [StoreValue::Integer(1), StoreValue::Integer(2)]);
+        assert!(context.compare_and_update("game.friends", "name", &mut result_vec).unwrap());
+        assert_eq!(result_vec, [StoreValue::String("Vaelden".to_string()), StoreValue::String("Nemikolh".to_string())]);
+    }
+
+    #[test]
+    fn bulk_get_implementation() {
+        let mut players = vec![Player::new("Vaelden", 1, 11), Player::new("Nemikolh", 2, 22)];
+        let mut vec = Vec::new();
+        assert!(players.compare_and_update("pv", &mut vec).unwrap());
+        assert_eq!(vec, [StoreValue::Integer(1), StoreValue::Integer(2)]);
+        assert!(!players.compare_and_update("pv", &mut vec).unwrap());
+        assert_eq!(vec, [StoreValue::Integer(1), StoreValue::Integer(2)]);
+        players.pop();
+        assert!(players.compare_and_update("pv", &mut vec).unwrap());
+        assert_eq!(vec, [StoreValue::Integer(1)]);
+        players.push(Player::new("Cendrais", 3, 33));
+        assert!(players.compare_and_update("xp", &mut vec).unwrap());
+        assert_eq!(vec, [StoreValue::Integer(11), StoreValue::Integer(33)]);
+    }
+
+    #[test]
+    fn invalid_iterator() {
+        let mut context = DataBinderContext::default();
+        let mut result_vec = Vec::new();
+        let players = Rc::new(RefCell::new(vec![Player::new("Vaelden", 1, 11), Player::new("Nemikolh", 2, 22)]));
+        context.register_global_iterator("game.friends".to_string(), &players);
+        context.compare_and_update("invalid_id", "pv", &mut result_vec).err().unwrap(); // IteratorNotFound
+        context.compare_and_update("game.friends", "invalid_key", &mut result_vec).err().unwrap(); // KeyNotFound
+    }
+
+    #[test]
+    fn masking_iterator() {
+        let mut context = DataBinderContext::default();
+        context.register_view("foo".to_string());
+        let global_players = Rc::new(RefCell::new(vec![Player::new("Vaelden", 1, 11), Player::new("Nemikolh", 2, 22)]));
+        context.register_global_iterator("game.friends".to_string(), &global_players);
+        let foo_players = Rc::new(RefCell::new(vec![Player::new("Cendrais", 3, 33)]));
+        context.register_iterator("foo", "game.friends".to_string(), &foo_players).unwrap();
+        let mut global_vec = Vec::new();
+        assert!(context.compare_and_update("game.friends", "pv", &mut global_vec).unwrap());
+        assert_eq!(global_vec, [StoreValue::Integer(1), StoreValue::Integer(2)]);
+        context.switch_to_view("foo".to_string());
+        let mut foo_vec = Vec::new();
+        assert!(context.compare_and_update("game.friends", "pv", &mut foo_vec).unwrap());
+        assert_eq!(foo_vec, [StoreValue::Integer(3)]);
     }
 }
