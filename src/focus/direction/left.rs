@@ -16,7 +16,7 @@ use super::find_parent_or_neighbour;
 ///
 pub fn focus_left(from: &FocusNode) -> &FocusNode {
     assert_eq!(from.is_acceptor, true);
-    find_parent_or_neighbour(from, from, &from.bounds, find_left_neighbour)
+    find_parent_or_neighbour(from, from, &from.bounds, -0.1, find_left_neighbour)
 }
 
 fn find_left_neighbour<'a>(parent: &'a FocusNode, from: &'a FocusNode)

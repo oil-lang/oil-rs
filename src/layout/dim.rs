@@ -45,14 +45,25 @@ bitflags! {
                                     | MARGIN_RIGHT_AUTO.bits,
         const MARGIN_Y_AUTO         = MARGIN_TOP_AUTO.bits
                                     | MARGIN_BOT_AUTO.bits,
+        const MARGIN_X_EXPAND       = MARGIN_LEFT_EXPAND.bits
+                                    | MARGIN_RIGHT_EXPAND.bits,
     }
 }
 
 impl DimFlags {
 
     #[inline]
-    pub fn is_auto(&self) -> bool {
+    pub fn is_x_auto(&self) -> bool {
         self.intersects(WIDTH_AUTO | MARGIN_X_AUTO)
+    }
+
+    #[inline]
+    pub fn is_x_expand(&self) -> bool {
+        self.intersects(WIDTH_EXPAND | MARGIN_X_EXPAND)
+    }
+
+    pub fn is_new_line_forced(&self) -> bool {
+        self.is_x_auto() || self.is_x_expand()
     }
 
     #[inline]

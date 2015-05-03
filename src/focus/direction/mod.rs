@@ -17,18 +17,20 @@ mod left;
 //             Left/Right Logic             //
 // ======================================== //
 
-fn find_matching_child_x<'a>(parent: &'a FocusNode, bounds: &Rect) -> &'a FocusNode {
+fn find_matching_child_x<'a>(parent: &'a FocusNode, bounds: &Rect, weight: f32) -> &'a FocusNode {
 
     // Pick the best child
+    let mut factor = 0f32;
     let res = parent.children().map(|n| {
-        (n.bounds.intersects_x(bounds), n)
+        factor += 1f32;
+        (n.bounds.intersects_y(bounds) * (1.0 + weight / factor), n)
     }).max_by(|&(w, _)| F32Ord(w));
 
     if let Some((_, node)) = res {
         if node.is_acceptor {
             node
         } else {
-            find_matching_child_x(node, bounds)
+            find_matching_child_x(node, bounds, weight)
         }
     } else {
         // The parent can't be non-acceptor and have zero children.
@@ -40,6 +42,7 @@ fn find_parent_or_neighbour<'a, F>(
     from: &'a FocusNode,
     current: &'a FocusNode,
     bounds: &Rect,
+    weight: f32,
     neighbour_finder: F) -> &'a FocusNode
     where F: Fn(&'a FocusNode, &'a FocusNode) -> Option<&'a FocusNode>
 {
@@ -49,7 +52,7 @@ fn find_parent_or_neighbour<'a, F>(
 
         Some(parent) => {
 
-            if let Some(child) = neighbour_finder(parent, from) {
+            if let Some(child) = neighbour_finder(parent, current) {
 
                 // Is it on the same line ?
                 if child.line_number == current.line_number && !ref_eq(child, from) {
@@ -60,13 +63,13 @@ fn find_parent_or_neighbour<'a, F>(
 
                     } else {
                         // Ok we switch to a different reasoning now:
-                        return find_matching_child_x(child, bounds);
+                        return find_matching_child_x(child, bounds, weight);
                     }
                 }
 
             }
             // Not found ? -> Look for parent.
-            find_parent_or_neighbour(from, parent, bounds, neighbour_finder)
+            find_parent_or_neighbour(from, parent, bounds, weight, neighbour_finder)
         }
         // No parent ?
         None => from
@@ -81,8 +84,10 @@ fn find_parent_or_neighbour<'a, F>(
 fn find_matching_child_y<'a>(parent: &'a FocusNode, bounds: &Rect) -> &'a FocusNode {
 
     // Pick the best child
+    let mut factor = 0f32;
     let res = parent.children().map(|n| {
-        (n.bounds.intersects_y(bounds), n)
+        factor += 1f32;
+        (n.bounds.intersects_x(bounds) * (1.0 + 0.1 / factor), n)
     }).max_by(|&(w, _)| F32Ord(w));
 
     if let Some((_, node)) = res {
@@ -103,10 +108,13 @@ fn find_neighbor<'a>(from: &'a FocusNode, current_node: &'a FocusNode, offset: i
     match current_node.parent() {
 
         Some(parent) => {
-
+            let mut factor = 0f32;
             let res = parent.children()
                 .filter(|n| n.line_number == (current_node.line_number as isize + offset) as usize)
-                .map(|n| (n.bounds.intersects_y(&from.bounds), n))
+                .map(|n| {
+                    factor += 1f32;
+                    (n.bounds.intersects_x(&from.bounds) * (1.0 + 0.1 / factor), n)
+                })
                 .max_by(|&(w, _)| F32Ord(w));
 
             if let Some((_, node)) = res {

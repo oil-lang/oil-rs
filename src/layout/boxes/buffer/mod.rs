@@ -120,7 +120,7 @@ fn compute_layout_defaut_width(this: &mut LayoutNode, space_available_for_self: 
                     }
 
                     // If the child is auto then we simply restart with a new line
-                    if child.flags.is_auto() {
+                    if child.flags.is_new_line_forced() {
                         sum = 0f32;
                         line_space_available = space_available;
                     }
@@ -141,15 +141,15 @@ fn compute_layout_defaut_width(this: &mut LayoutNode, space_available_for_self: 
                             max = sum;
                         }
 
-                        // Then start a new line:
-                        sum = 0f32;
-
                         next_child = true;
 
                     // If I wasn't alone, as I will be on a new line,
                     // the recursion will be done again. This do have an overhead.
                     }
 
+                    // Then start a new line:
+                    sum = 0f32;
+                    line_space_available = space_available;
                 }
 
             } else {
@@ -327,7 +327,7 @@ fn compute_layout_height_and_position(this: &mut LayoutNode, max_height: f32)
 
         for child in this.children_mut() {
 
-            let child_is_auto = child.flags.is_auto();
+            let need_new_line = child.flags.is_new_line_forced();
 
             // Line return ?
             if child.dim.content.width + current_line_width > this.dim.content.width {
@@ -370,7 +370,7 @@ fn compute_layout_height_and_position(this: &mut LayoutNode, max_height: f32)
                 stack.push(child);
             }
 
-            if child_is_auto {
+            if need_new_line {
                 let ref d = this.dim;
                 line_return!(
                     stack,

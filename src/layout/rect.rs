@@ -22,15 +22,15 @@ impl Rect {
     pub fn intersects_x(&self, other: &Rect) -> f32 {
         if self.x < other.x {
             if self.x + self.width > other.x {
-                other.x - (self.x + self.width)
+                self.x + self.width - other.x
             } else {
                 0f32
             }
         } else {
             if self.x > other.x + other.width {
-                self.x - (other.x + other.width)
-            } else {
                 0f32
+            } else {
+                other.x + other.width - self.x
             }
         }
     }
@@ -38,15 +38,15 @@ impl Rect {
     pub fn intersects_y(&self, other: &Rect) -> f32 {
         if self.y < other.y {
             if self.y + self.height > other.y {
-                other.y - (self.y + self.height)
+                self.y + self.height - other.y
             } else {
                 0f32
             }
         } else {
             if self.y > other.y + other.height {
-                self.y - (other.y + other.height)
-            } else {
                 0f32
+            } else {
+                other.y + other.height - self.y
             }
         }
     }
