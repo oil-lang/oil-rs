@@ -15,11 +15,11 @@ impl Rect {
     /// This function computes the area intersection
     /// between the two rectangles. It returns the
     /// intersection area value.
-    pub fn intersects(&self, other: &Rect) -> f32 {
-        self.intersects_x(other) * self.intersects_y(other)
-    }
+    // pub fn intersects(&self, other: &Rect) -> f32 {
+    //     self.intersects_x(other) * self.intersects_y(other)
+    // }
 
-    fn intersects_x(&self, other: &Rect) -> f32 {
+    pub fn intersects_x(&self, other: &Rect) -> f32 {
         if self.x < other.x {
             if self.x + self.width > other.x {
                 other.x - (self.x + self.width)
@@ -35,7 +35,7 @@ impl Rect {
         }
     }
 
-    fn intersects_y(&self, other: &Rect) -> f32 {
+    pub fn intersects_y(&self, other: &Rect) -> f32 {
         if self.y < other.y {
             if self.y + self.height > other.y {
                 other.y - (self.y + self.height)

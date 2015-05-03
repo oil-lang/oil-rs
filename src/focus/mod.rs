@@ -145,17 +145,24 @@ unsafe fn resolve_parent(focus_node: &mut FocusNode, parent: *const FocusNode) {
 fn resolve_line_numbers(focus_node: &mut FocusNode) {
 
     let mut current_line_number = 0;
-    let mut current_y = f32::NAN;
+    let mut current_y = focus_node.children()
+        .next()
+        .map(|c| c.bounds.y)
+        .unwrap_or(f32::NEG_INFINITY);
 
     for child in focus_node.children_mut() {
         // The child `y` property definition shouldn't change
         // to have this working.
         // With the circle layout this might change.
-        if child.bounds.y > current_y && !current_y.is_nan() {
+
+        if child.bounds.y > current_y {
             current_y = child.bounds.y;
             current_line_number += 1;
         }
 
         child.line_number = current_line_number;
+
+        resolve_line_numbers(child);
     }
+
 }

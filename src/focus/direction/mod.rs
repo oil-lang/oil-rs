@@ -13,19 +13,22 @@ mod up;
 mod right;
 mod left;
 
+// ======================================== //
+//             Left/Right Logic             //
+// ======================================== //
 
-fn find_matching_child<'a>(parent: &'a FocusNode, bounds: &Rect) -> &'a FocusNode {
+fn find_matching_child_x<'a>(parent: &'a FocusNode, bounds: &Rect) -> &'a FocusNode {
 
     // Pick the best child
     let res = parent.children().map(|n| {
-        (n.bounds.intersects(bounds), n)
+        (n.bounds.intersects_x(bounds), n)
     }).max_by(|&(w, _)| F32Ord(w));
 
     if let Some((_, node)) = res {
         if node.is_acceptor {
             node
         } else {
-            find_matching_child(node, bounds)
+            find_matching_child_x(node, bounds)
         }
     } else {
         // The parent can't be non-acceptor and have zero children.
@@ -57,13 +60,64 @@ fn find_parent_or_neighbour<'a, F>(
 
                     } else {
                         // Ok we switch to a different reasoning now:
-                        return find_matching_child(child, bounds)
+                        return find_matching_child_x(child, bounds);
                     }
                 }
-            }
 
+            }
             // Not found ? -> Look for parent.
             find_parent_or_neighbour(from, parent, bounds, neighbour_finder)
+        }
+        // No parent ?
+        None => from
+    }
+}
+
+// ======================================== //
+//                Up/Down Logic             //
+// ======================================== //
+
+
+fn find_matching_child_y<'a>(parent: &'a FocusNode, bounds: &Rect) -> &'a FocusNode {
+
+    // Pick the best child
+    let res = parent.children().map(|n| {
+        (n.bounds.intersects_y(bounds), n)
+    }).max_by(|&(w, _)| F32Ord(w));
+
+    if let Some((_, node)) = res {
+        if node.is_acceptor {
+            node
+        } else {
+            find_matching_child_y(node, bounds)
+        }
+    } else {
+        // The parent can't be non-acceptor and have zero children.
+        panic!("This parent does not have any children ? Bug found !");
+    }
+}
+
+fn find_neighbor<'a>(from: &'a FocusNode, current_node: &'a FocusNode, offset: isize)
+    -> &'a FocusNode
+{
+    match current_node.parent() {
+
+        Some(parent) => {
+
+            let res = parent.children()
+                .filter(|n| n.line_number == (current_node.line_number as isize + offset) as usize)
+                .map(|n| (n.bounds.intersects_y(&from.bounds), n))
+                .max_by(|&(w, _)| F32Ord(w));
+
+            if let Some((_, node)) = res {
+                if node.is_acceptor {
+                    node
+                } else {
+                    find_matching_child_y(node, &from.bounds)
+                }
+            } else {
+                find_neighbor(from, parent, offset)
+            }
         }
         // No parent ?
         None => from

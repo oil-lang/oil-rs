@@ -1,4 +1,5 @@
 use focus::FocusNode;
+use super::find_neighbor;
 
 /// This function returns the next node on the bottom.
 ///
@@ -7,11 +8,11 @@ use focus::FocusNode;
 ///
 /// ```ignore
 ///     let to = focus::focus_down(from);
-///     let index = focus_buffer.original_tree_index(to);
+///     let index = focus_buffer.node_as_global_index(to);
 ///
 ///     // ...
 /// ```
 ///
 pub fn focus_down(from: &FocusNode) -> &FocusNode {
-    unimplemented!();
+    find_neighbor(from, from, 1)
 }
