@@ -284,6 +284,35 @@ fn compute_layout_height_and_position(this: &mut LayoutNode, max_height: f32)
         // Used for margin (top/bottom)
         let mut stack: Vec<&mut LayoutNode> = Vec::with_capacity(4);
 
+        macro_rules! resolve_top_bot_auto_margins {
+            ($stack:ident,
+             $current_line_height:ident) => ({
+
+                 while let Some(ref mut c) = $stack.pop() {
+
+                     let s = $current_line_height - c.dim.content.height
+                         - c.dim.padding.top - c.dim.padding.bottom
+                         - c.dim.border.top  - c.dim.border.bottom
+                         - c.dim.margin.top  - c.dim.margin.bottom;
+
+                     // We compute the margin top / bottom
+                     match (c.flags.has_margin_top_auto(), c.flags.has_margin_bottom_auto()) {
+                         (true, true) => {
+                             c.dim.margin.top    = s / 2f32;
+                             c.dim.margin.bottom = s / 2f32;
+                         }
+                         (true, false) => {
+                             c.dim.margin.top   = s;
+                         }
+                         (false, true) => {
+                             c.dim.margin.bottom  = s;
+                         }
+                         _ => ()
+                     }
+                 }
+            })
+        }
+
         macro_rules! line_return {
 
             ($stack:ident,
@@ -293,28 +322,7 @@ fn compute_layout_height_and_position(this: &mut LayoutNode, max_height: f32)
              $accumulated_line_height:ident,
              $d:ident) => ({
 
-                while let Some(ref mut c) = $stack.pop() {
-
-                    let s = $current_line_height - c.dim.content.height
-                        - c.dim.padding.top - c.dim.padding.bottom
-                        - c.dim.border.top  - c.dim.border.bottom
-                        - c.dim.margin.top  - c.dim.margin.bottom;
-
-                    // We compute the margin top / bottom
-                    match (c.flags.has_margin_top_auto(), c.flags.has_margin_bottom_auto()) {
-                        (true, true) => {
-                            c.dim.margin.top    = s / 2f32;
-                            c.dim.margin.bottom = s / 2f32;
-                        }
-                        (true, false) => {
-                            c.dim.margin.top   = s;
-                        }
-                        (false, true) => {
-                            c.dim.margin.bottom  = s;
-                        }
-                        _ => ()
-                    }
-                }
+                resolve_top_bot_auto_margins!($stack, $current_line_height);
 
                 x = $d.content.x + $d.padding.left + $d.border.left + $d.margin.left;
                 y += $current_line_height;
@@ -381,7 +389,13 @@ fn compute_layout_height_and_position(this: &mut LayoutNode, max_height: f32)
                     d);
             }
         }
+
+        // Last line: we end the line and
+        // update margin top/bot auto if needed.
+        resolve_top_bot_auto_margins!(stack, current_line_height);
+        accumulated_line_height += current_line_height;
     }
+
 
     // Finally: the height !
     this.dim.content.height =
