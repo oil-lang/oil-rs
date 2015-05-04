@@ -41,20 +41,48 @@ impl LayoutBox {
     pub fn update_from_state(&mut self, state: &StateData) {
         let mut flags = DimFlags::empty();
 
-        if state.has_property_auto(PropertyName::MARGIN_LEFT) {
+        // Auto states
+        if state.has_property_auto(PropertyName::MARGIN) {
+
             flags = flags | dim::MARGIN_LEFT_AUTO;
-        }
-
-        if state.has_property_auto(PropertyName::MARGIN_RIGHT) {
             flags = flags | dim::MARGIN_RIGHT_AUTO;
-        }
-
-        if state.has_property_auto(PropertyName::MARGIN_TOP) {
             flags = flags | dim::MARGIN_TOP_AUTO;
+            flags = flags | dim::MARGIN_BOT_AUTO;
+
+        } else {
+
+            if state.has_property_auto(PropertyName::MARGIN_LEFT) {
+                flags = flags | dim::MARGIN_LEFT_AUTO;
+            }
+
+            if state.has_property_auto(PropertyName::MARGIN_RIGHT) {
+                flags = flags | dim::MARGIN_RIGHT_AUTO;
+            }
+
+            if state.has_property_auto(PropertyName::MARGIN_TOP) {
+                flags = flags | dim::MARGIN_TOP_AUTO;
+            }
+
+            if state.has_property_auto(PropertyName::MARGIN_BOTTOM) {
+                flags = flags | dim::MARGIN_BOT_AUTO;
+            }
         }
 
-        if state.has_property_auto(PropertyName::MARGIN_BOTTOM) {
-            flags = flags | dim::MARGIN_BOT_AUTO;
+        // Expands
+        if state.has_property_expand(PropertyName::MARGIN) {
+
+            flags = flags | dim::MARGIN_LEFT_EXPAND;
+            flags = flags | dim::MARGIN_RIGHT_EXPAND;
+
+        } else {
+
+            if state.has_property_expand(PropertyName::MARGIN_LEFT) {
+                flags = flags | dim::MARGIN_LEFT_EXPAND;
+            }
+
+            if state.has_property_expand(PropertyName::MARGIN_RIGHT) {
+                flags = flags | dim::MARGIN_RIGHT_EXPAND;
+            }
         }
 
         if state.has_property_auto(PropertyName::WIDTH) {
@@ -65,14 +93,7 @@ impl LayoutBox {
             flags = flags | dim::WIDTH_EXPAND;
         }
 
-        if state.has_property_expand(PropertyName::MARGIN_LEFT) {
-            flags = flags | dim::MARGIN_LEFT_EXPAND;
-        }
-
-        if state.has_property_expand(PropertyName::MARGIN_RIGHT) {
-            flags = flags | dim::MARGIN_RIGHT_EXPAND;
-        }
-
+        // Sizes
         let padding_left = state.size_of_prop(PropertyName::PADDING_LEFT);
         let padding_right = state.size_of_prop(PropertyName::PADDING_RIGHT);
         let padding_top = state.size_of_prop(PropertyName::PADDING_TOP);
