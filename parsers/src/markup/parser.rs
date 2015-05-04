@@ -2,11 +2,12 @@
 use xml::reader::EventReader;
 use xml::reader::events::*;
 use xml::attribute::OwnedAttribute;
-use std::io::BufRead;
+use std::io::Read;
 
 use std::collections::HashMap;
 use ErrorReporter;
 use uil_shared;
+use parsing::BufferConsumer;
 
 use super::HasNodeChildren;
 use super::Library;
@@ -33,14 +34,14 @@ use uil_shared::markup::{
 };
 
 /// Parser
-pub struct Parser<E, B: BufRead> {
+pub struct Parser<E, B: Read> {
     err: E,
     parser: EventReader<B>,
 }
 
 impl<E, B> Parser<E, B>
     where E: ErrorReporter,
-          B: BufRead
+          B: Read
 {
 
     pub fn new(reporter: E, reader: B) -> Parser<E, B> {
@@ -213,6 +214,70 @@ impl<E, B> Parser<E, B>
         }
     }
 
+    fn parse_data_binding(&mut self, text: &str, parent: &mut Node) {
+        let mut buf_consumer = BufferConsumer::new(text.as_bytes());
+        loop {
+            let text = buf_consumer.consume_while(|c| c != '{').unwrap();
+            if !text.is_empty() {
+                parent.add(Some(Node::new(
+                            None,
+                            NodeType::Text(text))));
+            }
+            match buf_consumer.consume_any_char() {
+                Some('{') => {
+                    match buf_consumer.consume_any_char() {
+                        Some('{') => {
+                            let mut data_binding = buf_consumer.consume_while(|c| c != '}').unwrap();
+                            match buf_consumer.consume_any_char() {
+                                Some('}') => {
+                                    match buf_consumer.consume_any_char() {
+                                        Some('}') => {
+                                            // Yahoo! We have a correct data binding
+                                            parent.add(Some(Node::new(
+                                                        None,
+                                                        NodeType::Binding(data_binding))));
+                                        }
+                                        _ => {
+                                            let (row, col) = (0, 0);
+                                            self.err.log(format!("Warning {}:{} : Missing '}}' for data binding", row, col));
+                                            data_binding.insert(0, '{');
+                                            data_binding.insert(0, '{');
+                                            data_binding.push('}');
+                                            parent.add(Some(Node::new(
+                                                        None,
+                                                        NodeType::Text(data_binding))));
+                                            break;
+                                        },
+                                    }
+                                }
+                                _ => {
+                                    let (row, col) = (0, 0);
+                                    self.err.log(format!("Warning {}:{} : Missing '}}' for data binding", row, col));
+                                    data_binding.insert(0, '{');
+                                    data_binding.insert(0, '{');
+                                    parent.add(Some(Node::new(
+                                                None,
+                                                NodeType::Text(data_binding))));
+                                    break;
+                                },
+                            }
+                        }
+                        _ => {
+                            let (row, col) = (0, 0);
+                            self.err.log(format!("Warning {}:{} : Missing \"{{ .. }}}}\" for data binding", row, col));
+                            let text = "{".to_string();
+                            parent.add(Some(Node::new(
+                                        None,
+                                        NodeType::Text(text))));
+                            break;
+                        },
+                    }
+                }
+                _ => break,
+            }
+        }
+    }
+
     fn report_error_if_needed(&mut self,
                               parse_error: ParseError) -> ParseError
     {
@@ -302,13 +367,7 @@ impl<E, B> Parser<E, B>
                     return Ok(());
                 }
                 XmlEvent::Characters( text ) => {
-
-                    parent.add(
-                        Some(Node::new(
-                            None,
-                            NodeType::Text(text)
-                        ))
-                    );
+                    self.parse_data_binding(&text, parent);
                 }
                 XmlEvent::Error( e ) => {
 

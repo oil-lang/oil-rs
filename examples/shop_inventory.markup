@@ -1,0 +1,20 @@
+<view name="main">
+    Welcome to my shop !
+    <group class="single-line">
+        <group class="shop">
+            <group class="single-line">Shop</group>
+            <button class="item"></button>
+            <button class="item"></button>
+            <button class="item"></button>
+            <button class="item"></button>
+        </group>
+        <group class="inventory">
+            <group class="single-line">Inventory</group>
+            <button class="item"></button>
+            <button class="item"></button>
+            <button class="item"></button>
+            <button class="item"></button>
+        </group>
+    </group>
+    <button class="center btn">Quit</button>
+</view>

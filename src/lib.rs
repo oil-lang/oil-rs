@@ -1,9 +1,13 @@
+#![feature(core)]
+#![feature(std_misc)]
 #![feature(plugin)]
+#![feature(alloc)]
 #![plugin(phf_macros)]
 
 #[macro_use]
 extern crate bitflags;
 extern crate phf;
+extern crate num;
 
 #[macro_use]
 extern crate glium;
@@ -11,7 +15,6 @@ extern crate image;
 extern crate cgmath;
 extern crate uil_parsers;
 extern crate uil_shared;
-extern crate num;
 
 #[cfg(test)]
 extern crate glutin;
@@ -28,9 +31,15 @@ pub use uil_parsers::StdOutErrorReporter;
 pub use uil_parsers::EmptyErrorReporter;
 pub use self::router::Router;
 pub use self::rendering::View;
+pub use self::data_bindings::DataBinderContext;
+pub use self::data_bindings::DBStore;
 
 mod layout;
 mod router;
+mod util;
+mod focus;
+mod state;
+mod data_bindings;
 
 pub trait RenderBackbend {
     type Frame;

@@ -6,6 +6,7 @@ pub mod backend;
 pub use self::view::View;
 
 mod view;
+mod render;
 
 #[derive(Copy, Clone, Debug)]
 pub enum TextureRule {
@@ -55,6 +56,23 @@ impl RenderData {
         rule: TextureRule)
         -> RenderData
     {
+
+        let buffer = RenderData::initialize_buffer(display, resource_manager, &image);
+
+        RenderData {
+            main_texture: image.img,
+            tex_coords_buffer: buffer,
+            vertex_coords_buffer: None,
+            rule: rule,
+        }
+    }
+
+    fn initialize_buffer<R: ResourceManager>(
+        display: &Display,
+        resource_manager: &R,
+        image: &ImageData)
+        -> glium::VertexBuffer<TexCoords>
+    {
         // TODO: Handle TextureRule::Repeat
         let (iw, ih) = resource_manager.get_image_dimensions(image.img);
         let (w_m, h_m) = (iw.to_f32().unwrap(), ih.to_f32().unwrap());
@@ -63,21 +81,26 @@ impl RenderData {
         let xo = image.width  / w_m + x;
         let yo = image.height / h_m + y;
 
-        let buffer = glium::VertexBuffer::new(display,
+        glium::VertexBuffer::new(display,
             vec![
                 TexCoords { tex_coords: [ x, y ] },
                 TexCoords { tex_coords: [ x, yo] },
                 TexCoords { tex_coords: [xo, yo] },
                 TexCoords { tex_coords: [xo, y ] }
             ]
-        );
+        )
+    }
 
-        RenderData {
-            main_texture: image.img,
-            tex_coords_buffer: buffer,
-            vertex_coords_buffer: None,
-            rule: rule,
-        }
+    fn update_texture<R: ResourceManager>(
+        &mut self,
+        display: &Display,
+        rm: &R,
+        image: ImageData)
+    {
+
+        // TODO: Update existing buffer instead
+        self.tex_coords_buffer = RenderData::initialize_buffer(display, rm, &image);
+        self.main_texture = image.img;
     }
 
     fn update_coords(&mut self, display: &Display, lb: &LayoutBox) {

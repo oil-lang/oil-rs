@@ -1,0 +1,41 @@
+
+.shop {
+    width: 85px;
+    margin: 5px;
+}
+
+.inventory {
+    width: 85px;
+    margin: 5px;
+}
+
+.item {
+    height: 40px;
+    width: 40px;
+    background-image: $item.notselected;
+    background-image-rule: fit;
+}
+
+.item:focus {
+    background-image: $item.selected;
+}
+
+.single-line {
+    width: auto;
+}
+
+.center {
+    margin-left: expand;
+    margin-right: expand;
+}
+
+.btn {
+    width: 160px;
+    height: 40px;
+    background-image: $btn.notselected;
+    background-image-rule: fit;
+}
+
+.btn:focus {
+    background-image: $btn.selected;
+}

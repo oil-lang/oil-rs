@@ -3,6 +3,7 @@ use std::collections::HashSet;
 #[derive(PartialEq, Clone, Debug)]
 pub enum NodeType {
     Text(String),
+    Binding(String),
     Group,
     Button(ButtonData),
     LineInput(LineInputData),
@@ -19,6 +20,18 @@ pub struct Node {
     pub children: Vec<Node>,
     classes: Option<String>,
     pub node_type: NodeType,
+}
+
+impl Node {
+    pub fn tree_size(&self) -> usize {
+        let mut count = 1;
+
+        for kid in &self.children {
+            count += kid.tree_size();
+        }
+
+        count
+    }
 }
 
 pub type Template = Node;

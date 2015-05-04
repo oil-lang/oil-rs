@@ -4,13 +4,6 @@
     margin-right: expand;
 }
 
-.btn-play {
-    width: auto;
-    height: 40px;
-    background-image: $btn.selected;
-    background-image-rule: fit;
-}
-
 .btn {
     width: 200px;
     height: 40px;
@@ -18,9 +11,17 @@
     background-image-rule: fit;
 }
 
+.btn:focus {
+    background-image: $btn.selected;
+}
+
 .btn-one-line {
     width: auto;
     height: 40px;
     background-image: $btn.notselected;
     background-image-rule: fit;
+}
+
+.btn-one-line:focus {
+    background-image: $btn.selected;
 }

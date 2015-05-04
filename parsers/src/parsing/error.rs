@@ -1,6 +1,6 @@
 use std::fmt;
 
-
+#[derive(Debug)]
 pub struct Error {
     row: usize,
     col: usize,

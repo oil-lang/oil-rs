@@ -9,9 +9,9 @@ mod util;
 fn main() {
 
     util::run_example(
-        "uil - menu example",
-        "./examples/menu.markup",
-        "./examples/menu.deps",
-        "./examples/menu.style"
+        "uil - list example",
+        "./examples/list.markup",
+        "./examples/list.deps",
+        "./examples/list.style"
     );
 }

@@ -1,8 +1,11 @@
+#![allow(dead_code)]
+use super::Rect;
+
 /// Dimensions for the box model.
 ///
 /// This code follows the css box model
 /// in naming and conventions. (all sizes are in pixels)
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct Dimensions {
     // Position of the content area relative to the viewport origin
     pub content: Rect,
@@ -12,14 +15,6 @@ pub struct Dimensions {
 }
 
 #[derive(Copy, Clone, Default)]
-pub struct Rect {
-    pub x: f32,
-    pub y: f32,
-    pub width: f32,
-    pub height: f32,
-}
-
-#[derive(Copy, Clone)]
 pub struct EdgeSizes {
     pub left: f32,
     pub right: f32,
@@ -28,6 +23,7 @@ pub struct EdgeSizes {
 }
 
 bitflags! {
+    #[derive(Default)]
     flags DimFlags: u16 {
         // A text node is WIDTH_FIXED,
         // A node with a style fixed width is naturally WIDTH_FIXED
@@ -49,14 +45,25 @@ bitflags! {
                                     | MARGIN_RIGHT_AUTO.bits,
         const MARGIN_Y_AUTO         = MARGIN_TOP_AUTO.bits
                                     | MARGIN_BOT_AUTO.bits,
+        const MARGIN_X_EXPAND       = MARGIN_LEFT_EXPAND.bits
+                                    | MARGIN_RIGHT_EXPAND.bits,
     }
 }
 
 impl DimFlags {
 
     #[inline]
-    pub fn is_auto(&self) -> bool {
+    pub fn is_x_auto(&self) -> bool {
         self.intersects(WIDTH_AUTO | MARGIN_X_AUTO)
+    }
+
+    #[inline]
+    pub fn is_x_expand(&self) -> bool {
+        self.intersects(WIDTH_EXPAND | MARGIN_X_EXPAND)
+    }
+
+    pub fn is_new_line_forced(&self) -> bool {
+        self.is_x_auto() || self.is_x_expand()
     }
 
     #[inline]
