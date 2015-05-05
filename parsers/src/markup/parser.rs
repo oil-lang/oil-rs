@@ -6,7 +6,7 @@ use std::io::Read;
 
 use std::collections::HashMap;
 use ErrorReporter;
-use uil_shared;
+use oil_shared;
 use parsing::BufferConsumer;
 
 use super::HasNodeChildren;
@@ -26,7 +26,7 @@ use super::PROGRESS_BAR_TAG;
 use super::REPEAT_TAG;
 use super::MAIN_VIEW_NAME;
 
-use uil_shared::markup::{
+use oil_shared::markup::{
     Node,
     View,
     Template,
@@ -88,7 +88,7 @@ impl<E, B> Parser<E, B>
 
     fn parse_view(&mut self) -> Result<View, ParseError>
     {
-        let mut view = uil_shared::markup::new_view(None);
+        let mut view = oil_shared::markup::new_view(None);
 
         try!(self.parse_loop(VIEW_TAG, &mut view));
         Ok(view)
@@ -96,7 +96,7 @@ impl<E, B> Parser<E, B>
 
     fn parse_template_decl(&mut self) -> Result<Template, ParseError>
     {
-        let mut template = uil_shared::markup::new_template(None);
+        let mut template = oil_shared::markup::new_template(None);
 
         try!(self.parse_loop(TEMPLATE_TAG, &mut template));
         Ok(template)

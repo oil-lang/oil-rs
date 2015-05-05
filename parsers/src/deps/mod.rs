@@ -7,7 +7,7 @@ use std::path::Path;
 use std::fs::File;
 
 use report::ErrorReporter;
-use uil_shared::deps::StyleDefinitions;
+use oil_shared::deps::StyleDefinitions;
 
 
 /// Convenient function to parse a style from a BufRead.

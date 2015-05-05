@@ -31,11 +31,11 @@ image = "*"
 cgmath = "*"
 num = "*"
 
-[dependencies.uil_parsers]
+[dependencies.oil_parsers]
 path = "./parsers"
 version = "=0.1.0"
 
-[dependencies.uil_shared]
+[dependencies.oil_shared]
 path = "./shared"
 version = "=0.1.0"
 

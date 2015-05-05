@@ -13,8 +13,8 @@ extern crate num;
 extern crate glium;
 extern crate image;
 extern crate cgmath;
-extern crate uil_parsers;
-extern crate uil_shared;
+extern crate oil_parsers;
+extern crate oil_shared;
 
 #[cfg(test)]
 extern crate glutin;
@@ -26,9 +26,9 @@ pub mod rendering;
 pub mod resource;
 
 // Reexport
-pub use uil_parsers::ErrorReporter;
-pub use uil_parsers::StdOutErrorReporter;
-pub use uil_parsers::EmptyErrorReporter;
+pub use oil_parsers::ErrorReporter;
+pub use oil_parsers::StdOutErrorReporter;
+pub use oil_parsers::EmptyErrorReporter;
 pub use self::router::Router;
 pub use self::rendering::View;
 pub use self::data_bindings::DataBinderContext;

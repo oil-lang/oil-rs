@@ -7,7 +7,7 @@ use glium::Display;
 use markup::MAIN_VIEW_NAME;
 use markup::Library;
 use resource::ResourceManager;
-use uil_shared::style::Stylesheet;
+use oil_shared::style::Stylesheet;
 use RenderBackbend;
 use View;
 use Viewport;

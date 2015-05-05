@@ -15,6 +15,6 @@ phf = "*"
 phf_macros = "*"
 num = "*"
 
-[dependencies.uil_shared]
+[dependencies.oil_shared]
 path = "../shared"
 version = "=0.1.0"

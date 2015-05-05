@@ -9,9 +9,6 @@ use state::StateBuffer;
 mod repeat_node;
 mod simple_node;
 
-
-
-
 pub struct LayoutBuffer(FlatTree<LayoutBox>);
 pub type LayoutNode = TreeNode<LayoutBox>;
 

@@ -2,7 +2,7 @@
 use std::collections::HashMap;
 use std::mem;
 
-use uil_shared::markup::{Node, NodeType, TemplateData, View, Template};
+use oil_shared::markup::{Node, NodeType, TemplateData, View, Template};
 use ErrorReporter;
 
 // Library

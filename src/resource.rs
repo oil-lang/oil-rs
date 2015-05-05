@@ -2,13 +2,13 @@ use std::path::Path;
 use glium::{self, Display};
 use glium::texture::CompressedTexture2d;
 use image::{self, GenericImage};
-use uil_shared::resource::new_resource_id;
+use oil_shared::resource::new_resource_id;
 
 
 // Reexport
 
-pub use uil_shared::resource::ResourceId;
-pub use uil_shared::resource::BasicResourceManager;
+pub use oil_shared::resource::ResourceId;
+pub use oil_shared::resource::BasicResourceManager;
 
 // ======================================== //
 //                INTERFACE                 //

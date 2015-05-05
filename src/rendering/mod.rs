@@ -23,7 +23,7 @@ use glium;
 use glium::Display;
 use image::{GenericImage};
 
-use uil_shared::asset::ImageData;
+use oil_shared::asset::ImageData;
 use layout::LayoutBox;
 use resource::{ResourceManager, ResourceId};
 

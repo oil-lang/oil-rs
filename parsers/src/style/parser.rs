@@ -1,16 +1,16 @@
 
 use report::ErrorReporter;
-use uil_shared::deps::StyleDefinitions;
-use uil_shared::deps::Constructor;
-use uil_shared::asset;
+use oil_shared::deps::StyleDefinitions;
+use oil_shared::deps::Constructor;
+use oil_shared::asset;
 use std::io::BufRead;
 use std::ops::Deref;
 use parsing::Error;
 use parsing::BufferConsumer;
-use uil_shared::resource::BasicResourceManager;
+use oil_shared::resource::BasicResourceManager;
 use phf;
 
-use uil_shared::style::{
+use oil_shared::style::{
     Value,
     KwValue,
     Rule,
