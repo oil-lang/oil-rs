@@ -71,7 +71,7 @@ fn converter(_: &Node) -> Option<LayoutBox> {
 fn compute_layout_defaut_width(this: &mut LayoutNode, space_available_for_self: f32) -> f32
 {
     // Compute the extra part to remove
-    let o = this.dim.padding.left
+    let mut o = this.dim.padding.left
         + this.dim.padding.right
         + this.dim.margin.left
         + this.dim.margin.right
@@ -136,7 +136,8 @@ fn compute_layout_defaut_width(this: &mut LayoutNode, space_available_for_self: 
                     if line_space_available == space_available {
 
                         // This might be surprising, but here we want to
-                        // transmit back to our parent the child constraint.
+                        // propagate back through the parent hiearchy the child constraint.
+                        sum += space_eaten;
                         if sum > max {
                             max = sum;
                         }
@@ -176,19 +177,22 @@ fn compute_layout_defaut_width(this: &mut LayoutNode, space_available_for_self: 
     };
 
     // Compute the free space for margin in expand mode:
-    let s = space_available - this.dim.content.width;
+    let s = space_available_for_self - o - this.dim.content.width;
 
     // We can also compute the margins (left/right) if they're auto:
     match (this.flags.has_margin_right_expand(), this.flags.has_margin_left_expand()) {
         (true, true) => {
             this.dim.margin.left  = s / 2f32;
             this.dim.margin.right = s / 2f32;
+            o += s;
         }
         (true, false) => {
             this.dim.margin.left = s;
+            o += s;
         }
         (false, true) => {
             this.dim.margin.right = s;
+            o += s;
         }
         _ => ()
     }
@@ -205,11 +209,6 @@ fn compute_layout_defaut_width(this: &mut LayoutNode, space_available_for_self: 
 /// It should be called after compute_layout_default_width
 fn compute_layout_auto_width(this: &mut LayoutNode, space_available: f32)
 {
-    for child in this.children_mut() {
-
-        compute_layout_auto_width(child, this.dim.content.width);
-    }
-
     // Resolve auto width for this.
     if this.flags.has_width_auto() {
         let o = this.dim.padding.left
@@ -220,6 +219,11 @@ fn compute_layout_auto_width(this: &mut LayoutNode, space_available: f32)
             + this.dim.border.right;
 
         this.dim.content.width = space_available - o;
+    }
+
+    for child in this.children_mut() {
+
+        compute_layout_auto_width(child, this.dim.content.width);
     }
 
     // Compute the free space for margin in auto mode:
