@@ -7,6 +7,7 @@ use focus::{self, FocusBuffer};
 use super::render::RenderBuffer;
 use uil_shared::style::SelectorState;
 use uil_shared::style::Stylesheet;
+use data_bindings::{DataBindingBuffer,DataBinderContext};
 use markup;
 use RenderBackbend;
 use Viewport;
@@ -18,6 +19,7 @@ pub struct View {
     focus_node: isize,
     layout_data: LayoutBuffer,
     render_data: RenderBuffer,
+    data_binding_buffer: DataBindingBuffer,
 }
 
 impl View {
@@ -34,6 +36,7 @@ impl View {
         let focus_buffer = FocusBuffer::new(view);
         let layout_buffer = LayoutBuffer::new(view);
         let render_buffer = RenderBuffer::new(display, resource_manager, &state_buffer);
+        let data_binding_buffer = DataBindingBuffer::new(view);
 
         View {
             dirty_flags: true,
@@ -42,6 +45,7 @@ impl View {
             focus_node: focus_buffer.first_acceptor_index(),
             focus_data: focus_buffer,
             state_data: state_buffer,
+            data_binding_buffer: data_binding_buffer,
         }
     }
 
@@ -49,10 +53,12 @@ impl View {
         &mut self,
         display: &Display,
         resource_manager: &R,
-        vp: Viewport)
+        vp: Viewport,
+        context: &DataBinderContext)
         where R: ResourceManager
     {
-        if self.dirty_flags {
+        let updated_bindings = self.data_binding_buffer.update(context, &mut self.layout_data);
+        if self.dirty_flags || updated_bindings {
             self.set_state_for_focused_node();
             self.layout_data.update_from_state(&self.state_data);
             self.layout_data.compute_layout(vp.width, vp.height);

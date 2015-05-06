@@ -55,6 +55,7 @@ pub fn run_example(title: &str, markup_path: &str, deps_path: &str, style_path: 
         library,
         &stylesheet
     );
+    let data_binder_context = uil::DataBinderContext::default();
 
     //////////////////////////////////////////////////////////////////////////////
     // main loop (modified example from glium lib)
@@ -64,7 +65,7 @@ pub fn run_example(title: &str, markup_path: &str, deps_path: &str, style_path: 
         let vp = uil::Viewport { width: width as f32, height: height as f32 };
 
         // Update views
-        router.update(&display, &resource_manager, vp);
+        router.update(&display, &resource_manager, vp, &data_binder_context);
 
         // Render views
         let mut f = renderer.prepare_frame(vp);
