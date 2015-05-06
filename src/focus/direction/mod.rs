@@ -8,6 +8,42 @@ pub use self::down::focus_down;
 pub use self::left::focus_left;
 pub use self::right::focus_right;
 
+
+#[derive(Copy, Clone, Default)]
+pub struct Cursor {
+    x: f32,
+    y: f32
+}
+
+pub enum Axis {
+    X,
+    Y
+}
+
+impl Cursor {
+
+    pub fn new(node: &FocusNode) -> Cursor {
+        Cursor {
+            x: node.bounds.x + node.bounds.width / 2.0,
+            y: node.bounds.y + node.bounds.height / 2.0,
+        }
+    }
+
+    pub fn from(previous: Cursor, node: &FocusNode, axis: Axis) -> Cursor {
+        match axis {
+            Axis::X => Cursor {
+                x: node.bounds.x + node.bounds.width / 2.0,
+                y: previous.y,
+            },
+            Axis::Y => Cursor {
+                x: previous.x,
+                y: node.bounds.y + node.bounds.height / 2.0,
+            },
+        }
+    }
+}
+
+
 mod down;
 mod up;
 mod right;

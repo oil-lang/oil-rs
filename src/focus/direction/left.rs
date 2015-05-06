@@ -1,4 +1,5 @@
 use focus::FocusNode;
+use super::Cursor;
 use util::ref_eq;
 use super::find_parent_or_neighbour;
 
@@ -14,7 +15,7 @@ use super::find_parent_or_neighbour;
 ///     // ...
 /// ```
 ///
-pub fn focus_left(from: &FocusNode) -> &FocusNode {
+pub fn focus_left(from: &FocusNode, cursor: Cursor) -> &FocusNode {
     assert_eq!(from.is_acceptor, true);
     find_parent_or_neighbour(from, from, &from.bounds, -0.1, find_left_neighbour)
 }
