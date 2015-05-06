@@ -2,7 +2,8 @@
 use std::collections::HashMap;
 use std::mem;
 
-use uil_shared::markup::{Node, NodeType, TemplateData, View, Template};
+use uil_shared::markup::{Node, NodeType, TemplateData, View, Template, UnlinkedRepeatData};
+use uil_shared::markup::RepeatBindingData;
 use ErrorReporter;
 
 // Library
@@ -66,40 +67,68 @@ impl<E> Library<E>
                                   templates: &HashMap<String, Template>,
                                   node: &mut Node)
     {
-        for child in node.children.iter_mut() {
-
-            let mut is_empty = None;
-            let test = match child.node_type {
-                NodeType::Template(TemplateData { ref path }) => {
-                    is_empty = Some(path.clone());
-                    templates.get(path)
-                }
-                _ => None
-            };
-
-            match test {
-                Some(found) => {
-                    mem::swap(
-                        child,
-                        &mut Node::from_template(
-                            found,
-                            NodeType::Group
-                        )
-                    );
-                }
-                // TODO: Warn if the template name is not valid
-                //       (not a data-bindings)
-                None => match is_empty {
-                    Some(name) => err.log(
-                        format!("Warning `{}` template name not found", name)
-                    ),
-                    None => ()
+        let test = match node.node_type {
+            NodeType::Template(TemplateData { ref path }) => {
+                match templates.get(path) {
+                    None => {
+                        err.log(format!(
+                                "Warning `{}` template name not found", path));
+                        None
+                    }
+                    Some(found) => Some(Node::from_template(found, NodeType::Group)),
                 }
             }
+            NodeType::UnlinkedRepeat(UnlinkedRepeatData{ref mut iter, ref template_name}) => {
+                match templates.get(template_name) {
+                    None => {
+                        err.log(format!(
+                                "Warning `{}` template name not found for repeat node",
+                                template_name));
+                        None
+                    }
+                    Some(found) => {
+                        let mut child = Node::from_template(found, NodeType::Group);
+                        replace_iterator_name(iter, &mut child);
+                        let mut new_node = Node::new(None, NodeType::Repeat(mem::replace(iter, String::new())));
+                        new_node.children.push(child);
+                        Some(new_node)
+                    },
+                }
+            }
+            _ => None
+        };
+
+        if let Some(new_node) = test {
+            *node = new_node;
         }
 
         for child in node.children.iter_mut() {
             Library::<E>::resolve_templates_for_node(err, templates, child);
         }
+    }
+}
+
+fn replace_iterator_name(iterator: &str, node: &mut Node) {
+    for child in node.children.iter_mut() {
+        let new_node = match child.node_type {
+            NodeType::Binding(ref mut name) => {
+                if name.starts_with(iterator) && name.len() > iterator.len() &&
+                    name.char_at(iterator.len()) == '.' {
+                        let key = name[(iterator.len() + 1)..].to_string();
+                        Some(Node::new(None, NodeType::RepeatBinding(RepeatBindingData{
+                            iter: iterator.to_string(),
+                            key: key,
+                        })))
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        };
+
+        if let Some(new_node) = new_node {
+            *child = new_node;
+        }
+        replace_iterator_name(iterator, child);
     }
 }

@@ -1,11 +1,18 @@
 <view name="main">
-    Welcome {{player.name}} to UIL!
-    <group class="btns-group">
-        <button class="btn-one-line" goto-view="play">Play</button>
-        <button class="btn-one-line" action="quit">Options</button>
-        <button class="btn" action="quit">Foo</button>
-        <button class="btn" action="quit">Bar</button>
-        <button class="btn-one-line" action="quit">More Options</button>
-        <button class="btn-one-line" action="quit">Quit</button>
+    <group>
+        Welcome {{player.name}} to UIL!
+        <group class="btns-group">
+            <button class="btn-one-line" goto-view="play">Play</button>
+            <button class="btn-one-line" action="quit">Options</button>
+            <button class="btn" action="quit">Foo</button>
+            <button class="btn" action="quit">Bar</button>
+            <button class="btn-one-line" action="quit">More Options</button>
+            <button class="btn-one-line" action="quit">Quit</button>
+        </group>
+        <repeat iter="player" template-name="friend" />
     </group>
 </view>
+
+<template name="friend">
+    {{player.name}} is {{player.status}}
+</template>

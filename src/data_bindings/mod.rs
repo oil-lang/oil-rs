@@ -1,3 +1,5 @@
+pub use self::buffer::DataBindingBuffer;
+
 use std::rc::{Rc,Weak};
 use std::collections::HashMap;
 use std::collections::hash_state::HashState;
@@ -7,6 +9,8 @@ use std::error::Error;
 use router::Router;
 
 use self::DataBindingError::*;
+
+mod buffer;
 
 pub type IteratingClosure<'b> = for <'a> FnMut(&mut Iterator<Item=&'a mut DBStore>) + 'b;
 
@@ -291,6 +295,13 @@ impl DataBinderScope {
             Some(it) => it.compare_and_update(key, output),
         }
     }
+
+    fn iterator_len(&self, iterator: &str) -> BindingResult<u32> {
+        match self.iterators.get(iterator) {
+            None => Err(DataBindingError::IteratorNotFound(format!(": {}", iterator))),
+            Some(it) => it.len(),
+        }
+    }
 }
 
 #[derive(Default)]
@@ -395,6 +406,7 @@ pub trait DBCLookup {
     fn set_value(&mut self, k: &str, value: StoreValue);
     fn iter(&self, k: &str, closure: &mut IteratingClosure) -> bool;
     fn compare_and_update(&self, iterator: &str, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool>;
+    fn iterator_len(&self, iterator: &str) -> BindingResult<u32>;
 }
 
 impl DBCLookup for DataBinderContext {
@@ -450,6 +462,17 @@ impl DBCLookup for DataBinderContext {
         }
         self.global.compare_and_update(iterator, k, output)
     }
+
+    fn iterator_len(&self, iterator: &str) -> BindingResult<u32> {
+        if let Some(view_scope) = self.views.get(&self.current_view) {
+            match view_scope.iterator_len(iterator) {
+                Err(IteratorNotFound(..)) => {} // Normal operation
+                Err(e) => return Err(e),
+                Ok(out) => return Ok(out),
+            }
+        }
+        self.global.iterator_len(iterator)
+    }
 }
 
 #[derive(Debug)]
@@ -485,6 +508,7 @@ impl <T: DBStore> Proxy<T> {
 trait IsRepeatable {
     fn iter(&self, closure: &mut IteratingClosure) -> bool;
     fn compare_and_update(&self, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool>;
+    fn len(&self) -> BindingResult<u32>;
 }
 
 pub struct RepeatProxy<T> {
@@ -520,6 +544,15 @@ where T: DBStore + 'static,
         };
         let guard = reference.borrow_mut();
         (*guard).compare_and_update(k, output)
+    }
+
+    fn len(&self) -> BindingResult<u32> {
+        let reference = match self.cell.upgrade() {
+            Some(r) => r,
+            None => return Err(DataBindingError::DanglingReference("".to_string())),
+        };
+        let guard = reference.borrow();
+        Ok((*guard).len() as u32)
     }
 }
 

@@ -227,11 +227,13 @@ impl<E, B> Parser<E, B>
                 Some('{') => {
                     match buf_consumer.consume_any_char() {
                         Some('{') => {
+                            buf_consumer.consume_any_char();    // XXX: If I don't do this the data binding will contain one '{'
                             let mut data_binding = buf_consumer.consume_while(|c| c != '}').unwrap();
                             match buf_consumer.consume_any_char() {
                                 Some('}') => {
                                     match buf_consumer.consume_any_char() {
                                         Some('}') => {
+                                            buf_consumer.consume_any_char();    // XXX: If I don't do this the text after data binding will contain one '}'
                                             // Yahoo! We have a correct data binding
                                             parent.add(Some(Node::new(
                                                         None,

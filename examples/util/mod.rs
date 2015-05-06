@@ -18,7 +18,9 @@ pub fn run_example(title: &str, markup_path: &str, deps_path: &str, style_path: 
     let library = {
         let file = File::open(&Path::new(markup_path)).unwrap();
         let reader = BufReader::new(file);
-        uil::markup::parse(uil::StdOutErrorReporter, reader)
+        let mut unlinked = uil::markup::parse(uil::StdOutErrorReporter, reader);
+        unlinked.resolve_templates();
+        unlinked
     };
 
     let defs = uil::deps::parse_file(uil::StdOutErrorReporter, deps_path);

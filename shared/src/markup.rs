@@ -4,12 +4,14 @@ use std::collections::HashSet;
 pub enum NodeType {
     Text(String),
     Binding(String),
+    RepeatBinding(RepeatBindingData),
     Group,
     Button(ButtonData),
     LineInput(LineInputData),
     ProgressBar(ProgressBarData),
     Template(TemplateData),
-    Repeat(RepeatData),
+    UnlinkedRepeat(UnlinkedRepeatData),
+    Repeat(String),
     // Special Root Nodes
     RootView,
     RootTemplate
@@ -108,7 +110,14 @@ pub struct TemplateData {
 
 // ------------------------------------------------- Repeat tag
 #[derive(PartialEq, Clone, Debug)]
-pub struct RepeatData {
+pub struct UnlinkedRepeatData {
     pub template_name: String,
     pub iter: String,
+}
+
+// ------------------------------------------------- Repeat binding tag
+#[derive(PartialEq, Clone, Debug)]
+pub struct RepeatBindingData {
+    pub iter: String,
+    pub key: String,
 }

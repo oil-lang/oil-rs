@@ -13,7 +13,7 @@ use uil_shared::markup::{
     LineInputData,
     ProgressBarData,
     TemplateData,
-    RepeatData
+    UnlinkedRepeatData
 };
 
 
@@ -83,7 +83,7 @@ pub fn parse_repeat(attributes: &Vec<OwnedAttribute>) -> ResOrError {
            lookup_name("iter", attributes))
     {
         (Some(name), Some(iter)) => {
-            Ok(NodeType::Repeat(RepeatData {
+            Ok(NodeType::UnlinkedRepeat(UnlinkedRepeatData {
                 template_name: name,
                 iter: iter
             }))

@@ -9,7 +9,8 @@ pub use uil_shared::markup::{
     LineInputData,
     ProgressBarData,
     TemplateData,
-    RepeatData
+    UnlinkedRepeatData,
+    RepeatBindingData,
 };
 
 pub use uil_parsers::markup::Library;
