@@ -2,16 +2,16 @@ use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 
 use util::BufferFromTree;
-use uil_shared::asset::ImageData;
-use uil_shared::properties::PropertyName;
-use uil_shared::properties::STYLE_PROPERTIES;
-use uil_shared::style::Value;
-use uil_shared::style::KwValue;
-use uil_shared::style::Stylesheet;
-use uil_shared::style::SelectorState;
-use uil_shared::style::Unit;
-use uil_shared::style::Rule;
-use uil_shared::markup::Node;
+use oil_shared::asset::ImageData;
+use oil_shared::properties::PropertyName;
+use oil_shared::properties::STYLE_PROPERTIES;
+use oil_shared::style::Value;
+use oil_shared::style::KwValue;
+use oil_shared::style::Stylesheet;
+use oil_shared::style::SelectorState;
+use oil_shared::style::Unit;
+use oil_shared::style::Rule;
+use oil_shared::markup::Node;
 use rendering::TextureRule;
 
 
@@ -203,9 +203,9 @@ impl StateData {
     }
 
     pub fn size_of_prop(&self, prop_name: PropertyName) -> f32 {
-        use uil_shared::properties::PropertyName::MARGIN;
-        use uil_shared::properties::PropertyName::PADDING;
-        use uil_shared::properties::PropertyName::BORDER;
+        use oil_shared::properties::PropertyName::MARGIN;
+        use oil_shared::properties::PropertyName::PADDING;
+        use oil_shared::properties::PropertyName::BORDER;
 
         match prop_name {
             PropertyName::LEFT

@@ -5,25 +5,25 @@ use std::path::Path;
 use std::thread;
 
 use glium::DisplayBuild;
-use uil::RenderBackbend;
-use uil;
+use oil::RenderBackbend;
+use oil;
 use glutin;
 use clock_ticks;
 
 pub fn run_example(title: &str, markup_path: &str, deps_path: &str, style_path: &str) {
 
     //////////////////////////////////////////////////////////////////////////////
-    // uil related code
+    // oil related code
     //
-    let library = {
+    let mut library = {
         let file = File::open(&Path::new(markup_path)).unwrap();
         let reader = BufReader::new(file);
-        let mut unlinked = uil::markup::parse(uil::StdOutErrorReporter, reader);
-        unlinked.resolve_templates();
-        unlinked
+        oil::markup::parse(oil::StdOutErrorReporter, reader)
     };
 
-    let defs = uil::deps::parse_file(uil::StdOutErrorReporter, deps_path);
+    library.resolve_templates();
+
+    let defs = oil::deps::parse_file(oil::StdOutErrorReporter, deps_path);
 
     //////////////////////////////////////////////////////////////////////////////
     // glium display start
@@ -35,34 +35,34 @@ pub fn run_example(title: &str, markup_path: &str, deps_path: &str, style_path: 
         .unwrap();
 
     //////////////////////////////////////////////////////////////////////////////
-    // uil resource manager and final tree
+    // oil resource manager and final tree
     //
 
-    let mut resource_manager = uil::resource::create_resource_manager(&display);
+    let mut resource_manager = oil::resource::create_resource_manager(&display);
 
     let stylesheet = {
         let file = File::open(&Path::new(style_path)).unwrap();
         let reader = BufReader::new(file);
-        uil::style::parse(uil::StdOutErrorReporter, reader, &defs, &mut resource_manager)
+        oil::style::parse(oil::StdOutErrorReporter, reader, &defs, &mut resource_manager)
     };
 
     let (width, height) = display.get_window().unwrap().get_inner_size().unwrap();
 
-    let mut renderer = uil::rendering::backend::GliumRenderer::new(&display);
-    let mut router = uil::Router::from_library_and_stylesheet(
+    let mut renderer = oil::rendering::backend::GliumRenderer::new(&display);
+    let mut router = oil::Router::from_library_and_stylesheet(
         &display,
         &resource_manager,
         library,
         &stylesheet
     );
-    let data_binder_context = uil::DataBinderContext::default();
+    let data_binder_context = oil::DataBinderContext::default();
 
     //////////////////////////////////////////////////////////////////////////////
     // main loop (modified example from glium lib)
     //
     start_loop(|| {
 
-        let vp = uil::Viewport { width: width as f32, height: height as f32 };
+        let vp = oil::Viewport { width: width as f32, height: height as f32 };
 
         // Update views
         router.update(&display, &resource_manager, vp, &data_binder_context);

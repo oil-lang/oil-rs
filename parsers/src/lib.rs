@@ -8,7 +8,7 @@ extern crate xml;
 extern crate phf;
 extern crate num;
 
-extern crate uil_shared;
+extern crate oil_shared;
 
 pub mod style;
 pub mod markup;

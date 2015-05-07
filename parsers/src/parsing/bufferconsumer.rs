@@ -101,7 +101,6 @@ impl<B> BufferConsumer<B>
                     } else {
                         self.col += 1;
                     }
-                    self.tmp_char = Some(c);
                     Some(c)
                 }
                 None => None
@@ -114,11 +113,12 @@ impl<B> BufferConsumer<B>
     }
 
     pub fn look_next_char(&mut self) -> Option<char> {
+
         if self.tmp_char.is_none() {
-            self.consume_any_char()
-        } else {
-            self.tmp_char
+            self.tmp_char = self.consume_any_char();
         }
+
+        self.tmp_char
     }
 
     pub fn error(&self, msg: &str) -> Error {
@@ -160,5 +160,24 @@ fn valid_path_char(c: char) -> bool {
     match c {
         '.' => true,
         _ => valid_identifier_char(c)
+    }
+}
+
+// ======================================== //
+//                   TESTS                  //
+// ======================================== //
+
+#[cfg(test)]
+mod test {
+    use super::BufferConsumer;
+
+    #[test]
+    fn consume_any_char_should_consume() {
+        let text = "abcd";
+        let mut consumer = BufferConsumer::new(text.as_bytes());
+        assert_eq!(consumer.consume_any_char(), Some('a'));
+        assert_eq!(consumer.consume_any_char(), Some('b'));
+        assert_eq!(consumer.consume_any_char(), Some('c'));
+        assert_eq!(consumer.consume_any_char(), Some('d'));
     }
 }

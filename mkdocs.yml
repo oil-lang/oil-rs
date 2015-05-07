@@ -1,0 +1,7 @@
+site_name: Oil
+pages:
+- ['index.md', 'Getting Started']
+- ['languages_reference/intro.md', 'Languages Reference', 'Design']
+- ['languages_reference/tag_list.md', 'Languages Reference', 'Markup tags']
+- ['languages_reference/properties_list.md', 'Languages Reference', 'Style properties']
+- ['action.md', 'Actions']

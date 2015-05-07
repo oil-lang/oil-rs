@@ -98,9 +98,9 @@ mod test {
     use markup::{self, Node};
     use style;
     use state::StateBuffer;
-    use uil_shared::style::Stylesheet;
-    use uil_shared::deps::{Constructor, StyleDefinitions};
-    use uil_parsers::{StdOutErrorReporter};
+    use oil_shared::style::Stylesheet;
+    use oil_shared::deps::{Constructor, StyleDefinitions};
+    use oil_parsers::{StdOutErrorReporter};
     use resource::{self, ResourceManager};
 
     fn stylesheet<R: ResourceManager>(st: &str, r: &mut R) -> Stylesheet {

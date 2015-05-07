@@ -1,17 +1,19 @@
 
 [package]
-name = "uil"
-version = "0.0.3"
-authors = ["Nemikolh <joan.varvenne@gmail.com>"]
-homepage = "http://uil-lang.github.io/"
-repository = "https://github.com/uil-lang/uil-rs"
+name = "oil"
+version = "0.1.0"
+authors = ["Nemikolh <joan.varvenne@gmail.com>", "Vaelden <maugan.villatel@gmail.com>"]
+homepage = "http://oil-lang.github.io/"
+repository = "https://github.com/oil-lang/oil-rs"
 readme = "README.md"
 license = "MIT"
 keywords = ["ui", "opengl", "gamedev"]
 description = "User interface library oriented for games. It includes user interface languages."
 exclude = [
     ".travis.yml",
-    "examples/*"
+    "examples/*",
+    "docs/*",
+    "mkdocs.yml"
 ]
 
 [profile.release]
@@ -29,13 +31,13 @@ image = "*"
 cgmath = "*"
 num = "*"
 
-[dependencies.uil_parsers]
+[dependencies.oil_parsers]
 path = "./parsers"
-version = "=0.0.3"
+version = "=0.1.0"
 
-[dependencies.uil_shared]
+[dependencies.oil_shared]
 path = "./shared"
-version = "=0.0.3"
+version = "=0.1.0"
 
 [dependencies.glium]
 version = "*"

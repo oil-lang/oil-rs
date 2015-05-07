@@ -2,9 +2,9 @@
 use std::io::BufRead;
 
 use report::ErrorReporter;
-use uil_shared::deps::StyleDefinitions;
-use uil_shared::resource::BasicResourceManager;
-use uil_shared::style::Stylesheet;
+use oil_shared::deps::StyleDefinitions;
+use oil_shared::resource::BasicResourceManager;
+use oil_shared::style::Stylesheet;
 
 
 mod parser;

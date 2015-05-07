@@ -4,7 +4,7 @@ use self::parser::Parser;
 use xml::attribute::OwnedAttribute;
 use std::io::BufRead;
 use ErrorReporter;
-use uil_shared::markup::Node;
+use oil_shared::markup::Node;
 
 pub use self::lib::Library;
 
@@ -29,8 +29,8 @@ mod lib;
 /// # Example:
 ///
 /// ```
-/// use uil_parsers::StdOutErrorReporter;
-/// use uil_parsers::markup;
+/// use oil_parsers::StdOutErrorReporter;
+/// use oil_parsers::markup;
 ///
 /// let reader = std::io::BufReader::new(
 ///     "<view name=\"toto\">\

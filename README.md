@@ -1,4 +1,4 @@
-# uil-rs [![Build Status](https://travis-ci.org/uil-lang/uil-rs.svg?branch=master)](https://travis-ci.org/uil-lang/uil-rs)
+# oil-rs [![Build Status](https://travis-ci.org/oil-lang/oil-rs.svg?branch=master)](https://travis-ci.org/oil-lang/oil-rs)
 
 Uil is a graphical user interface library for Rust with video games in mind.
 It is designed around three languages to describe your user interface:
@@ -21,7 +21,7 @@ Okay, now a few more things to keep in mind before getting started:
   It essentially means some feature might be set as lower/higher priority because of the main project.
 * Contributions are welcomed !
 
-## [Getting-started](http://uil-lang.github.io)
+## [Getting-started](http://oil-lang.github.io)
 
 ```toml
 [dependencies]

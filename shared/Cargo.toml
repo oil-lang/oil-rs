@@ -1,13 +1,13 @@
 
 [package]
-name = "uil_shared"
-version = "0.0.3"
-authors = ["Nemikolh <joan.varvenne@gmail.com>"]
-homepage = "http://uil-lang.github.io/"
-repository = "https://github.com/uil-lang/uil-rs"
+name = "oil_shared"
+version = "0.1.0"
+authors = ["Nemikolh <joan.varvenne@gmail.com>", "Vaelden <maugan.villatel@gmail.com>"]
+homepage = "http://oil-lang.github.io/"
+repository = "https://github.com/oil-lang/oil-rs"
 license = "MIT"
 keywords = ["ui", "parser"]
-description = "Support code shared by uil libraries."
+description = "Support code shared by oil libraries."
 
 [dependencies]
 phf = "*"

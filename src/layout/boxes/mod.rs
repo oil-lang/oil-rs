@@ -1,6 +1,6 @@
 use super::dim::{self, DimFlags};
 use super::{Dimensions, EdgeSizes, Rect};
-use uil_shared::properties::PropertyName;
+use oil_shared::properties::PropertyName;
 use state::StateData;
 
 /// Reexport

@@ -2,8 +2,9 @@
 use std::collections::HashMap;
 use std::mem;
 
-use uil_shared::markup::{Node, NodeType, TemplateData, View, Template, UnlinkedRepeatData};
-use uil_shared::markup::RepeatBindingData;
+use oil_shared::markup::{
+	Node, NodeType, TemplateData, View, Template, UnlinkedRepeatData, RepeatBindingData
+};
 use ErrorReporter;
 
 // Library
