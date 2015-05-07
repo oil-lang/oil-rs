@@ -9,10 +9,10 @@
             <button class="btn-one-line" action="quit">More Options</button>
             <button class="btn-one-line" action="quit">Quit</button>
         </group>
-        <repeat iter="player" template-name="friend" />
+        <repeat iter="{{player.friends}}" template-name="friend" />
     </group>
 </view>
 
 <template name="friend">
-    {{player.name}} is {{player.status}}
+    {{name}} is {{status}}
 </template>
