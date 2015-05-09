@@ -14,6 +14,6 @@ use super::find_neighbor;
 ///     // ...
 /// ```
 ///
-pub fn focus_up<'a>(from: &'a FocusNode, cursor: Cursor) -> &'a FocusNode {
-    find_neighbor(from, from, -1)
+pub fn focus_up<'a>(from: &'a FocusNode, cursor: &Cursor) -> &'a FocusNode {
+    find_neighbor(from, from, cursor, -1)
 }

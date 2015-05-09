@@ -135,16 +135,16 @@ impl FocusBuffer {
         self.focus_any(previous, direction::focus_left, Axis::X)
     }
 
-    fn focus_any<F>(&self, previous: &FocusedElement, pick_next: F, axis: Axis)
+    fn focus_any<'a, F>(&'a self, previous: &FocusedElement, pick_next: F, axis: Axis)
         -> Option<FocusedElement>
-        where F: Fn(&FocusNode, Cursor) -> &FocusNode
+        where F: Fn(&'a FocusNode, &Cursor) -> &'a FocusNode
     {
         if previous.focus_node >= 0 {
 
             assert!((previous.focus_node as usize) < self.len());
 
             let node =
-                pick_next(self.get(previous.focus_node as usize).unwrap(), previous.cursor);
+                pick_next(self.get(previous.focus_node as usize).unwrap(), &previous.cursor);
             let new_index = self.node_as_index(node);
 
             Some(FocusedElement {
