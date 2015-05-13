@@ -1,4 +1,5 @@
 use focus::FocusNode;
+use super::Cursor;
 use super::find_neighbor;
 
 /// This function returns the next node on the bottom.
@@ -13,6 +14,6 @@ use super::find_neighbor;
 ///     // ...
 /// ```
 ///
-pub fn focus_down(from: &FocusNode) -> &FocusNode {
-    find_neighbor(from, from, 1)
+pub fn focus_down<'a>(from: &'a FocusNode, cursor: &Cursor) -> &'a FocusNode {
+    find_neighbor(from, from, cursor, 1)
 }
