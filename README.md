@@ -1,6 +1,6 @@
 # oil-rs [![Build Status](https://travis-ci.org/oil-lang/oil-rs.svg?branch=master)](https://travis-ci.org/oil-lang/oil-rs)
 
-Uil is a graphical user interface library for Rust with video games in mind.
+Oil is a graphical user interface library for Rust with video games in mind.
 It is designed around three languages to describe your user interface:
 
  * A markup language
@@ -21,11 +21,11 @@ Okay, now a few more things to keep in mind before getting started:
   It essentially means some feature might be set as lower/higher priority because of the main project.
 * Contributions are welcomed !
 
-## [Getting-started](http://oil-lang.github.io)
+## [Getting-started](http://oil-lang.github.io/#getting-started)
 
 ```toml
 [dependencies]
-uil = "*"
+oil = "*"
 ```
 
 For a concrete example, you should have a look at the examples in the `examples/` folder.
@@ -34,6 +34,7 @@ For a concrete example, you should have a look at the examples in the `examples/
 
 This library does not allow to do many things right now. In the future, you'll have:
 
+  * fonts support
   * User events such as mouse/key
   * Data-bindings
   * Animations
