@@ -27,8 +27,8 @@ debug-assertions = false
 bitflags = "0.1"
 phf = "*"
 phf_macros = "*"
-image = "*"
-cgmath = "0.1.5" # Needs to be the same version than the one used by glium.
+image = "0.3.9"
+cgmath = "0.2.0" # Needs to be the same version than the one used by glium.
 num = "*"
 
 [dependencies.oil_parsers]
@@ -40,12 +40,12 @@ path = "./shared"
 version = "=0.1.0"
 
 [dependencies.glium]
-version = "*"
+version = "0.4.0"
 features = ["image", "cgmath", "gl_read_buffer", "gl_depth_textures"]
 default-features = false
 
 [dev-dependencies.glutin]
-version = "*"
+version = "0.1.4"
 
 [dev-dependencies]
 clock_ticks = "*"
