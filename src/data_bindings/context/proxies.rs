@@ -8,6 +8,38 @@ use data_bindings::DBStore;
 use data_bindings::BulkGet;
 use data_bindings::IteratingClosure;
 
+
+#[derive(Debug)]
+pub struct Proxy<T: DBStore> {
+    data: Weak<RefCell<T>>,
+}
+
+impl <T> DBStore for Proxy<T>
+where T: DBStore {
+    fn get_value(&self, k: &str) -> Option<StoreValue> {
+        match self.data.upgrade() {
+            None => None,
+            Some(p) => p.borrow().get_value(k),
+        }
+    }
+
+    fn set_value(&mut self, k: &str, value: StoreValue) -> Option<StoreValue> {
+        match self.data.upgrade() {
+            None => Some(value),
+            Some(p) => p.borrow_mut().set_value(k, value),
+        }
+    }
+}
+
+impl <T: DBStore> Proxy<T> {
+    pub fn new(value: &Rc<RefCell<T>>) -> Proxy<T> {
+        Proxy {
+            data: value.downgrade(),
+        }
+    }
+}
+
+
 pub struct RepeatProxy<T> {
     cell: Weak<RefCell<Vec<T>>>,
 }

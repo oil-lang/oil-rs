@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::{StoreValue, DataBinderContext, DBCLookup};
+use super::{StoreValue, ContextManager, DBCLookup};
 use markup::{View, Template, NodeType, RepeatData};
 use util::BufferFromTree;
 use layout::LayoutBuffer;
@@ -28,7 +28,7 @@ struct IteratorBindingNode {
 }
 
 impl DataBindingNode {
-    fn update(&mut self, context: &DataBinderContext, layout: &mut LayoutBuffer, lookup: usize) -> bool {
+    fn update(&mut self, context: &ContextManager, layout: &mut LayoutBuffer, lookup: usize) -> bool {
         match context.get_value(&self.key) {
             None => {
                 println!("WARNING: Failed to update binding {}", self.key);
@@ -54,7 +54,7 @@ impl DataBindingNode {
 }
 
 impl IteratorNode {
-    fn update(&mut self, context: &DataBinderContext, layout: &mut LayoutBuffer, lookup: usize) -> bool {
+    fn update(&mut self, context: &ContextManager, layout: &mut LayoutBuffer, lookup: usize) -> bool {
         match context.iterator_len(&self.iterator) {
             Err(e) => {
                 println!("WARNING: Failed to update iterator {}: {}", self.iterator, e);
@@ -80,7 +80,7 @@ impl IteratorNode {
 }
 
 impl IteratorBindingNode {
-    fn update(&mut self, context: &DataBinderContext, layout: &mut LayoutBuffer, lookup: usize) -> bool {
+    fn update(&mut self, context: &ContextManager, layout: &mut LayoutBuffer, lookup: usize) -> bool {
         match context.compare_and_update(&self.iterator, &self.key, &mut self.current) {
             Ok(res) => res,
             Err(e) => {
@@ -100,7 +100,7 @@ impl IteratorBindingNode {
 }
 
 impl DataBindingBuffer {
-    pub fn update(&mut self, context: &DataBinderContext, layout: &mut LayoutBuffer) -> bool {
+    pub fn update(&mut self, context: &ContextManager, layout: &mut LayoutBuffer) -> bool {
         let mut has_changed = false;
         for (&lookup, node) in self.bindings.enumerate_lookup_indices_mut().unwrap() {
             if node.update(context, layout, lookup) {

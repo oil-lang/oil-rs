@@ -148,7 +148,7 @@ be interpreted differently.
 **Attributes:**
 
  - `iter` **must** be a data binding. The data binding will be traversed during the
-   render phase. For more details see `DataBinderContext`.
+   render phase. For more details see `ContextManager`.
  - `template-name` is the name of the template that will be used to render each element.
    All data bindings defined inside the template will first lookup the value inside
    the current value being rendered and then lookup in the direct more global context.

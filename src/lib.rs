@@ -31,7 +31,7 @@ pub use oil_parsers::StdOutErrorReporter;
 pub use oil_parsers::EmptyErrorReporter;
 pub use self::router::Router;
 pub use self::rendering::View;
-pub use self::data_bindings::DataBinderContext;
+pub use self::data_bindings::ContextManager;
 pub use self::data_bindings::DBStore;
 
 mod layout;
@@ -39,6 +39,8 @@ mod router;
 mod util;
 mod focus;
 mod state;
+
+#[macro_use]
 mod data_bindings;
 
 pub trait RenderBackbend {

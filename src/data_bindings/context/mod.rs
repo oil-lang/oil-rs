@@ -1,19 +1,19 @@
-///! DataBinderScope is an implementation detail of DataBinderContext
+///! AmbientModel is an implementation detail of ContextManager
 ///!
 ///! It classify DBStore into categories and act as a unique scope.
-///! DataBinderContext build a scope on top of that struct, using
-///! the DataBinderScope as the unit for each scope.
+///! ContextManager build a scope on top of that struct, using
+///! the AmbientModel as the unit for each scope.
 ///!
 ///! Note that this concept might be removed in the future
 ///! to be completely replaced by the Ambient Model concept.
 ///!
 
 
-pub use self::binder::DataBinderContext;
+pub use self::binder::ContextManager;
 
 mod binder;
 mod prefixkey_iter;
-
+mod proxies;
 
 use std::collections::HashMap;
 use self::prefixkey_iter::PrefixKeyIter;
@@ -25,13 +25,13 @@ use data_bindings::IteratingClosure;
 use data_bindings::BindingResult;
 
 #[derive(Default)]
-struct DataBinderScope {
+struct AmbientModel {
     values: HashMap<String,StoreValue>,
     stores: HashMap<String,Box<DBStore>>,
     iterators: HashMap<String,Box<IsRepeatable>>,
 }
 
-impl DBStore for DataBinderScope {
+impl DBStore for AmbientModel {
     fn get_value(&self, k: &str) -> Option<StoreValue> {
         for (prefix, key) in PrefixKeyIter::new(k) {
             if let Some(store) = self.stores.get(prefix) {
@@ -59,7 +59,7 @@ impl DBStore for DataBinderScope {
     }
 }
 
-impl DataBinderScope {
+impl AmbientModel {
     fn register_value(&mut self, key: String, value: StoreValue) -> Result<(),StoreValue> {
         match self.values.insert(key, value) {
             Some(old) => Err(old),

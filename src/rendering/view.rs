@@ -8,7 +8,7 @@ use focus::{FocusBuffer, FocusedElement};
 use super::render::RenderBuffer;
 use oil_shared::style::SelectorState;
 use oil_shared::style::Stylesheet;
-use data_bindings::{DataBindingBuffer,DataBinderContext};
+use data_bindings::{DataBindingBuffer,ContextManager};
 use markup;
 use RenderBackbend;
 use Viewport;
@@ -58,7 +58,7 @@ impl View {
         display: &Display,
         resource_manager: &R,
         vp: Viewport,
-        context: &DataBinderContext)
+        context: &ContextManager)
         where R: ResourceManager
     {
         let updated_bindings = self.data_binding_buffer.update(context, &mut self.layout_data);

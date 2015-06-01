@@ -55,7 +55,7 @@ pub fn run_example(title: &str, markup_path: &str, deps_path: &str, style_path: 
         library,
         &stylesheet
     );
-    let data_binder_context = oil::DataBinderContext::default();
+    let data_binder_context = oil::ContextManager::default();
 
     //////////////////////////////////////////////////////////////////////////////
     // main loop (modified example from glium lib)

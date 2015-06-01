@@ -8,7 +8,7 @@ use markup::MAIN_VIEW_NAME;
 use markup::Library;
 use resource::ResourceManager;
 use oil_shared::style::Stylesheet;
-use data_bindings::DataBinderContext;
+use data_bindings::ContextManager;
 use RenderBackbend;
 use View;
 use Viewport;
@@ -92,7 +92,7 @@ impl Router {
         display: &Display,
         resource_manager: &R,
         vp: Viewport,
-        context: &DataBinderContext)
+        context: &ContextManager)
         where R: ResourceManager
     {
         for &mut (_, ref mut v) in self.stack.iter_mut() {
