@@ -1,9 +1,8 @@
 
 use std::collections::HashMap;
-use std::mem;
 
 use oil_shared::markup::{
-	Node, NodeType, TemplateData, View, Template, RepeatData
+    Node, NodeType, TemplateData, View, Template
 };
 use ErrorReporter;
 
@@ -49,7 +48,7 @@ impl<E> Library<E>
     /// with a group containing the templates childs.
     ///
     /// Note: this does not resolve data-bindings dependencies.
-	//#[deprecated(reason = "This is now managed automatically when the view is created.",
+    //#[deprecated(reason = "This is now managed automatically when the view is created.",
     //         	 since = "0.2.0")]
     pub fn resolve_templates(&mut self) {
         let ref mut views = self.views;

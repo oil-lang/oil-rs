@@ -1,7 +1,6 @@
 #![feature(io)]
 #![feature(plugin)]
 #![plugin(phf_macros)]
-#![feature(str_char)]
 #![feature(float_from_str_radix)]
 
 extern crate xml;
