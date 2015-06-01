@@ -1,10 +1,9 @@
-use std::collections::HashMap;
 use glium::Display;
 
 use resource::ResourceManager;
 use layout::LayoutBuffer;
 use state::StateBuffer;
-use focus::{self, FocusBuffer};
+use focus::{FocusBuffer, FocusedElement};
 use super::render::RenderBuffer;
 use oil_shared::style::SelectorState;
 use oil_shared::style::Stylesheet;
@@ -15,11 +14,13 @@ use Viewport;
 
 pub struct View {
     dirty_flags: bool,
+    // Buffers
     state_data: StateBuffer,
     focus_data: FocusBuffer,
-    focus_node: isize,
     layout_data: LayoutBuffer,
     render_data: RenderBuffer,
+    // Current state
+    current_focused_node: FocusedElement,
     data_binding_buffer: DataBindingBuffer,
 }
 
@@ -44,7 +45,7 @@ impl View {
             dirty_flags: true,
             layout_data: layout_buffer,
             render_data: render_buffer,
-            focus_node: focus_buffer.first_acceptor_index(),
+            current_focused_node: focus_buffer.first_acceptor(),
             focus_data: focus_buffer,
             state_data: state_buffer,
             data_binding_buffer: data_binding_buffer,
@@ -85,71 +86,55 @@ impl View {
     }
 
     pub fn focus_up(&mut self) {
-        if self.focus_node >= 0 {
-            assert!((self.focus_node as usize) < self.focus_data.len());
-
+        if let Some(new_focused_node) = self.focus_data.focus_up(&self.current_focused_node) {
             self.remove_state_for_focused_node();
-            self.focus_node = self.focus_data.node_as_index(
-                focus::focus_up(self.focus_data.get(self.focus_node as usize).unwrap())
-            );
-
+            self.current_focused_node = new_focused_node;
             self.dirty_flags = true;
         }
     }
 
     pub fn focus_down(&mut self) {
-        if self.focus_node >= 0 {
-            assert!((self.focus_node as usize) < self.focus_data.len());
-
+        if let Some(new_focused_node) = self.focus_data.focus_down(&self.current_focused_node) {
             self.remove_state_for_focused_node();
-            self.focus_node = self.focus_data.node_as_index(
-                focus::focus_down(self.focus_data.get(self.focus_node as usize).unwrap())
-            );
-
-            self.dirty_flags = true
+            self.current_focused_node = new_focused_node;
+            self.dirty_flags = true;
         }
     }
 
     pub fn focus_right(&mut self) {
-        if self.focus_node >= 0 {
-            assert!((self.focus_node as usize) < self.focus_data.len());
-
+        if let Some(new_focused_node) = self.focus_data.focus_right(&self.current_focused_node) {
             self.remove_state_for_focused_node();
-            self.focus_node = self.focus_data.node_as_index(
-                focus::focus_right(self.focus_data.get(self.focus_node as usize).unwrap())
-            );
-
+            self.current_focused_node = new_focused_node;
             self.dirty_flags = true;
         }
     }
 
     pub fn focus_left(&mut self) {
-        if self.focus_node >= 0 {
-            assert!((self.focus_node as usize) < self.focus_data.len());
-
+        if let Some(new_focused_node) = self.focus_data.focus_left(&self.current_focused_node) {
             self.remove_state_for_focused_node();
-            self.focus_node = self.focus_data.node_as_index(
-                focus::focus_left(self.focus_data.get(self.focus_node as usize).unwrap())
-            );
-
+            self.current_focused_node = new_focused_node;
             self.dirty_flags = true;
         }
     }
 
     fn set_state_for_focused_node(&mut self) {
-        self.state_data.get_mut(self.focus_data.node_as_global_index(
-                self.focus_data.get(self.focus_node as usize).unwrap()
-            ) as usize)
-            .unwrap()
-            .set_current_state(SelectorState::Focus);
+
+        if let Some(global_index) = self.focus_data.global_index(&self.current_focused_node) {
+
+            self.state_data.get_mut(global_index)
+                .unwrap()
+                .set_current_state(SelectorState::Focus);
+        }
     }
 
     fn remove_state_for_focused_node(&mut self) {
-        self.state_data.get_mut(self.focus_data.node_as_global_index(
-                self.focus_data.get(self.focus_node as usize).unwrap()
-            ) as usize)
-            .unwrap()
-            .set_current_state(SelectorState::Default);
+
+        if let Some(global_index) = self.focus_data.global_index(&self.current_focused_node) {
+
+            self.state_data.get_mut(global_index)
+                .unwrap()
+                .set_current_state(SelectorState::Default);
+        }
     }
 }
 

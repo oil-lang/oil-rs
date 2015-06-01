@@ -8,15 +8,15 @@ use layout::{LayoutBuffer, Rect};
 use markup::Node;
 use self::tagged_tree::TaggedNode;
 use std::default::Default;
+use self::direction::{Axis, Cursor};
 
 mod tagged_tree;
 mod direction;
 
-// Reexports
-pub use self::direction::focus_up;
-pub use self::direction::focus_down;
-pub use self::direction::focus_left;
-pub use self::direction::focus_right;
+pub struct FocusedElement {
+    focus_node: isize,
+    cursor: Cursor,
+}
 
 pub struct FocusAcceptor {
     // The parent of this node.
@@ -90,12 +90,70 @@ impl FocusBuffer {
         }
     }
 
-    pub fn first_acceptor<'a>(&'a self) -> Option<&'a FocusNode> {
+    fn first_acceptor_node<'a>(&'a self) -> Option<&'a FocusNode> {
         self.buffer.iter().skip_while(|&a| !a.is_acceptor).next()
     }
 
-    pub fn first_acceptor_index<'a>(&'a self) -> isize {
-        self.first_acceptor().map_or(-1, |n| self.buffer.node_as_index(n) as isize)
+    pub fn first_acceptor(&self) -> FocusedElement {
+        match self.first_acceptor_node() {
+            Some(node) => {
+                FocusedElement {
+                    focus_node: self.node_as_index(node) as isize,
+                    cursor: Cursor::new(node),
+                }
+            }
+            None => {
+                FocusedElement {
+                    focus_node: -1,
+                    cursor: Cursor::default(),
+                }
+            }
+        }
+    }
+
+    pub fn global_index(&self, el: &FocusedElement) -> Option<usize> {
+        if el.focus_node >= 0 {
+            Some(self.node_as_global_index(self.get(el.focus_node as usize).unwrap()) as usize)
+        } else {
+            None
+        }
+    }
+
+    pub fn focus_up(&self, previous: &FocusedElement) -> Option<FocusedElement> {
+        self.focus_any(previous, direction::focus_up, Axis::Y)
+    }
+
+    pub fn focus_down(&self, previous: &FocusedElement) -> Option<FocusedElement> {
+        self.focus_any(previous, direction::focus_down, Axis::Y)
+    }
+
+    pub fn focus_right(&self, previous: &FocusedElement) -> Option<FocusedElement> {
+        self.focus_any(previous, direction::focus_right, Axis::X)
+    }
+
+    pub fn focus_left(&self, previous: &FocusedElement) -> Option<FocusedElement> {
+        self.focus_any(previous, direction::focus_left, Axis::X)
+    }
+
+    fn focus_any<'a, F>(&'a self, previous: &FocusedElement, pick_next: F, axis: Axis)
+        -> Option<FocusedElement>
+        where F: Fn(&'a FocusNode, &Cursor) -> &'a FocusNode
+    {
+        if previous.focus_node >= 0 {
+
+            assert!((previous.focus_node as usize) < self.len());
+
+            let node =
+                pick_next(self.get(previous.focus_node as usize).unwrap(), &previous.cursor);
+            let new_index = self.node_as_index(node);
+
+            Some(FocusedElement {
+                focus_node: new_index,
+                cursor: Cursor::from(previous.cursor, node, axis),
+            })
+        } else {
+            None
+        }
     }
 
     pub fn update_nodes(&mut self, layout_data: &LayoutBuffer) {
