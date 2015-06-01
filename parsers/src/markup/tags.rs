@@ -13,7 +13,7 @@ use oil_shared::markup::{
     LineInputData,
     ProgressBarData,
     TemplateData,
-    UnlinkedRepeatData
+    RepeatData
 };
 
 
@@ -83,7 +83,7 @@ pub fn parse_repeat(attributes: &Vec<OwnedAttribute>) -> ResOrError {
            lookup_name("iter", attributes))
     {
         (Some(name), Some(iter)) => {
-            Ok(NodeType::UnlinkedRepeat(UnlinkedRepeatData {
+            Ok(NodeType::Repeat(RepeatData {
                 template_name: name,
                 iter: iter
             }))

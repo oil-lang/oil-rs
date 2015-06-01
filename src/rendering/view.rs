@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use glium::Display;
 
 use resource::ResourceManager;
@@ -28,6 +29,7 @@ impl View {
         display: &Display,
         resource_manager: &R,
         view: &markup::View,
+        templates: &HashMap<String, markup::Template>,
         stylesheet: &Stylesheet)
         -> View
         where R: ResourceManager
@@ -36,7 +38,7 @@ impl View {
         let focus_buffer = FocusBuffer::new(view);
         let layout_buffer = LayoutBuffer::new(view);
         let render_buffer = RenderBuffer::new(display, resource_manager, &state_buffer);
-        let data_binding_buffer = DataBindingBuffer::new(view);
+        let data_binding_buffer = DataBindingBuffer::new(view, templates);
 
         View {
             dirty_flags: true,

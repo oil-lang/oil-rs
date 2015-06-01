@@ -1,173 +1,67 @@
 pub use self::buffer::DataBindingBuffer;
 
 use std::rc::{Rc,Weak};
-use std::collections::HashMap;
-use std::collections::hash_state::HashState;
 use std::cell::RefCell;
-use std::error::Error;
+use std::collections::hash_state::HashState;
+use std::collections::HashMap;
 
-use router::Router;
+// Re-export
+#[macro_use]
+mod macros;
 
-use self::DataBindingError::*;
+pub use self::error::DataBindingError;
+pub use self::error::BindingResult;
+pub use self::store_value::StoreValue;
+pub use self::context::DataBinderContext;
 
+mod error;
+mod store_value;
 mod buffer;
+mod context;
+mod repeat;
 
 pub type IteratingClosure<'b> = for <'a> FnMut(&mut Iterator<Item=&'a mut DBStore>) + 'b;
-
-pub type BindingResult<T> = Result<T,DataBindingError>;
-
-macro_rules! declare_data_binding {
-    ($name:ident {
-        $($field:ident:$type_field:ty),*
-    }) => (
-        declare_data_binding! {
-            $name {
-                $($field -> $field: $type_field),*
-            }
-        }
-        );
-    ($name:ident {
-        $($key:ident -> $field:ident : $type_field:ty),*
-    }) => (
-        impl DBStore for $name {
-            fn get_value(&self, k: &str) -> Option<StoreValue> {
-                match k {
-                    $(stringify!($key) => Some(StoreValue::from(self.$field.clone())),)*
-                    _ => None,
-                }
-            }
-            fn set_value(&mut self, k: &str, value: StoreValue) -> Option<StoreValue> {
-                match k {
-                    $(stringify!($key) => {
-                        self.$field = value.into();
-                        None
-                    })*
-                    _ => Some(value),
-                }
-            }
-        }
-
-        impl BulkGet for [$name] {
-            fn compare_and_update(&self, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool> {
-                match k {
-                    $(stringify!($key) => {
-                        let mut has_changed = false;
-                        if output.len() != self.len() {
-                            has_changed = true;
-                            if output.len() > self.len() {
-                                output.truncate(self.len());
-                            } else {
-                                let len = output.len();
-                                output.reserve(self.len() - len);
-                            }
-                        }
-                        for (element, old_value) in self.iter().zip(output.iter_mut()) {
-                            let new_value: StoreValue = element.$field.clone().into();
-                            if new_value != *old_value {
-                                has_changed = true;
-                                *old_value = new_value;
-                            }
-                        }
-                        for input in self.iter().skip(output.len()) {
-                            (*output).push(input.$field.clone().into());
-                        }
-                        Ok(has_changed)
-                    })*
-                    _ => Err(DataBindingError::KeyNotFound(format!(": {} for type {}", k, stringify!($name)))),
-                }
-            }
-        }
-
-        )
-}
-
-#[derive(Clone,Eq,PartialEq,Debug)]
-pub enum DataBindingError {
-    DanglingReference(String),
-    IteratorNotFound(String),
-    KeyNotFound(String),
-    ViewNotFound(String),
-}
-
-impl Error for DataBindingError {
-    fn description(&self) -> &str {
-        match *self {
-            DanglingReference(_) => "Dangling data binding reference",
-            IteratorNotFound(_) => "Repeat iterator not found",
-            KeyNotFound(_) => "Key not found",
-            ViewNotFound(_) => "View not found",
-        }
-    }
-}
-
-impl ::std::fmt::Display for DataBindingError {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        try!(self.description().fmt(f));
-        let details = match *self {
-            DanglingReference(ref s) => s,
-            IteratorNotFound(ref s) => s,
-            KeyNotFound(ref s) => s,
-            ViewNotFound(ref s) => s,
-        };
-        details.fmt(f)
-    }
-}
-
-// TODO: Implement Eq and PartialEq manually to compare Strings and Integers
-#[derive(Clone,Debug,Eq,PartialEq)]
-pub enum StoreValue {
-    String(String),
-    Integer(i64),
-}
-
-impl From<i64> for StoreValue {
-    fn from(i: i64) -> StoreValue {
-        StoreValue::Integer(i)
-    }
-}
-
-impl Into<i64> for StoreValue {
-    fn into(self) -> i64 {
-        use std::str::FromStr;
-        match self {
-            StoreValue::String(data) => {
-                match i64::from_str(&data) {
-                    Ok(i) => i,
-                    Err(error) => {
-                        println!("ERROR: Parsing to integer error {}", error);
-                        0
-                    }
-                }
-            }
-            StoreValue::Integer(i) => i,
-        }
-    }
-}
-
-impl From<String> for StoreValue {
-    fn from(s: String) -> StoreValue {
-        StoreValue::String(s)
-    }
-}
-
-impl Into<String> for StoreValue {
-    fn into(self) -> String {
-        match self {
-            StoreValue::String(data) => {
-                data
-            }
-            StoreValue::Integer(i) => i.to_string(),
-        }
-    }
-}
-
 
 pub trait BulkGet {
     fn compare_and_update(&self, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool>;
 }
 
+/// Key trait to create a model that support two-ways databindings
+/// with oil.
+///
+/// The simplest way to implement it, is by using
+/// the `declare_data_binding!` macro like this:
+///
+/// ```
+/// struct Player {
+///     name: String,
+///     pv: i64,
+///     xp: i64,
+///     non_relevant_stuff: usize,
+/// }
+///
+/// declare_data_binding! {
+///     Player {
+///         name: String,
+///         pv: i64,
+///         xp: i64
+///     }
+/// }
+/// ```
+///
 pub trait DBStore {
+
+    /// Return the value corresponding to the key 'k'.
+    /// If no value is found with such a name, the trait
+    /// implementer should returns `None`.
     fn get_value(&self, k: &str) -> Option<StoreValue>;
+
+    /// This method set the value for the attribute named 'k'.
+    ///
+    /// **Note:**
+    ///     Oil does not perform any coherence check between
+    ///     get_value and set_value. It allows you to perform alternatives
+    ///     checks and modifies others value if relevant.
     fn set_value(&mut self, k: &str, value: StoreValue) -> Option<StoreValue>;
 }
 
@@ -221,186 +115,13 @@ impl <'a> DBStore for Box<DBStore + 'a> {
     }
 }
 
-#[derive(Default)]
-struct DataBinderScope {
-    values: HashMap<String,StoreValue>,
-    stores: HashMap<String,Box<DBStore>>,
-    iterators: HashMap<String,Box<IsRepeatable>>,
+trait IsRepeatable {
+    fn iter(&self, closure: &mut IteratingClosure) -> bool;
+    fn compare_and_update(&self, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool>;
+    fn len(&self) -> BindingResult<u32>;
 }
 
-impl DBStore for DataBinderScope {
-    fn get_value(&self, k: &str) -> Option<StoreValue> {
-        for (prefix, key) in PrefixKeyIterator::new(k) {
-            if let Some(store) = self.stores.get(prefix) {
-                // If we have a store registered, we look here first
-                let result = store.get_value(key);
-                if result.is_some() {
-                    return result;
-                }
-            }
-        }
-        self.values.get_value(k)
-    }
-
-    fn set_value(&mut self, k: &str, mut value: StoreValue) -> Option<StoreValue> {
-        for (prefix, key) in PrefixKeyIterator::new(k) {
-            if let Some(store) = self.stores.get_mut(prefix) {
-                // If we have a store registered, we look here first
-                match store.set_value(key, value) {
-                    None => return None,
-                    Some(ret) => value = ret,
-                }
-            }
-        }
-        self.values.set_value(k, value)
-    }
-}
-
-impl DataBinderScope {
-    fn register_value(&mut self, key: String, value: StoreValue) -> Result<(),StoreValue> {
-        match self.values.insert(key, value) {
-            Some(old) => Err(old),
-            None => Ok(()),
-        }
-    }
-
-    fn register_store(&mut self, prefix: String, store: Box<DBStore + 'static>)
-        -> Result<(),Box<DBStore + 'static>> {
-        match self.stores.insert(prefix, store) {
-            Some(old) => Err(old),
-            None => Ok(()),
-        }
-    }
-
-    fn register_iterator(&mut self, prefix: String, iterable: Box<IsRepeatable + 'static>)
-        -> Result<(),Box<IsRepeatable + 'static>> {
-        match self.iterators.insert(prefix, iterable) {
-            Some(old) => Err(old),
-            None => Ok(()),
-        }
-    }
-
-    fn iter(&self, k: &str, closure: &mut IteratingClosure) -> bool {
-        match self.iterators.get(k) {
-            None => return false,
-            Some(it) => {
-                it.iter(closure)
-            }
-        }
-    }
-
-    fn compare_and_update(&self, iterator: &str, key: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool> {
-        match self.iterators.get(iterator) {
-            None => Err(DataBindingError::IteratorNotFound(format!(": {}", iterator))),
-            Some(it) => it.compare_and_update(key, output),
-        }
-    }
-
-    fn iterator_len(&self, iterator: &str) -> BindingResult<u32> {
-        match self.iterators.get(iterator) {
-            None => Err(DataBindingError::IteratorNotFound(format!(": {}", iterator))),
-            Some(it) => it.len(),
-        }
-    }
-}
-
-#[derive(Default)]
-pub struct DataBinderContext {
-    global: DataBinderScope,
-    views: HashMap<String,DataBinderScope>,
-    current_view: String,
-}
-
-impl DataBinderContext {
-    pub fn new(router: &Router) -> DataBinderContext {
-        let mut binder = DataBinderContext::default();
-        binder.register_views(router);
-        binder
-    }
-
-    pub fn register_views(&mut self, router: &Router) {
-        for name in router.iter_name_views() {
-            self.register_view(name.clone());
-        }
-    }
-
-    pub fn switch_to_view(&mut self, view: String) {
-        self.current_view = view;
-    }
-
-    pub fn register_global_value(&mut self, key: String, value: StoreValue) {
-        if let Err(old) = self.global.register_value(key.clone(), value) {
-            println!("WARNING: re-registering global value {} (old value {:?})", key, old);
-        }
-    }
-
-    pub fn register_global_store<T>(&mut self, prefix: String, value: &Rc<RefCell<T>>)
-    where T: DBStore + 'static {
-        let v = Box::new(Proxy::new(value));
-        if let Err(_) = self.global.register_store(prefix.clone(), v) {
-            println!("WARNING: overriding global object {}", prefix);
-        }
-    }
-
-    pub fn register_value(&mut self, view: &str, key: String, value: StoreValue) -> BindingResult<()> {
-        match self.views.get_mut(view) {
-            None => Err(DataBindingError::ViewNotFound(format!(": {}", view))),
-            Some(view_scope) => {
-                if let Err(old) = view_scope.register_value(key.clone(), value) {
-                    // Don't throw an error, just print a warning
-                    println!("WARNING: View {}: re-registering value {} (old value {:?})", view, key, old);
-                }
-                Ok(())
-            }
-        }
-    }
-
-    pub fn register_store<T>(&mut self, view: &str, prefix: String, value: &Rc<RefCell<T>>) -> BindingResult<()>
-    where T: DBStore + 'static {
-        match self.views.get_mut(view) {
-            None => Err(DataBindingError::ViewNotFound(format!(": {}", view))),
-            Some(view_scope) => {
-                let v = Box::new(Proxy::new(value));
-                if let Err(_) = view_scope.register_store(prefix.clone(), v) {
-                    // Don't throw an error, just print a warning
-                    println!("WARNING: View {}: overriding object {}", view, prefix);
-                }
-                Ok(())
-            }
-        }
-    }
-
-    pub fn register_iterator<T>(&mut self, view: &str, key: String, iterator: &Rc<RefCell<Vec<T>>>) -> BindingResult<()>
-    where T: DBStore + 'static,
-          [T]: BulkGet {
-        match self.views.get_mut(view) {
-            None => Err(DataBindingError::ViewNotFound(format!(": {}", view))),
-            Some(view_scope) => {
-                let v = Box::new(RepeatProxy::new(iterator));
-                if let Err(_) = view_scope.register_iterator(key.clone(), v) {
-                    // Don't throw an error, just print a warning
-                    println!("WARNING: View {}: overriding iterator {}", view, key);
-                }
-                Ok(())
-            }
-        }
-    }
-
-    pub fn register_global_iterator<T>(&mut self, key: String, iterator: &Rc<RefCell<Vec<T>>>)
-    where T: DBStore + 'static,
-          [T]: BulkGet {
-        let v = Box::new(RepeatProxy::new(iterator));
-        if let Err(_) = self.global.register_iterator(key.clone(), v) {
-            println!("WARNING: re-registering global iterator {}", key);
-        }
-    }
-
-    fn register_view(&mut self, view: String) {
-        self.views.entry(view).or_insert_with(|| DataBinderScope::default());
-    }
-}
-
-// Private trait for UIL
+// Private trait for OIL
 pub trait DBCLookup {
     fn get_value(&self, k: &str) -> Option<StoreValue>;
     fn set_value(&mut self, k: &str, value: StoreValue);
@@ -455,7 +176,7 @@ impl DBCLookup for DataBinderContext {
     fn compare_and_update(&self, iterator: &str, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool> {
         if let Some(view_scope) = self.views.get(&self.current_view) {
             match view_scope.compare_and_update(iterator, k, output) {
-                Err(IteratorNotFound(..)) => {} // Normal operation
+                Err(DataBindingError::IteratorNotFound(..)) => {} // Normal operation
                 Err(e) => return Err(e),
                 Ok(out) => return Ok(out),
             }
@@ -466,7 +187,7 @@ impl DBCLookup for DataBinderContext {
     fn iterator_len(&self, iterator: &str) -> BindingResult<u32> {
         if let Some(view_scope) = self.views.get(&self.current_view) {
             match view_scope.iterator_len(iterator) {
-                Err(IteratorNotFound(..)) => {} // Normal operation
+                Err(DataBindingError::IteratorNotFound(..)) => {} // Normal operation
                 Err(e) => return Err(e),
                 Ok(out) => return Ok(out),
             }
@@ -502,103 +223,6 @@ impl <T: DBStore> Proxy<T> {
         Proxy {
             data: value.downgrade(),
         }
-    }
-}
-
-trait IsRepeatable {
-    fn iter(&self, closure: &mut IteratingClosure) -> bool;
-    fn compare_and_update(&self, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool>;
-    fn len(&self) -> BindingResult<u32>;
-}
-
-pub struct RepeatProxy<T> {
-    cell: Weak<RefCell<Vec<T>>>,
-}
-
-impl <T> RepeatProxy<T> {
-    fn new(cell: &Rc<RefCell<Vec<T>>>) -> RepeatProxy<T> {
-        RepeatProxy {
-            cell: cell.downgrade(),
-        }
-    }
-}
-
-impl <T> IsRepeatable for RepeatProxy<T>
-where T: DBStore + 'static,
-      [T]: BulkGet {
-    fn iter(&self, closure: &mut IteratingClosure) -> bool {
-        let reference = match self.cell.upgrade() {
-            Some(r) => r,
-            None => return false,
-        };
-        let mut guard = reference.borrow_mut();
-        let mut iter = guard.iter_mut().map(|item| item as &mut DBStore);
-        closure(&mut iter);
-        true
-    }
-
-    fn compare_and_update(&self, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool> {
-        let reference = match self.cell.upgrade() {
-            Some(r) => r,
-            None => return Err(DataBindingError::DanglingReference(format!(": {}", k))),
-        };
-        let guard = reference.borrow_mut();
-        (*guard).compare_and_update(k, output)
-    }
-
-    fn len(&self) -> BindingResult<u32> {
-        let reference = match self.cell.upgrade() {
-            Some(r) => r,
-            None => return Err(DataBindingError::DanglingReference("".to_string())),
-        };
-        let guard = reference.borrow();
-        Ok((*guard).len() as u32)
-    }
-}
-
-// An iterator over the different combinations of prefix-key
-struct PrefixKeyIterator<'a> {
-    data: &'a str,
-    position: i8,
-}
-
-impl <'a> PrefixKeyIterator<'a> {
-    fn new(data: &'a str) -> PrefixKeyIterator<'a> {
-        PrefixKeyIterator {
-            data: data,
-            position: 0,
-        }
-    }
-}
-
-impl <'a> Iterator for PrefixKeyIterator<'a> {
-    type Item = (&'a str, &'a str);
-
-    fn next(&mut self) -> Option<<Self as Iterator>::Item> {
-        if self.position == 0 {
-            self.position += 1;
-            return Some(("", self.data));
-        }
-        let mut position = self.position;
-        self.position += 1;
-        let mut iterator = self.data.split(|c| {
-            if c == '.' {
-                position -= 1;
-                if position == 0 {
-                    return true;
-                }
-            }
-            false
-        });
-        let prefix = match iterator.next() {
-            None => return None,
-            Some(a) => a,
-        };
-        let key = match iterator.next() {
-            None => return None,
-            Some(a) => a,
-        };
-        Some((prefix,key))
     }
 }
 

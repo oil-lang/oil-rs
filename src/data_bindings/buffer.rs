@@ -1,5 +1,7 @@
-use super::{StoreValue,DataBinderContext,DBCLookup};
-use markup::{View,NodeType,RepeatBindingData};
+use std::collections::HashMap;
+
+use super::{StoreValue, DataBinderContext, DBCLookup};
+use markup::{View, Template, NodeType, RepeatData};
 use util::BufferFromTree;
 use layout::LayoutBuffer;
 
@@ -100,25 +102,25 @@ impl IteratorBindingNode {
 impl DataBindingBuffer {
     pub fn update(&mut self, context: &DataBinderContext, layout: &mut LayoutBuffer) -> bool {
         let mut has_changed = false;
-        for (lookup, node) in self.bindings.enumerate_lookup_indices_mut().unwrap() {
-            if node.update(context, layout, *lookup) {
+        for (&lookup, node) in self.bindings.enumerate_lookup_indices_mut().unwrap() {
+            if node.update(context, layout, lookup) {
                 has_changed = true;
             }
         }
-        for (lookup, node) in self.iterators.enumerate_lookup_indices_mut().unwrap() {
-            if node.update(context, layout, *lookup) {
+        for (&lookup, node) in self.iterators.enumerate_lookup_indices_mut().unwrap() {
+            if node.update(context, layout, lookup) {
                 has_changed = true;
             }
         }
-        for (lookup, node) in self.iterator_bindings.enumerate_lookup_indices_mut().unwrap() {
-            if node.update(context, layout, *lookup) {
+        for (&lookup, node) in self.iterator_bindings.enumerate_lookup_indices_mut().unwrap() {
+            if node.update(context, layout, lookup) {
                 has_changed = true;
             }
         }
         has_changed
     }
 
-    pub fn new(view: &View) -> DataBindingBuffer {
+    pub fn new(view: &View, templates: &HashMap<String, Template>) -> DataBindingBuffer {
         let bindings = BufferFromTree::new_with_lookup_table(view, 0, |node| {
             match node.node_type {
                 NodeType::Binding(ref binding) => {
@@ -129,17 +131,17 @@ impl DataBindingBuffer {
         });
         let iterators = BufferFromTree::new_with_lookup_table(view, 0, |node| {
             match node.node_type {
-                NodeType::Repeat(ref iterator) => {
-                    Some(IteratorNode::new(iterator.clone()))
-                }
+                // NodeType::Repeat(RepeatData { ref template_name, ref iter }) => {
+                //     Some(IteratorNode::new(iterator.clone()))
+                // }
                 _ => None
             }
         });
         let iterator_bindings = BufferFromTree::new_with_lookup_table(view, 0, |node| {
             match node.node_type {
-                NodeType::RepeatBinding(RepeatBindingData{ref iter, ref key}) => {
-                    Some(IteratorBindingNode::new(iter.clone(), key.clone()))
-                }
+                // NodeType::RepeatBinding(RepeatBindingData{ref iter, ref key}) => {
+                //     Some(IteratorBindingNode::new(iter.clone(), key.clone()))
+                // }
                 _ => None
             }
         });

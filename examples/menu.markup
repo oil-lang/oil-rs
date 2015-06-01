@@ -1,6 +1,6 @@
 <view name="main">
     <group>
-        Welcome {{player.name}} to UIL!
+        Welcome {{player.name}} to OIL!
         <group class="btns-group">
             <button class="btn-one-line" goto-view="play">Play</button>
             <button class="btn-one-line" action="quit">Options</button>

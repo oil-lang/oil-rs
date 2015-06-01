@@ -9,8 +9,7 @@ pub use oil_shared::markup::{
     LineInputData,
     ProgressBarData,
     TemplateData,
-    UnlinkedRepeatData,
-    RepeatBindingData,
+    RepeatData,
 };
 
 pub use oil_parsers::markup::Library;
