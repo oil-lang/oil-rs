@@ -1,13 +1,13 @@
 
 
 /// An iterator over the different combinations of prefix-key
-struct PrefixKeyIter<'a> {
+pub struct PrefixKeyIter<'a> {
     data: &'a str,
     position: i8,
 }
 
 impl <'a> PrefixKeyIter<'a> {
-    fn new(data: &'a str) -> PrefixKeyIter<'a> {
+    pub fn new(data: &'a str) -> PrefixKeyIter<'a> {
         PrefixKeyIter {
             data: data,
             position: 0,

@@ -13,7 +13,7 @@ pub struct RepeatProxy<T> {
 }
 
 impl <T> RepeatProxy<T> {
-    fn new(cell: &Rc<RefCell<Vec<T>>>) -> RepeatProxy<T> {
+    pub fn new(cell: &Rc<RefCell<Vec<T>>>) -> RepeatProxy<T> {
         RepeatProxy {
             cell: cell.downgrade(),
         }

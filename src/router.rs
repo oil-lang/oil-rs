@@ -27,6 +27,21 @@ impl Router {
         }
     }
 
+    pub fn from_library_and_stylesheet<R, E>(
+        display: &Display,
+        resource_manager:  &R,
+        lib: Library<E>,
+        style: &Stylesheet)
+        -> Router
+        where R: ResourceManager
+    {
+        let mut router = Router::new();
+        for (name, view) in lib.views.into_iter() {
+            router.add_view(name, View::new(display, resource_manager, &view, &lib.templates, style));
+        }
+        router
+    }
+
     pub fn iter_name_views(&self) -> Keys<String,Rc<RefCell<View>>> {
         self.views.keys()
     }
@@ -70,21 +85,6 @@ impl Router {
         if let Some(&mut (_, ref mut view)) = self.stack.last_mut() {
             view.borrow_mut().focus_down();
         }
-    }
-
-    pub fn from_library_and_stylesheet<R, E>(
-        display: &Display,
-        resource_manager:  &R,
-        lib: Library<E>,
-        style: &Stylesheet)
-        -> Router
-        where R: ResourceManager
-    {
-        let mut router = Router::new();
-        for (name, view) in lib.views.into_iter() {
-            router.add_view(name, View::new(display, resource_manager, &view, style));
-        }
-        router
     }
 
     pub fn update<R>(

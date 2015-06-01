@@ -1,4 +1,5 @@
 use glium::Display;
+use std::collections::HashMap;
 
 use resource::ResourceManager;
 use layout::LayoutBuffer;
