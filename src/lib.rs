@@ -25,6 +25,9 @@ pub mod deps;
 pub mod rendering;
 pub mod resource;
 
+#[macro_use]
+pub mod data_bindings;
+
 // Reexport
 pub use oil_parsers::ErrorReporter;
 pub use oil_parsers::StdOutErrorReporter;
@@ -39,9 +42,6 @@ mod router;
 mod util;
 mod focus;
 mod state;
-
-#[macro_use]
-mod data_bindings;
 
 pub trait RenderBackbend {
     type Frame;

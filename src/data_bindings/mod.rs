@@ -26,6 +26,8 @@ mod context;
 /// the `declare_data_binding!` macro like this:
 ///
 /// ```
+/// # #[macro_use]
+/// # extern crate oil;
 /// struct Player {
 ///     name: String,
 ///     pv: i64,
@@ -40,6 +42,8 @@ mod context;
 ///         xp: i64
 ///     }
 /// }
+/// # fn main() {
+/// # }
 /// ```
 ///
 pub trait DBStore {
@@ -60,8 +64,13 @@ pub trait DBStore {
 
 pub type IteratingClosure<'b> = FnMut(&mut Iterator<Item=&mut DBStore>) + 'b;
 
+// Ugly hack to implement the trait in external crates.
+//
+// FIXME(Nemikolh): https://github.com/rust-lang/rust/issues/24745
+//
 pub trait BulkGet {
-    fn compare_and_update(&self, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool>;
+
+    fn compare_and_update(this: &[Self], k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool>;
 }
 
 impl <S> DBStore for HashMap<String,StoreValue,S>
@@ -145,6 +154,7 @@ pub trait DBCLookup {
 mod test {
     use std::rc::Rc;
     use std::cell::RefCell;
+    use std::ops::Deref;
     use super::*;
 
     #[derive(Debug)]
@@ -242,15 +252,15 @@ mod test {
     fn bulk_get_implementation() {
         let mut players = vec![Player::new("Grub", 1, 11), Player::new("Gnom", 2, 22)];
         let mut vec = Vec::new();
-        assert!(players.compare_and_update("pv", &mut vec).unwrap());
+        assert!(BulkGet::compare_and_update(players.deref(), "pv", &mut vec).unwrap());
         assert_eq!(vec, [StoreValue::Integer(1), StoreValue::Integer(2)]);
-        assert!(!players.compare_and_update("pv", &mut vec).unwrap());
+        assert!(!BulkGet::compare_and_update(players.deref(), "pv", &mut vec).unwrap());
         assert_eq!(vec, [StoreValue::Integer(1), StoreValue::Integer(2)]);
         players.pop();
-        assert!(players.compare_and_update("pv", &mut vec).unwrap());
+        assert!(BulkGet::compare_and_update(players.deref(), "pv", &mut vec).unwrap());
         assert_eq!(vec, [StoreValue::Integer(1)]);
-        players.push(Player::new("Cendrais", 3, 33));
-        assert!(players.compare_and_update("xp", &mut vec).unwrap());
+        players.push(Player::new("Turtle", 3, 33));
+        assert!(BulkGet::compare_and_update(players.deref(), "xp", &mut vec).unwrap());
         assert_eq!(vec, [StoreValue::Integer(11), StoreValue::Integer(33)]);
     }
 

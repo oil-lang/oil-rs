@@ -24,6 +24,8 @@ pub struct ContextManager {
 
 impl ContextManager {
 
+    /// Create a new context manager using a router.
+    ///
     pub fn new(router: &Router) -> ContextManager {
         let mut binder = ContextManager::default();
         binder.register_views(router);
@@ -87,8 +89,7 @@ impl ContextManager {
     }
 
     pub fn register_iterator<T>(&mut self, view: &str, key: String, iterator: &Rc<RefCell<Vec<T>>>) -> BindingResult<()>
-        where T: DBStore + 'static,
-             [T]: BulkGet
+        where T: DBStore + BulkGet + 'static
     {
         match self.views.get_mut(view) {
             None => Err(DataBindingError::ViewNotFound(format!(": {}", view))),
@@ -104,8 +105,7 @@ impl ContextManager {
     }
 
     pub fn register_global_iterator<T>(&mut self, key: String, iterator: &Rc<RefCell<Vec<T>>>)
-        where T: DBStore + 'static,
-             [T]: BulkGet
+        where T: DBStore + BulkGet + 'static
     {
         let v = Box::new(RepeatProxy::new(iterator));
         if let Err(_) = self.global.register_iterator(key.clone(), v) {

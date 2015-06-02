@@ -1,5 +1,6 @@
 use std::rc::{Rc,Weak};
 use std::cell::RefCell;
+use std::ops::Deref;
 use data_bindings::BindingResult;
 use data_bindings::DataBindingError;
 use data_bindings::StoreValue;
@@ -41,46 +42,46 @@ impl <T: DBStore> Proxy<T> {
 
 
 pub struct RepeatProxy<T> {
-    cell: Weak<RefCell<Vec<T>>>,
+    weak_values: Weak<RefCell<Vec<T>>>,
 }
 
 impl <T> RepeatProxy<T> {
-    pub fn new(cell: &Rc<RefCell<Vec<T>>>) -> RepeatProxy<T> {
+    pub fn new(values: &Rc<RefCell<Vec<T>>>) -> RepeatProxy<T> {
         RepeatProxy {
-            cell: cell.downgrade(),
+            weak_values: values.downgrade(),
         }
     }
 }
 
 impl <T> IsRepeatable for RepeatProxy<T>
-where T: DBStore + 'static,
-      [T]: BulkGet {
+where T: DBStore + BulkGet + 'static {
+
     fn iter(&self, closure: &mut IteratingClosure) -> bool {
-        let reference = match self.cell.upgrade() {
+        let ref_values = match self.weak_values.upgrade() {
             Some(r) => r,
             None => return false,
         };
-        let mut guard = reference.borrow_mut();
-        let mut iter = guard.iter_mut().map(|item| item as &mut DBStore);
+        let mut values = ref_values.borrow_mut();
+        let mut iter = values.iter_mut().map(|item| item as &mut DBStore);
         closure(&mut iter);
         true
     }
 
     fn compare_and_update(&self, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool> {
-        let reference = match self.cell.upgrade() {
+        let ref_values = match self.weak_values.upgrade() {
             Some(r) => r,
             None => return Err(DataBindingError::DanglingReference(format!(": {}", k))),
         };
-        let guard = reference.borrow_mut();
-        (*guard).compare_and_update(k, output)
+        let values = ref_values.borrow_mut();
+        BulkGet::compare_and_update((*values).deref(), k, output)
     }
 
     fn len(&self) -> BindingResult<u32> {
-        let reference = match self.cell.upgrade() {
+        let ref_values = match self.weak_values.upgrade() {
             Some(r) => r,
             None => return Err(DataBindingError::DanglingReference("".to_string())),
         };
-        let guard = reference.borrow();
-        Ok((*guard).len() as u32)
+        let values = ref_values.borrow();
+        Ok((*values).len() as u32)
     }
 }

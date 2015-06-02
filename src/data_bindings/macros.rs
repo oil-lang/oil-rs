@@ -13,14 +13,19 @@ macro_rules! declare_data_binding {
     ($name:ident {
         $($key:ident -> $field:ident : $type_field:ty),*
     }) => (
-        impl DBStore for $name {
-            fn get_value(&self, k: &str) -> Option<StoreValue> {
+        impl $crate::data_bindings::DBStore for $name {
+
+            fn get_value(&self, k: &str) -> Option<$crate::data_bindings::StoreValue> {
+                use $crate::data_bindings::StoreValue;
                 match k {
                     $(stringify!($key) => Some(StoreValue::from(self.$field.clone())),)*
                     _ => None,
                 }
             }
-            fn set_value(&mut self, k: &str, value: StoreValue) -> Option<StoreValue> {
+
+            fn set_value(&mut self, k: &str, value: $crate::data_bindings::StoreValue)
+                -> Option<$crate::data_bindings::StoreValue>
+            {
                 match k {
                     $(stringify!($key) => {
                         self.$field = value.into();
@@ -31,28 +36,33 @@ macro_rules! declare_data_binding {
             }
         }
 
-        impl BulkGet for [$name] {
-            fn compare_and_update(&self, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool> {
+        impl $crate::data_bindings::BulkGet for $name {
+
+            fn compare_and_update(this: &[$name], k: &str, output: &mut Vec<$crate::data_bindings::StoreValue>)
+                -> $crate::data_bindings::BindingResult<bool>
+            {
+                use $crate::data_bindings::StoreValue;
+                use $crate::data_bindings::DataBindingError;
                 match k {
                     $(stringify!($key) => {
                         let mut has_changed = false;
-                        if output.len() != self.len() {
+                        if output.len() != this.len() {
                             has_changed = true;
-                            if output.len() > self.len() {
-                                output.truncate(self.len());
+                            if output.len() > this.len() {
+                                output.truncate(this.len());
                             } else {
                                 let len = output.len();
-                                output.reserve(self.len() - len);
+                                output.reserve(this.len() - len);
                             }
                         }
-                        for (element, old_value) in self.iter().zip(output.iter_mut()) {
+                        for (element, old_value) in this.iter().zip(output.iter_mut()) {
                             let new_value: StoreValue = element.$field.clone().into();
                             if new_value != *old_value {
                                 has_changed = true;
                                 *old_value = new_value;
                             }
                         }
-                        for input in self.iter().skip(output.len()) {
+                        for input in this.iter().skip(output.len()) {
                             (*output).push(input.$field.clone().into());
                         }
                         Ok(has_changed)
