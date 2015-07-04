@@ -9,9 +9,9 @@
 ///!
 
 
-pub use self::binder::ContextManager;
+pub use self::manager::ContextManager;
 
-mod binder;
+mod manager;
 mod prefixkey_iter;
 mod proxies;
 

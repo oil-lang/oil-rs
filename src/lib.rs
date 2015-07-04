@@ -1,7 +1,7 @@
-#![feature(core)]
-#![feature(std_misc)]
 #![feature(plugin)]
-#![feature(alloc)]
+#![feature(hashmap_hasher)]
+#![feature(rc_weak)]
+#![feature(iter_cmp)]
 #![plugin(phf_macros)]
 
 #[macro_use]

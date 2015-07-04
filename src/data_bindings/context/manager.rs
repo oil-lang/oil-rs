@@ -61,7 +61,7 @@ impl ContextManager {
     pub fn register_value(&mut self, view: &str, key: String, value: StoreValue) -> BindingResult<()>
     {
         match self.views.get_mut(view) {
-            None => Err(DataBindingError::ViewNotFound(format!(": {}", view))),
+            None => Err(DataBindingError::ViewNotFound),
             Some(view_scope) => {
                 if let Err(old) = view_scope.register_value(key.clone(), value) {
                     // Don't throw an error, just print a warning
@@ -76,7 +76,7 @@ impl ContextManager {
         where T: DBStore + 'static
     {
         match self.views.get_mut(view) {
-            None => Err(DataBindingError::ViewNotFound(format!(": {}", view))),
+            None => Err(DataBindingError::ViewNotFound),
             Some(view_scope) => {
                 let v = Box::new(Proxy::new(value));
                 if let Err(_) = view_scope.register_store(prefix.clone(), v) {
@@ -92,7 +92,7 @@ impl ContextManager {
         where T: DBStore + BulkGet + 'static
     {
         match self.views.get_mut(view) {
-            None => Err(DataBindingError::ViewNotFound(format!(": {}", view))),
+            None => Err(DataBindingError::ViewNotFound),
             Some(view_scope) => {
                 let v = Box::new(RepeatProxy::new(iterator));
                 if let Err(_) = view_scope.register_iterator(key.clone(), v) {
