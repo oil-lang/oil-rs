@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use super::{StoreValue, ContextManager, DBCLookup};
-use markup::{View, Template, NodeType, RepeatData};
+use markup::{View, Template, NodeType};
 use util::BufferFromTree;
 use layout::LayoutBuffer;
 
