@@ -42,9 +42,9 @@ impl ContextManager {
         self.current_view = view;
     }
 
-    pub fn register_global_value(&mut self, key: String, value: StoreValue)
+    pub fn register_global_value<V: Into<StoreValue>>(&mut self, key: String, value: V)
     {
-        if let Err(old) = self.global.register_value(key.clone(), value) {
+        if let Err(old) = self.global.register_value(key.clone(), value.into()) {
             println!("WARNING: re-registering global value {} (old value {:?})", key, old);
         }
     }
@@ -58,12 +58,12 @@ impl ContextManager {
         }
     }
 
-    pub fn register_value(&mut self, view: &str, key: String, value: StoreValue) -> BindingResult<()>
+    pub fn register_value<V: Into<StoreValue>>(&mut self, view: &str, key: String, value: V) -> BindingResult<()>
     {
         match self.views.get_mut(view) {
             None => Err(DataBindingError::ViewNotFound),
             Some(view_scope) => {
-                if let Err(old) = view_scope.register_value(key.clone(), value) {
+                if let Err(old) = view_scope.register_value(key.clone(), value.into()) {
                     // Don't throw an error, just print a warning
                     println!("WARNING: View {}: re-registering value {} (old value {:?})", view, key, old);
                 }

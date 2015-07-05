@@ -200,16 +200,14 @@ mod test {
     #[test]
     fn register_global_value() {
         let mut context = ContextManager::default();
-        context.register_global_value("option.width".to_string(),
-            StoreValue::Integer(42));
+        context.register_global_value("option.width".to_string(), 42);
         assert_eq!(context.get_value("option.width").unwrap(), StoreValue::Integer(42));
     }
 
     #[test]
     fn masking_value_by_object() {
         let mut context = ContextManager::default();
-        context.register_global_value("player.pv".to_string(),
-            StoreValue::Integer(12));
+        context.register_global_value("player.pv".to_string(), 12);
         assert_eq!(context.get_value("player.pv").unwrap(), StoreValue::Integer(12));
         let player = Player::new_rc("Grub", 42, 100);
         context.register_global_store("player".to_string(), &player);
