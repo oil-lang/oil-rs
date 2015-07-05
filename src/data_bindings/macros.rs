@@ -2,23 +2,22 @@
 #[macro_export]
 macro_rules! declare_data_binding {
     ($name:ident {
-        $($field:ident:$type_field:ty),*
+        $($field:ident),*
     }) => (
         declare_data_binding! {
             $name {
-                $($field -> $field: $type_field),*
+                $($field -> $field),*
             }
         }
         );
     ($name:ident {
-        $($key:ident -> $field:ident : $type_field:ty),*
+        $($key:ident -> $field:ident),*
     }) => (
         impl $crate::data_bindings::DBStore for $name {
 
             fn get_value(&self, k: &str) -> Option<$crate::data_bindings::StoreValue> {
-                use $crate::data_bindings::StoreValue;
                 match k {
-                    $(stringify!($key) => Some(StoreValue::from(self.$field.clone())),)*
+                    $(stringify!($key) => Some(self.$field.clone().into()),)*
                     _ => None,
                 }
             }

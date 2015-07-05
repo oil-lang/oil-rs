@@ -227,9 +227,9 @@ mod test {
 
     declare_data_binding! {
         Player {
-            name: String,
-            pv: i64,
-            xp: i64
+            name,
+            pv,
+            xp
         }
     }
 
