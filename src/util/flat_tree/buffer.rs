@@ -18,14 +18,14 @@ pub struct FlatTree<T> {
 impl<T> Deref for FlatTree<T> {
     type Target = [TreeNode<T>];
 
-    fn deref<'a>(&'a self) -> &'a [TreeNode<T>] {
+    fn deref<'a>(&'a self) -> &'a <Self as Deref>::Target {
         self.buffer.deref()
     }
 }
 
 impl<T> DerefMut for FlatTree<T> {
 
-    fn deref_mut<'a>(&'a mut self) -> &'a mut [TreeNode<T>] {
+    fn deref_mut<'a>(&'a mut self) -> &'a mut <Self as Deref>::Target {
         self.buffer.deref_mut()
     }
 }

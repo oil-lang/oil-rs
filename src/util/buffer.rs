@@ -13,14 +13,14 @@ pub struct BufferFromTree<T>{
 impl<T> Deref for BufferFromTree<T> {
     type Target = [T];
 
-    fn deref<'a>(&'a self) -> &'a [T] {
+    fn deref<'a>(&'a self) -> &'a <Self as Deref>::Target {
         self.buffer.deref()
     }
 }
 
 impl<T> DerefMut for BufferFromTree<T> {
 
-    fn deref_mut<'a>(&'a mut self) -> &'a mut [T] {
+    fn deref_mut<'a>(&'a mut self) -> &'a mut <Self as Deref>::Target {
         self.buffer.deref_mut()
     }
 }
