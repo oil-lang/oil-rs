@@ -14,10 +14,11 @@ macro_rules! declare_data_binding {
         $($key:ident -> $field:ident),*
     }) => (
         impl $crate::data_bindings::DBStore for $name {
-
-            fn get_value(&self, k: &str) -> Option<$crate::data_bindings::StoreValue> {
-                match k {
-                    $(stringify!($key) => Some(self.$field.clone().into()),)*
+            fn get_attribute(&self, k: $crate::data_bindings::PropertyAccessor)
+                -> Option<$crate::data_bindings::StoreValue>
+            {
+                match k.name() {
+                    $(Some(stringify!($key)) => self.$field.get_attribute(k.next()),)*
                     _ => None,
                 }
             }

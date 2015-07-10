@@ -11,11 +11,13 @@ pub use self::error::DataBindingError;
 pub use self::error::BindingResult;
 pub use self::store_value::StoreValue;
 pub use self::context::ContextManager;
+pub use self::lookup::PropertyAccessor;
 
 mod error;
 mod store_value;
 mod buffer;
 mod context;
+mod lookup;
 
 /// Key trait to create a model that support two-ways databindings
 /// with oil.
@@ -49,13 +51,13 @@ pub trait DBStore {
     /// Return the value corresponding to the key 'k'.
     /// If no value is found with such a name, the trait
     /// implementer should returns `None`.
-    fn get_value(&self, k: &str) -> Option<StoreValue>;
+    fn get_attribute(&self, k: PropertyAccessor) -> Option<StoreValue>;
 
     /// This method set the value for the attribute named 'k'.
     ///
     /// **Note:**
     ///     Oil does not perform any coherence check between
-    ///     get_value and set_value. It allows you to perform alternatives
+    ///     get_attribute and set_value. It allows you to perform alternatives
     ///     checks and modifies others value if relevant.
     fn set_value(&mut self, k: &str, value: StoreValue) -> Option<StoreValue>;
 }
@@ -72,10 +74,14 @@ pub trait BulkGet {
 }
 
 impl <S> DBStore for HashMap<String,StoreValue,S>
-where S: HashState {
+    where S: HashState
+{
 
-    fn get_value(&self, k: &str) -> Option<StoreValue> {
-        self.get(k).cloned()
+    fn get_attribute(&self, k: PropertyAccessor) -> Option<StoreValue> {
+        match k.name() {
+            Some(s) => self.get(s).cloned(),
+            None => None
+        }
     }
 
     fn set_value(&mut self, k: &str, value: StoreValue) -> Option<StoreValue> {
@@ -89,12 +95,38 @@ where S: HashState {
     }
 }
 
-impl <T> DBStore for [T]
-where T: DBStore {
+// Implementation for i64, String and others.
+impl<T> DBStore for T
+    where T: Into<StoreValue> + Clone
+{
 
-    fn get_value(&self, k: &str) -> Option<StoreValue> {
+    fn get_attribute(&self, k: PropertyAccessor) -> Option<StoreValue> {
+        match k.name() {
+            Some(_) => None,
+            None => {
+                Some(self.clone().into())
+            }
+        }
+    }
+
+    fn set_value(&mut self, k: &str, value: StoreValue) -> Option<StoreValue> {
+        None
+        // match k {
+        //     Some(_) => Some(value),
+        //     None => {
+        //
+        //     }
+        // }
+    }
+}
+
+impl <T> DBStore for [T]
+    where T: DBStore
+{
+
+    fn get_attribute(&self, k: PropertyAccessor) -> Option<StoreValue> {
         for i in self.iter().rev() {
-            let value = i.get_value(k);
+            let value = i.get_attribute(k.clone());
             if value.is_some() {
                 return value;
             }
@@ -115,8 +147,8 @@ where T: DBStore {
 
 impl <'a> DBStore for Box<DBStore + 'a> {
 
-    fn get_value(&self, k: &str) -> Option<StoreValue> {
-        (**self).get_value(k)
+    fn get_attribute(&self, k: PropertyAccessor) -> Option<StoreValue> {
+        (**self).get_attribute(k)
     }
 
     fn set_value(&mut self, k: &str, value: StoreValue) -> Option<StoreValue> {
@@ -137,7 +169,7 @@ trait IsRepeatable {
 
 
 pub trait DBCLookup {
-    fn get_value(&self, k: &str) -> Option<StoreValue>;
+    fn get_attribute(&self, k: &str) -> Option<StoreValue>;
     fn set_value(&mut self, k: &str, value: StoreValue);
     fn iter(&self, k: &str, closure: &mut IteratingClosure) -> bool;
     fn compare_and_update(&self, iterator: &str, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool>;
@@ -191,25 +223,25 @@ mod test {
         let mut context = ContextManager::default();
         let player = Player::new_rc("Grub", 42, 100);
         context.register_global_store("player".to_string(), &player);
-        assert_eq!(context.get_value("player.pv").unwrap(), StoreValue::Integer(42));
-        assert_eq!(context.get_value("player.xp").unwrap(), StoreValue::Integer(100));
+        assert_eq!(context.get_attribute("player.pv").unwrap(), StoreValue::Integer(42));
+        assert_eq!(context.get_attribute("player.xp").unwrap(), StoreValue::Integer(100));
     }
 
     #[test]
     fn register_global_value() {
         let mut context = ContextManager::default();
         context.register_global_value("option.width".to_string(), 42);
-        assert_eq!(context.get_value("option.width").unwrap(), StoreValue::Integer(42));
+        assert_eq!(context.get_attribute("option.width").unwrap(), StoreValue::Integer(42));
     }
 
     #[test]
     fn masking_value_by_object() {
         let mut context = ContextManager::default();
         context.register_global_value("player.pv".to_string(), 12);
-        assert_eq!(context.get_value("player.pv").unwrap(), StoreValue::Integer(12));
+        assert_eq!(context.get_attribute("player.pv").unwrap(), StoreValue::Integer(12));
         let player = Player::new_rc("Grub", 42, 100);
         context.register_global_store("player".to_string(), &player);
-        assert_eq!(context.get_value("player.pv").unwrap(), StoreValue::Integer(42));
+        assert_eq!(context.get_attribute("player.pv").unwrap(), StoreValue::Integer(42));
     }
 
     #[test]
@@ -217,23 +249,18 @@ mod test {
         let mut context = ContextManager::default();
         let players = Rc::new(RefCell::new(vec![Player::new("Grub", 1, 11), Player::new("Gnom", 2, 22)]));
         context.register_global_iterator("game.friends".to_string(), &players);
-        let mut iteration = 0;
         let result = context.iter("game.friends", &mut |iterator| {
-            for store in iterator {
-                iteration += 1;
-                match iteration {
-                    1 => {
-                        assert_eq!(store.get_value("pv").unwrap(), StoreValue::Integer(1));
-                        assert_eq!(store.get_value("xp").unwrap(), StoreValue::Integer(11));
-                    }
-                    2 => {
-                        assert_eq!(store.get_value("pv").unwrap(), StoreValue::Integer(2));
-                        assert_eq!(store.get_value("xp").unwrap(), StoreValue::Integer(22));
-                        store.set_value("xp", StoreValue::Integer(42));
-                        assert_eq!(store.get_value("xp").unwrap(), StoreValue::Integer(42));
-                    }
-                    _ => panic!("Too many iterations"),
-                }
+            {
+                let store = iterator.next().unwrap();
+                assert_eq!(store.get_attribute(PropertyAccessor::new("pv")).unwrap(), StoreValue::Integer(1));
+                assert_eq!(store.get_attribute(PropertyAccessor::new("xp")).unwrap(), StoreValue::Integer(11));
+            }
+            {
+                let store = iterator.next().unwrap();
+                assert_eq!(store.get_attribute(PropertyAccessor::new("pv")).unwrap(), StoreValue::Integer(2));
+                assert_eq!(store.get_attribute(PropertyAccessor::new("xp")).unwrap(), StoreValue::Integer(22));
+                store.set_value("xp", StoreValue::Integer(42));
+                assert_eq!(store.get_attribute(PropertyAccessor::new("xp")).unwrap(), StoreValue::Integer(42));
             }
         });
         assert!(result);

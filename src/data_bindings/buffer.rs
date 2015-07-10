@@ -29,7 +29,7 @@ struct IteratorBindingNode {
 
 impl DataBindingNode {
     fn update(&mut self, context: &ContextManager, layout: &mut LayoutBuffer, lookup: usize) -> bool {
-        match context.get_value(&self.key) {
+        match context.get_attribute(&self.key) {
             None => {
                 println!("WARNING: Failed to update binding {}", self.key);
                 false

@@ -1,6 +1,7 @@
 #![feature(plugin)]
 #![feature(hashmap_hasher)]
 #![feature(rc_weak)]
+#![feature(into_cow)]
 #![feature(iter_cmp)]
 #![plugin(phf_macros)]
 

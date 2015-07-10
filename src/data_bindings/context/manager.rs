@@ -5,13 +5,16 @@ use std::collections::HashMap;
 use data_bindings::context::AmbientModel;
 use data_bindings::context::proxies::Proxy;
 use data_bindings::context::proxies::RepeatProxy;
-use data_bindings::BindingResult;
-use data_bindings::StoreValue;
-use data_bindings::DataBindingError;
-use data_bindings::DBStore;
-use data_bindings::BulkGet;
-use data_bindings::DBCLookup;
-use data_bindings::IteratingClosure;
+use data_bindings::{
+    BindingResult,
+    StoreValue,
+    DataBindingError,
+    DBStore,
+    BulkGet,
+    DBCLookup,
+    IteratingClosure,
+    PropertyAccessor
+};
 use router::Router;
 
 
@@ -120,20 +123,20 @@ impl ContextManager {
 
 
 impl DBCLookup for ContextManager {
-    fn get_value(&self, k: &str) -> Option<StoreValue> {
+    fn get_attribute(&self, k: &str) -> Option<StoreValue> {
         match self.views.get(&self.current_view) {
             None => {
                 println!("WARNING: Did not find view {}", &self.current_view);
             }
             Some(view_store) => {
-                let result = view_store.get_value(k);
+                let result = view_store.get_attribute(PropertyAccessor::new(k));
                 if result.is_some() {
                     return result;
                 }
             }
         }
         // Did not find view, or view did not have the corresponding value
-        self.global.get_value(k)
+        self.global.get_attribute(PropertyAccessor::new(k))
     }
 
     fn set_value(&mut self, k: &str, value: StoreValue) {
@@ -241,10 +244,10 @@ mod test {
         context.register_store("foo", "player".to_string(), &player).unwrap();
 
         // Not in the correct view
-        assert!(context.get_value("player.pv").is_none());
+        assert!(context.get_attribute("player.pv").is_none());
         context.switch_to_view("foo".to_string());
-        assert_eq!(context.get_value("player.pv").unwrap(), StoreValue::Integer(42));
-        assert_eq!(context.get_value("player.xp").unwrap(), StoreValue::Integer(100));
+        assert_eq!(context.get_attribute("player.pv").unwrap(), StoreValue::Integer(42));
+        assert_eq!(context.get_attribute("player.xp").unwrap(), StoreValue::Integer(100));
     }
 
     #[test]
@@ -253,9 +256,9 @@ mod test {
         context.register_view("foo".to_string());
         context.register_value("foo", "option.width".to_string(),
             StoreValue::Integer(42)).unwrap();
-        assert!(context.get_value("option.width").is_none());
+        assert!(context.get_attribute("option.width").is_none());
         context.switch_to_view("foo".to_string());
-        assert_eq!(context.get_value("option.width").unwrap(), StoreValue::Integer(42));
+        assert_eq!(context.get_attribute("option.width").unwrap(), StoreValue::Integer(42));
     }
 
     #[test]
@@ -275,13 +278,13 @@ mod test {
 
         // In view "foobar" -> get global value
         context.switch_to_view("foobar".to_string());
-        assert_eq!(context.get_value("option.width").unwrap(), StoreValue::String("global_value".to_string()));
+        assert_eq!(context.get_attribute("option.width").unwrap(), StoreValue::String("global_value".to_string()));
         // In view "foo" -> get foo specific value
         context.switch_to_view("foo".to_string());
-        assert_eq!(context.get_value("option.width").unwrap(), StoreValue::String("foo_value".to_string()));
+        assert_eq!(context.get_attribute("option.width").unwrap(), StoreValue::String("foo_value".to_string()));
         // In view "bar" -> get bar specific value
         context.switch_to_view("bar".to_string());
-        assert_eq!(context.get_value("option.width").unwrap(), StoreValue::String("bar_value".to_string()));
+        assert_eq!(context.get_attribute("option.width").unwrap(), StoreValue::String("bar_value".to_string()));
     }
 
     #[test]

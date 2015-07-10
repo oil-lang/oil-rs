@@ -1,13 +1,16 @@
 use std::rc::{Rc,Weak};
 use std::cell::RefCell;
 use std::ops::Deref;
-use data_bindings::BindingResult;
-use data_bindings::DataBindingError;
-use data_bindings::StoreValue;
-use data_bindings::IsRepeatable;
-use data_bindings::DBStore;
-use data_bindings::BulkGet;
-use data_bindings::IteratingClosure;
+use data_bindings::{
+    BindingResult,
+    DataBindingError,
+    StoreValue,
+    IsRepeatable,
+    DBStore,
+    BulkGet,
+    IteratingClosure,
+    PropertyAccessor
+};
 
 
 #[derive(Debug)]
@@ -17,10 +20,10 @@ pub struct Proxy<T: DBStore> {
 
 impl <T> DBStore for Proxy<T>
 where T: DBStore {
-    fn get_value(&self, k: &str) -> Option<StoreValue> {
+    fn get_attribute(&self, k: PropertyAccessor) -> Option<StoreValue> {
         match self.data.upgrade() {
             None => None,
-            Some(p) => p.borrow().get_value(k),
+            Some(p) => p.borrow().get_attribute(k),
         }
     }
 

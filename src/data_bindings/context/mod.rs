@@ -17,12 +17,15 @@ mod proxies;
 
 use std::collections::HashMap;
 use self::prefixkey_iter::PrefixKeyIter;
-use data_bindings::DBStore;
-use data_bindings::StoreValue;
-use data_bindings::IsRepeatable;
-use data_bindings::DataBindingError;
-use data_bindings::IteratingClosure;
-use data_bindings::BindingResult;
+use data_bindings::{
+    DBStore,
+    StoreValue,
+    IsRepeatable,
+    DataBindingError,
+    IteratingClosure,
+    BindingResult,
+    PropertyAccessor
+};
 
 #[derive(Default)]
 struct AmbientModel {
@@ -32,17 +35,22 @@ struct AmbientModel {
 }
 
 impl DBStore for AmbientModel {
-    fn get_value(&self, k: &str) -> Option<StoreValue> {
-        for (prefix, key) in PrefixKeyIter::new(k) {
-            if let Some(store) = self.stores.get(prefix) {
-                // If we have a store registered, we look here first
-                let result = store.get_value(key);
-                if result.is_some() {
-                    return result;
-                }
+    fn get_attribute(&self, k: PropertyAccessor) -> Option<StoreValue> {
+        if let Some(name) = k.name() {
+            if let Some(store) = self.stores.get(name) {
+                return store.get_attribute(k.next())
             }
         }
-        self.values.get_value(k)
+        self.values.get_attribute(k)
+        // for (prefix, key) in PrefixKeyIter::new(k) {
+        //     if let Some(store) = self.stores.get(prefix) {
+        //         // If we have a store registered, we look here first
+        //         let result = store.get_attribute(key);
+        //         if result.is_some() {
+        //             return result;
+        //         }
+        //     }
+        // }
     }
 
     fn set_value(&mut self, k: &str, mut value: StoreValue) -> Option<StoreValue> {
