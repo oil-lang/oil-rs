@@ -1,160 +1,12 @@
-pub use self::buffer::DataBindingBuffer;
-
-use std::collections::hash_state::HashState;
-use std::collections::HashMap;
 
 // Re-export
-#[macro_use]
-mod macros;
-
-pub use self::error::DataBindingError;
-pub use self::error::BindingResult;
-pub use self::store_value::StoreValue;
-pub use self::context::ContextManager;
-pub use self::lookup::PropertyAccessor;
-
-mod error;
-mod store_value;
-mod buffer;
-mod context;
-mod lookup;
-
-/// Key trait to create a model that support two-ways databindings
-/// with oil.
-///
-/// The simplest way to implement it, is by using
-/// the `declare_data_binding!` macro like this:
-///
-/// ```
-/// # #[macro_use]
-/// # extern crate oil;
-/// struct Player {
-///     name: String,
-///     pv: i64,
-///     xp: i64,
-///     non_relevant_stuff: usize,
-/// }
-///
-/// declare_data_binding! {
-///     Player {
-///         name,
-///         pv,
-///         xp
-///     }
-/// }
-/// # fn main() {
-/// # }
-/// ```
-///
-pub trait DBStore {
-
-    /// Return the value corresponding to the key 'k'.
-    /// If no value is found with such a name, the trait
-    /// implementer should returns `None`.
-    fn get_attribute(&self, k: PropertyAccessor) -> Option<StoreValue>;
-
-    /// This method set the value for the attribute named 'k'.
-    ///
-    /// **Note:**
-    ///     Oil does not perform any coherence check between
-    ///     get_attribute and set_value. It allows you to perform alternatives
-    ///     checks and modifies others value if relevant.
-    fn set_value(&mut self, k: &str, value: StoreValue) -> Option<StoreValue>;
-}
-
-pub type IteratingClosure<'b> = FnMut(&mut Iterator<Item=&mut DBStore>) + 'b;
-
-// Ugly hack to implement the trait in external crates.
-//
-// FIXME(Nemikolh): https://github.com/rust-lang/rust/issues/24745
-//
-pub trait BulkGet {
-
-    fn compare_and_update(this: &[Self], k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool>;
-}
-
-impl <S> DBStore for HashMap<String,StoreValue,S>
-    where S: HashState
-{
-
-    fn get_attribute(&self, k: PropertyAccessor) -> Option<StoreValue> {
-        match k.name() {
-            Some(s) => self.get(s).cloned(),
-            None => None
-        }
-    }
-
-    fn set_value(&mut self, k: &str, value: StoreValue) -> Option<StoreValue> {
-        match self.get_mut(k) {
-            None => Some(value),
-            Some(entry) => {
-                *entry = value;
-                None
-            }
-        }
-    }
-}
-
-// Implementation for i64, String and others.
-impl<T> DBStore for T
-    where T: Into<StoreValue> + Clone
-{
-
-    fn get_attribute(&self, k: PropertyAccessor) -> Option<StoreValue> {
-        match k.name() {
-            Some(_) => None,
-            None => {
-                Some(self.clone().into())
-            }
-        }
-    }
-
-    fn set_value(&mut self, k: &str, value: StoreValue) -> Option<StoreValue> {
-        None
-        // match k {
-        //     Some(_) => Some(value),
-        //     None => {
-        //
-        //     }
-        // }
-    }
-}
-
-impl <T> DBStore for [T]
-    where T: DBStore
-{
-
-    fn get_attribute(&self, k: PropertyAccessor) -> Option<StoreValue> {
-        for i in self.iter().rev() {
-            let value = i.get_attribute(k.clone());
-            if value.is_some() {
-                return value;
-            }
-        }
-        None
-    }
-
-    fn set_value(&mut self, k: &str, mut value: StoreValue) -> Option<StoreValue> {
-        for i in self.iter_mut().rev() {
-            match i.set_value(k, value) {
-                None => return None,
-                Some(ret) => value = ret,
-            }
-        }
-        Some(value)
-    }
-}
-
-impl <'a> DBStore for Box<DBStore + 'a> {
-
-    fn get_attribute(&self, k: PropertyAccessor) -> Option<StoreValue> {
-        (**self).get_attribute(k)
-    }
-
-    fn set_value(&mut self, k: &str, value: StoreValue) -> Option<StoreValue> {
-        (**self).set_value(k, value)
-    }
-}
+pub use oil_databindings::{
+	Store,
+	Cast,
+	StoreValue,
+	ContextManager,
+	DefaultContextManager
+};
 
 // ======================================== //
 //         Private trait for OIL            //
@@ -170,131 +22,72 @@ trait IsRepeatable {
 
 pub trait DBCLookup {
     fn get_attribute(&self, k: &str) -> Option<StoreValue>;
-    fn set_value(&mut self, k: &str, value: StoreValue);
-    fn iter(&self, k: &str, closure: &mut IteratingClosure) -> bool;
-    fn compare_and_update(&self, iterator: &str, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool>;
-    fn iterator_len(&self, iterator: &str) -> BindingResult<u32>;
+    fn set_attribute(&mut self, k: &str, value: StoreValue);
 }
 
-// ======================================== //
-//                   TESTS                  //
-// ======================================== //
 
-#[cfg(test)]
-mod test {
-    use std::rc::Rc;
-    use std::cell::RefCell;
-    use std::ops::Deref;
-    use super::*;
-
-    #[derive(Debug)]
-    struct Player {
-        name: String,
-        pv: i64,
-        xp: i64,
-        non_relevant_stuff: usize,
-    }
-
-    impl Player {
-        fn new<T: ToString>(name: T, pv: i64, xp: i64) -> Player {
-            Player {
-                name: name.to_string(),
-                pv: pv,
-                xp: xp,
-                non_relevant_stuff: 0,
+impl DBCLookup for ContextManager {
+    fn get_attribute(&self, k: &str) -> Option<StoreValue> {
+        match self.views.get(&self.current_view) {
+            None => {
+                println!("WARNING: Did not find view {}", &self.current_view);
+            }
+            Some(view_store) => {
+                let result = view_store.get_attribute(PropertyAccessor::new(k));
+                if result.is_some() {
+                    return result;
+                }
             }
         }
+        // Did not find view, or view did not have the corresponding value
+        self.global.get_attribute(PropertyAccessor::new(k))
+    }
 
-        fn new_rc<T: ToString>(name: T, pv: i64, xp: i64) -> Rc<RefCell<Player>> {
-            Rc::new(RefCell::new(Player::new(name, pv, xp)))
+    fn set_attribute(&mut self, k: &str, value: StoreValue) {
+        match self.views.get_mut(&self.current_view) {
+            None => {
+                println!("WARNING: Did not find view {}", &self.current_view);
+            }
+            Some(view_store) => {
+                let result = view_store.set_attribute(PropertyAccessor::new(k), value);
+                match result {
+                    NoSuchProperty(value) => {
+                        self.global.set_attribute(PropertyAccessor::new(k), value);
+                    },
+                    _ => {}
+                }
+            }
         }
     }
 
-    declare_data_binding! {
-        Player {
-            name,
-            pv,
-            xp
+    fn iter(&self, k: &str, closure: &mut IteratingClosure) -> bool {
+        if let Some(view_scope) = self.views.get(&self.current_view) {
+            if view_scope.iter(k, closure) {
+                return true;
+            }
         }
+        self.global.iter(k, closure)
     }
 
-    #[test]
-    fn register_global_player() {
-        let mut context = ContextManager::default();
-        let player = Player::new_rc("Grub", 42, 100);
-        context.register_global_store("player".to_string(), &player);
-        assert_eq!(context.get_attribute("player.pv").unwrap(), StoreValue::Integer(42));
-        assert_eq!(context.get_attribute("player.xp").unwrap(), StoreValue::Integer(100));
-    }
-
-    #[test]
-    fn register_global_value() {
-        let mut context = ContextManager::default();
-        context.register_global_value("option.width".to_string(), 42);
-        assert_eq!(context.get_attribute("option.width").unwrap(), StoreValue::Integer(42));
-    }
-
-    #[test]
-    fn masking_value_by_object() {
-        let mut context = ContextManager::default();
-        context.register_global_value("player.pv".to_string(), 12);
-        assert_eq!(context.get_attribute("player.pv").unwrap(), StoreValue::Integer(12));
-        let player = Player::new_rc("Grub", 42, 100);
-        context.register_global_store("player".to_string(), &player);
-        assert_eq!(context.get_attribute("player.pv").unwrap(), StoreValue::Integer(42));
-    }
-
-    #[test]
-    fn global_iterator() {
-        let mut context = ContextManager::default();
-        let players = Rc::new(RefCell::new(vec![Player::new("Grub", 1, 11), Player::new("Gnom", 2, 22)]));
-        context.register_global_iterator("game.friends".to_string(), &players);
-        let result = context.iter("game.friends", &mut |iterator| {
-            {
-                let store = iterator.next().unwrap();
-                assert_eq!(store.get_attribute(PropertyAccessor::new("pv")).unwrap(), StoreValue::Integer(1));
-                assert_eq!(store.get_attribute(PropertyAccessor::new("xp")).unwrap(), StoreValue::Integer(11));
+    fn compare_and_update(&self, iterator: &str, k: &str, output: &mut Vec<StoreValue>) -> BindingResult<bool> {
+        if let Some(view_scope) = self.views.get(&self.current_view) {
+            match view_scope.compare_and_update(iterator, k, output) {
+                Err(DataBindingError::IteratorNotFound(..)) => {} // Normal operation
+                Err(e) => return Err(e),
+                Ok(out) => return Ok(out),
             }
-            {
-                let store = iterator.next().unwrap();
-                assert_eq!(store.get_attribute(PropertyAccessor::new("pv")).unwrap(), StoreValue::Integer(2));
-                assert_eq!(store.get_attribute(PropertyAccessor::new("xp")).unwrap(), StoreValue::Integer(22));
-                store.set_value("xp", StoreValue::Integer(42));
-                assert_eq!(store.get_attribute(PropertyAccessor::new("xp")).unwrap(), StoreValue::Integer(42));
+        }
+        self.global.compare_and_update(iterator, k, output)
+    }
+
+    fn iterator_len(&self, iterator: &str) -> BindingResult<u32> {
+        if let Some(view_scope) = self.views.get(&self.current_view) {
+            match view_scope.iterator_len(iterator) {
+                Err(DataBindingError::IteratorNotFound(..)) => {} // Normal operation
+                Err(e) => return Err(e),
+                Ok(out) => return Ok(out),
             }
-        });
-        assert!(result);
-        let mut result_vec = Vec::new();
-        assert!(context.compare_and_update("game.friends", "pv", &mut result_vec).unwrap());
-        assert_eq!(result_vec, [StoreValue::Integer(1), StoreValue::Integer(2)]);
-        assert!(context.compare_and_update("game.friends", "name", &mut result_vec).unwrap());
-        assert_eq!(result_vec, [StoreValue::String("Grub".to_string()), StoreValue::String("Gnom".to_string())]);
+        }
+        self.global.iterator_len(iterator)
     }
-
-    #[test]
-    fn bulk_get_implementation() {
-        let mut players = vec![Player::new("Grub", 1, 11), Player::new("Gnom", 2, 22)];
-        let mut vec = Vec::new();
-        assert!(BulkGet::compare_and_update(players.deref(), "pv", &mut vec).unwrap());
-        assert_eq!(vec, [StoreValue::Integer(1), StoreValue::Integer(2)]);
-        assert!(!BulkGet::compare_and_update(players.deref(), "pv", &mut vec).unwrap());
-        assert_eq!(vec, [StoreValue::Integer(1), StoreValue::Integer(2)]);
-        players.pop();
-        assert!(BulkGet::compare_and_update(players.deref(), "pv", &mut vec).unwrap());
-        assert_eq!(vec, [StoreValue::Integer(1)]);
-        players.push(Player::new("Turtle", 3, 33));
-        assert!(BulkGet::compare_and_update(players.deref(), "xp", &mut vec).unwrap());
-        assert_eq!(vec, [StoreValue::Integer(11), StoreValue::Integer(33)]);
-    }
-
-    #[test]
-    fn invalid_iterator() {
-        let mut context = ContextManager::default();
-        let mut result_vec = Vec::new();
-        let players = Rc::new(RefCell::new(vec![Player::new("Grub", 1, 11), Player::new("Gnom", 2, 22)]));
-        context.register_global_iterator("game.friends".to_string(), &players);
-        context.compare_and_update("invalid_id", "pv", &mut result_vec).err().unwrap(); // IteratorNotFound
-        context.compare_and_update("game.friends", "invalid_key", &mut result_vec).err().unwrap(); // KeyNotFound
-    }
-
 }

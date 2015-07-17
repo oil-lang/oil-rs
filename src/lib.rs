@@ -16,6 +16,7 @@ extern crate image;
 extern crate cgmath;
 extern crate oil_parsers;
 extern crate oil_shared;
+extern crate oil_databindings;
 
 #[cfg(test)]
 extern crate glutin;
@@ -25,8 +26,6 @@ pub mod style;
 pub mod deps;
 pub mod rendering;
 pub mod resource;
-
-#[macro_use]
 pub mod data_bindings;
 
 // Reexport
@@ -36,7 +35,7 @@ pub use oil_parsers::EmptyErrorReporter;
 pub use self::router::Router;
 pub use self::rendering::View;
 pub use self::data_bindings::ContextManager;
-pub use self::data_bindings::DBStore;
+pub use self::data_bindings::Store;
 
 mod layout;
 mod router;

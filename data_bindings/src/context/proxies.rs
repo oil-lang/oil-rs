@@ -6,36 +6,37 @@ use data_bindings::{
     DataBindingError,
     StoreValue,
     IsRepeatable,
-    DBStore,
-    BulkGet,
+    Store,
+    ArrStore,
     IteratingClosure,
-    PropertyAccessor
+    PropertyAccessor,
+    AttributeSetResult
 };
 
 
 #[derive(Debug)]
-pub struct Proxy<T: DBStore> {
+pub struct Proxy<T: Store> {
     data: Weak<RefCell<T>>,
 }
 
-impl <T> DBStore for Proxy<T>
-where T: DBStore {
-    fn get_attribute(&self, k: PropertyAccessor) -> Option<StoreValue> {
+impl <T> Store for Proxy<T>
+where T: Store {
+    fn get_attribute(&self, k: PropertyAccessor) -> AttributeGetResult {
         match self.data.upgrade() {
-            None => None,
+            None => NoSuchProperty,
             Some(p) => p.borrow().get_attribute(k),
         }
     }
 
-    fn set_value(&mut self, k: &str, value: StoreValue) -> Option<StoreValue> {
+    fn set_attribute(&mut self, k: PropertyAccessor, value: StoreValue) -> AttributeSetResult {
         match self.data.upgrade() {
-            None => Some(value),
-            Some(p) => p.borrow_mut().set_value(k, value),
+            None => NoSuchProperty(value),
+            Some(p) => p.borrow_mut().set_attribute(k, value),
         }
     }
 }
 
-impl <T: DBStore> Proxy<T> {
+impl <T: Store> Proxy<T> {
     pub fn new(value: &Rc<RefCell<T>>) -> Proxy<T> {
         Proxy {
             data: value.downgrade(),
@@ -57,7 +58,7 @@ impl <T> RepeatProxy<T> {
 }
 
 impl <T> IsRepeatable for RepeatProxy<T>
-where T: DBStore + BulkGet + 'static {
+where T: Store + ArrStore + 'static {
 
     fn iter(&self, closure: &mut IteratingClosure) -> bool {
         let ref_values = match self.weak_values.upgrade() {
@@ -65,7 +66,7 @@ where T: DBStore + BulkGet + 'static {
             None => return false,
         };
         let mut values = ref_values.borrow_mut();
-        let mut iter = values.iter_mut().map(|item| item as &mut DBStore);
+        let mut iter = values.iter_mut().map(|item| item as &mut Store);
         closure(&mut iter);
         true
     }
@@ -76,7 +77,7 @@ where T: DBStore + BulkGet + 'static {
             None => return Err(DataBindingError::DanglingReference(format!(": {}", k))),
         };
         let values = ref_values.borrow_mut();
-        BulkGet::compare_and_update((*values).deref(), k, output)
+        ArrStore::compare_and_update((*values).deref(), k, output)
     }
 
     fn len(&self) -> BindingResult<u32> {

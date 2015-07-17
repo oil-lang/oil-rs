@@ -39,6 +39,10 @@ version = "=0.1.0"
 path = "./shared"
 version = "=0.1.0"
 
+[dependencies.oil_databindings]
+path = "./data_bindings"
+version= "=0.2.0"
+
 [dependencies.glium]
 version = "=0.4.0"
 features = ["image", "cgmath", "gl_read_buffer", "gl_depth_textures"]
