@@ -105,6 +105,7 @@ pub trait Store {//: mopa::Any {
 
 /// Result type when calling `get_attribute` on a `Store`
 /// object.
+#[derive(Clone)]
 pub enum AttributeGetResult<'a> {
     /// This value is returned when the get has succeeded
     Found(StoreValue<'a>),
@@ -155,9 +156,6 @@ pub enum AttributeSetResult<'a> {
 
 #[cfg(test)]
 mod test {
-    use std::rc::Rc;
-    use std::cell::RefCell;
-    use std::ops::Deref;
     use super::*;
 
     #[derive(Debug)]
@@ -177,10 +175,6 @@ mod test {
                 non_relevant_stuff: 0,
             }
         }
-
-        fn new_rc<T: ToString>(name: T, pv: i64, xp: i64) -> Rc<RefCell<Player>> {
-            Rc::new(RefCell::new(Player::new(name, pv, xp)))
-        }
     }
 
     declare_data_binding! {
@@ -193,81 +187,32 @@ mod test {
 
     #[test]
     fn register_global_player() {
-        let mut context = ContextManager::default();
-        let player = Player::new_rc("Grub", 42, 100);
-        context.register_global_store("player".to_string(), &player);
-        assert_eq!(context.get_attribute("player.pv").unwrap(), StoreValue::Integer(42));
-        assert_eq!(context.get_attribute("player.xp").unwrap(), StoreValue::Integer(100));
+        let mut context = DefaultContextManager::default();
+        let player = Player::new("Grub", 42, 100);
+        context.register_global_store("player".to_string(), player);
+        println!("hello3");
+        {let a = context.get_attribute("main", "player.pv");
+        println!("hello 1{:?}", a);
+        assert_eq!(a.unwrap(), StoreValue::Integer(42));}
+        assert_eq!(context.get_attribute("main", "player.xp").unwrap(), StoreValue::Integer(100));
     }
 
     #[test]
     fn register_global_value() {
-        let mut context = ContextManager::default();
+        let mut context = DefaultContextManager::default();
         context.register_global_value("option.width".to_string(), 42);
-        assert_eq!(context.get_attribute("option.width").unwrap(), StoreValue::Integer(42));
+        assert_eq!(context.get_attribute("main", "option.width").unwrap(), StoreValue::Integer(42));
     }
 
+    // TODO(Nemikolh): Move this test in manager.rs
     #[test]
-    fn masking_value_by_object() {
-        let mut context = ContextManager::default();
+    fn lookup_should_pick_store_before_global() {
+        let mut context = DefaultContextManager::default();
         context.register_global_value("player.pv".to_string(), 12);
-        assert_eq!(context.get_attribute("player.pv").unwrap(), StoreValue::Integer(12));
-        let player = Player::new_rc("Grub", 42, 100);
-        context.register_global_store("player".to_string(), &player);
-        assert_eq!(context.get_attribute("player.pv").unwrap(), StoreValue::Integer(42));
-    }
-
-    #[test]
-    fn global_iterator() {
-        let mut context = ContextManager::default();
-        let players = Rc::new(RefCell::new(vec![Player::new("Grub", 1, 11), Player::new("Gnom", 2, 22)]));
-        context.register_global_iterator("game.friends".to_string(), &players);
-        let result = context.iter("game.friends", &mut |iterator| {
-            {
-                let store = iterator.next().unwrap();
-                assert_eq!(store.get_attribute(PropertyAccessor::new("pv")).unwrap(), StoreValue::Integer(1));
-                assert_eq!(store.get_attribute(PropertyAccessor::new("xp")).unwrap(), StoreValue::Integer(11));
-            }
-            {
-                let store = iterator.next().unwrap();
-                assert_eq!(store.get_attribute(PropertyAccessor::new("pv")).unwrap(), StoreValue::Integer(2));
-                assert_eq!(store.get_attribute(PropertyAccessor::new("xp")).unwrap(), StoreValue::Integer(22));
-                store.set_value("xp", StoreValue::Integer(42));
-                assert_eq!(store.get_attribute(PropertyAccessor::new("xp")).unwrap(), StoreValue::Integer(42));
-            }
-        });
-        assert!(result);
-        let mut result_vec = Vec::new();
-        assert!(context.compare_and_update("game.friends", "pv", &mut result_vec).unwrap());
-        assert_eq!(result_vec, [StoreValue::Integer(1), StoreValue::Integer(2)]);
-        assert!(context.compare_and_update("game.friends", "name", &mut result_vec).unwrap());
-        assert_eq!(result_vec, [StoreValue::String("Grub".to_string()), StoreValue::String("Gnom".to_string())]);
-    }
-
-    #[test]
-    fn arrstore_implementation() {
-        let mut players = vec![Player::new("Grub", 1, 11), Player::new("Gnom", 2, 22)];
-        let mut vec = Vec::new();
-        assert!(ArrStore::compare_and_update(players.deref(), "pv", &mut vec).unwrap());
-        assert_eq!(vec, [StoreValue::Integer(1), StoreValue::Integer(2)]);
-        assert!(!ArrStore::compare_and_update(players.deref(), "pv", &mut vec).unwrap());
-        assert_eq!(vec, [StoreValue::Integer(1), StoreValue::Integer(2)]);
-        players.pop();
-        assert!(ArrStore::compare_and_update(players.deref(), "pv", &mut vec).unwrap());
-        assert_eq!(vec, [StoreValue::Integer(1)]);
-        players.push(Player::new("Turtle", 3, 33));
-        assert!(ArrStore::compare_and_update(players.deref(), "xp", &mut vec).unwrap());
-        assert_eq!(vec, [StoreValue::Integer(11), StoreValue::Integer(33)]);
-    }
-
-    #[test]
-    fn invalid_iterator() {
-        let mut context = ContextManager::default();
-        let mut result_vec = Vec::new();
-        let players = Rc::new(RefCell::new(vec![Player::new("Grub", 1, 11), Player::new("Gnom", 2, 22)]));
-        context.register_global_iterator("game.friends".to_string(), &players);
-        context.compare_and_update("invalid_id", "pv", &mut result_vec).err().unwrap(); // IteratorNotFound
-        context.compare_and_update("game.friends", "invalid_key", &mut result_vec).err().unwrap(); // KeyNotFound
+        assert_eq!(context.get_attribute("main", "player.pv").unwrap(), StoreValue::Integer(12));
+        let player = Player::new("Grub", 42, 100);
+        context.register_global_store("player".to_string(), player);
+        assert_eq!(context.get_attribute("main", "player.pv").unwrap(), StoreValue::Integer(42));
     }
 
 }

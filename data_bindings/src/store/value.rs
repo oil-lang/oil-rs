@@ -2,12 +2,38 @@ use std::slice;
 use Store;
 
 /// `StoreValue` is the type that encapsulate
-/// a value extracted from a Store  
+/// a value extracted from a Store
 pub enum StoreValue<'a> {
     String(String),
     Integer(i64),
     Boolean(bool),
     List(Box<Iterator<Item=&'a Store> + 'a>)
+}
+
+impl<'a> PartialEq for StoreValue<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            &StoreValue::String(ref s) => match other 
+            { &StoreValue::String(ref l) => l == s, _ => false},
+            &StoreValue::Integer(s) => match other 
+            { &StoreValue::Integer(l) => l == s, _ => false},
+            &StoreValue::Boolean(s) => match other 
+            { &StoreValue::Boolean(l) => l == s, _ => false},
+            &StoreValue::List(_) => false,
+        }
+    }
+}
+
+impl<'a> ::std::fmt::Debug for StoreValue<'a> {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        try!(write!(f, "StoreValue<'a>::"));
+        match self {
+            &StoreValue::String(ref s) => s.fmt(f),
+            &StoreValue::Integer(ref s) => s.fmt(f),
+            &StoreValue::Boolean(ref s) => s.fmt(f),
+            &StoreValue::List(_) => write!(f, "List"),
+        }
+    }
 }
 
 /// Equivalent to of `StoreValue<'static>` to allow the implementation
@@ -50,6 +76,11 @@ macro_rules! impl_for_integer {
                 StoreValue::Integer(i as i64)
             }
         }
+        impl From<$int_type> for StoreValueStatic {
+            fn from(i: $int_type) -> StoreValueStatic {
+                StoreValueStatic(StoreValue::Integer(i as i64))
+            }
+        }
     )
 }
 
@@ -67,10 +98,20 @@ impl<'a> From<String> for StoreValue<'a> {
         StoreValue::String(s)
     }
 }
+impl From<String> for StoreValueStatic {
+    fn from(s: String) -> StoreValueStatic {
+        StoreValueStatic(StoreValue::String(s))
+    }
+}
 
 impl<'a> From<bool> for StoreValue<'a> {
     fn from(b: bool) -> StoreValue<'a> {
         StoreValue::Boolean(b)
+    }
+}
+impl From<bool> for StoreValueStatic {
+    fn from(b: bool) -> StoreValueStatic {
+        StoreValueStatic(StoreValue::Boolean(b))
     }
 }
 

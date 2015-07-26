@@ -23,15 +23,17 @@ impl<'a> PropertyAccessor<'a> {
     /// Returns the name associated with that property accessor
     /// or `None` if the end of the path has been reached.
     pub fn name(&self) -> &'a str {
-        self.path.find('.').map(|i| &self.path[i..]).unwrap_or(self.path)
+        println!("{}", self.path);
+        self.path.find('.').map(|i| &self.path[..i]).unwrap_or(self.path)
     }
 
     /// Returns the next property accessor in the path.
     /// If the end is reached, then calling name on the property
     /// accessor created with that function will return `None`.
     pub fn next(&self) -> PropertyAccessor<'a> {
+        let next = self.path.find('.').unwrap_or(self.path.len() - 1) + 1;
         PropertyAccessor {
-            path: &self.path[self.path.find('.').unwrap_or(self.path.len())..self.path.len()],
+            path: &self.path[next..self.path.len()],
         }
     }
 }
@@ -60,7 +62,7 @@ impl<'a> PropertyAccessor<'a> {
 /// contains in their name a `.`.
 pub struct PrefixKeyIter<'a> {
     property_full_path: &'a str,
-    position: i8,
+    position: usize,
 }
 
 impl <'a> PrefixKeyIter<'a> {
@@ -76,30 +78,23 @@ impl <'a> Iterator for PrefixKeyIter<'a> {
     type Item = (&'a str, PropertyAccessor<'a>);
 
     fn next(&mut self) -> Option<<Self as Iterator>::Item> {
-        if self.position == 0 {
-            self.position += 1;
-            return Some(("", PropertyAccessor::new(self.property_full_path)));
-        }
-        let mut position = self.position;
-        self.position += 1;
-        let mut iterator = self.property_full_path.split(|c| {
-            if c == '.' {
-                position -= 1;
-                if position == 0 {
-                    return true;
+        if self.position == usize::max_value() {
+            None
+        } else {
+            let offset = self.property_full_path[self.position..].find('.');
+            match offset {
+                Some(i) => {
+                    let prefix = &self.property_full_path[..self.position+i];
+                    let property = &self.property_full_path[self.position+i+1..];
+                    self.position += i + 1;
+                    Some((prefix, PropertyAccessor::new(property)))
                 }
+                _ => {
+                    self.position = usize::max_value();
+                    Some((self.property_full_path, PropertyAccessor::new("")))
+                } 
             }
-            false
-        });
-        let prefix = match iterator.next() {
-            None => return None,
-            Some(a) => a,
-        };
-        let key = match iterator.next() {
-            None => return None,
-            Some(a) => a,
-        };
-        Some((prefix, PropertyAccessor::new(key)))
+        }
     }
 }
 
@@ -124,5 +119,28 @@ mod test {
         assert_eq!(a.name(), "foo");
         assert_eq!(b.name(), "bar");
         assert_eq!(a.name(), "foo");
+    }
+    
+    #[test]
+    fn next_with_a_path_of_length_three() {
+        let a = PropertyAccessor::new("foo.bar.bazz");
+        let b = a.next();
+        let c = b.next();
+        assert_eq!(a.name(), "foo");
+        assert_eq!(b.name(), "bar");
+        assert_eq!(c.name(), "bazz");
+    }
+    
+    #[test]
+    fn prefixkeyiter_should_generate_property_accessor_with_correct_order() {
+        let a = PrefixKeyIter::new(PropertyAccessor::new("foo.bar.bazz"));
+        let mut prefixes = Vec::with_capacity(3);
+        let mut properties = Vec::with_capacity(3);
+        for (i, p) in a { prefixes.push(i); properties.push(p); }
+        assert_eq!(prefixes, vec!["foo", "foo.bar", "foo.bar.bazz"]);
+        let mut it = properties.iter();
+        assert_eq!(it.next().unwrap().name(), "bar");
+        assert_eq!(it.next().unwrap().name(), "bazz");
+        assert_eq!(it.next().unwrap().name(), "");
     }
 }

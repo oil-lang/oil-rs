@@ -43,11 +43,15 @@ impl<G, V> ContextManager<G, V>
     
     /// Equivalent to the get_attribute of the `Store` trait.
     pub fn get_attribute<'a>(&'a mut self, view: &str, key: &str) -> Option<StoreValue<'a>> {
-        if let AttributeGetResult::Found(sv) = self.views.get(view)
-            .unwrap()
-            .get_attribute(PropertyAccessor::new(key)) {
-            Some(sv)
-        } else if let AttributeGetResult::Found(sv) = self.global
+        match self.views.get(view) {
+            Some(store) =>
+                if let AttributeGetResult::Found(sv) = store
+                    .get_attribute(PropertyAccessor::new(key)) {
+                    return Some(sv);
+                },
+            _ => ()
+        }
+        if let AttributeGetResult::Found(sv) = self.global
             .get_attribute(PropertyAccessor::new(key)) {
             Some(sv)
         } else {
@@ -124,112 +128,4 @@ impl<G, V> ContextManager<G, V>
 
 #[cfg(test)]
 mod test {
-    use std::rc::Rc;
-    use std::cell::RefCell;
-    use data_bindings::StoreValue;
-    use data_bindings::DataBindingError;
-    use data_bindings::BindingResult;
-    use data_bindings::Store;
-    use data_bindings::ArrStore;
-    use data_bindings::DBCLookup;
-    use super::ContextManager;
-
-    #[derive(Debug)]
-    struct Player {
-        name: String,
-        pv: i64,
-        xp: i64,
-        non_relevant_stuff: usize,
-    }
-
-    impl Player {
-        fn new<T: ToString>(name: T, pv: i64, xp: i64) -> Player {
-            Player {
-                name: name.to_string(),
-                pv: pv,
-                xp: xp,
-                non_relevant_stuff: 0,
-            }
-        }
-
-        fn new_rc<T: ToString>(name: T, pv: i64, xp: i64) -> Rc<RefCell<Player>> {
-            Rc::new(RefCell::new(Player::new(name, pv, xp)))
-        }
-    }
-
-    declare_data_binding! {
-        Player {
-            name,
-            pv,
-            xp
-        }
-    }
-
-    #[test]
-    fn register_view_player() {
-        let mut context = ContextManager::default();
-        context.register_view("foo".to_string());
-        let player = Player::new_rc("Grub", 42, 100);
-        context.register_store("foo", "player".to_string(), &player).unwrap();
-
-        // Not in the correct view
-        assert!(context.get_attribute("player.pv").is_none());
-        context.switch_to_view("foo".to_string());
-        assert_eq!(context.get_attribute("player.pv").unwrap(), StoreValue::Integer(42));
-        assert_eq!(context.get_attribute("player.xp").unwrap(), StoreValue::Integer(100));
-    }
-
-    #[test]
-    fn register_view_value() {
-        let mut context = ContextManager::default();
-        context.register_view("foo".to_string());
-        context.register_value("foo", "option.width".to_string(),
-            StoreValue::Integer(42)).unwrap();
-        assert!(context.get_attribute("option.width").is_none());
-        context.switch_to_view("foo".to_string());
-        assert_eq!(context.get_attribute("option.width").unwrap(), StoreValue::Integer(42));
-    }
-
-    #[test]
-    fn masking_global_value_by_view() {
-        let foo = "foo".to_string();
-        let bar = "bar".to_string();
-        let mut context = ContextManager::default();
-        context.register_view(foo.clone());
-        context.register_view(bar.clone());
-        context.register_view("foobar".to_string());
-        context.register_value("foo", "option.width".to_string(),
-            StoreValue::String("foo_value".to_string())).unwrap();
-        context.register_value("bar", "option.width".to_string(),
-            StoreValue::String("bar_value".to_string())).unwrap();
-        context.register_global_value("option.width".to_string(),
-            StoreValue::String("global_value".to_string()));
-
-        // In view "foobar" -> get global value
-        context.switch_to_view("foobar".to_string());
-        assert_eq!(context.get_attribute("option.width").unwrap(), StoreValue::String("global_value".to_string()));
-        // In view "foo" -> get foo specific value
-        context.switch_to_view("foo".to_string());
-        assert_eq!(context.get_attribute("option.width").unwrap(), StoreValue::String("foo_value".to_string()));
-        // In view "bar" -> get bar specific value
-        context.switch_to_view("bar".to_string());
-        assert_eq!(context.get_attribute("option.width").unwrap(), StoreValue::String("bar_value".to_string()));
-    }
-
-    #[test]
-    fn masking_iterator() {
-        let mut context = ContextManager::default();
-        context.register_view("foo".to_string());
-        let global_players = Rc::new(RefCell::new(vec![Player::new("Grub", 1, 11), Player::new("Gnom", 2, 22)]));
-        context.register_global_iterator("game.friends".to_string(), &global_players);
-        let foo_players = Rc::new(RefCell::new(vec![Player::new("Turtle", 3, 33)]));
-        context.register_iterator("foo", "game.friends".to_string(), &foo_players).unwrap();
-        let mut global_vec = Vec::new();
-        assert!(context.compare_and_update("game.friends", "pv", &mut global_vec).unwrap());
-        assert_eq!(global_vec, [StoreValue::Integer(1), StoreValue::Integer(2)]);
-        context.switch_to_view("foo".to_string());
-        let mut foo_vec = Vec::new();
-        assert!(context.compare_and_update("game.friends", "pv", &mut foo_vec).unwrap());
-        assert_eq!(foo_vec, [StoreValue::Integer(3)]);
-    }
 }

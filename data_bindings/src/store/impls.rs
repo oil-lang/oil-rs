@@ -17,18 +17,44 @@ use {
 };
 
 /// `Box` implementation to allow virtual implementations
-/// TODO(Nemikolh): Does everything still works if this impl
-/// is replaced by `Box<T> where T: Store`.
-impl <'a> Store for Box<Store + 'a> {
-
+impl<'a> Store for Box<Store + 'a> {
     fn get_attribute<'b>(&'b self, k: PropertyAccessor) -> AttributeGetResult<'b> {
         (**self).get_attribute(k)
     }
-
     fn set_attribute<'b>(&mut self, k: PropertyAccessor, value: StoreValue<'b>) -> AttributeSetResult<'b> {
         (**self).set_attribute(k, value)
     }
 }
+
+/// `Box` implementation to allow virtual implementations
+impl<T> Store for Box<T> where T: Store {
+    fn get_attribute<'b>(&'b self, k: PropertyAccessor) -> AttributeGetResult<'b> {
+        (**self).get_attribute(k)
+    }
+    fn set_attribute<'b>(&mut self, k: PropertyAccessor, value: StoreValue<'b>) -> AttributeSetResult<'b> {
+        (**self).set_attribute(k, value)
+    }
+}
+/*
+impl<T> Store for Rc<RefCell<T>> where T: Store {
+    fn get_attribute<'b>(&'b self, k: PropertyAccessor) -> AttributeGetResult<'b> {
+        let b = self.borrow();
+        let a = b.get_attribute(k);
+        match 
+    }
+    fn set_attribute<'b>(&mut self, k: PropertyAccessor, value: StoreValue<'b>) -> AttributeSetResult<'b> {
+        self.borrow_mut().set_attribute(k, value)
+    }
+}
+impl<T> Store for Rc<T> where T: Store {
+    fn get_attribute<'b>(&'b self, k: PropertyAccessor) -> AttributeGetResult<'b> {
+        (**self).get_attribute(k)
+    }
+    fn set_attribute<'b>(&mut self, k: PropertyAccessor, value: StoreValue<'b>) -> AttributeSetResult<'b> {
+        self.set_attribute(k, value)
+    }
+}
+*/
 
 // Implementation for i64, String and others.
 impl<T> Store for T
@@ -55,32 +81,6 @@ impl<T> Store for T
         }
     }
 }
-
-// Implementation to allow using directly `StoreValue` enum
-// in any container/struct. It is more efficient to reimplement it
-// because the function call to cast is avoided like this.
-//impl Store for StoreValueStatic {
-//
-//    fn get_attribute<'b>(&'b self, k: PropertyAccessor) -> AttributeGetResult<'b> {
-//        match k.name() {
-//            "" => {
-//                let f: StoreValue<'b> = self.clone().into();
-//                AttributeGetResult::Found(f)
-//            }
-//            _ => AttributeGetResult::NoSuchProperty
-//        }
-//    }
-//
-//    fn set_attribute<'b>(&mut self, k: PropertyAccessor, value: StoreValue<'b>) -> AttributeSetResult<'b> {
-//        match k.name() {
-//            "" => match <Self as Cast>::cast(value) {
-//                Some(c) => { *self = c; AttributeSetResult::Stored },
-//                None => AttributeSetResult::WrongType
-//            },
-//            _ => AttributeSetResult::NoSuchProperty(value)
-//        }
-//    }
-//}
 
 /// This implementation is used by the `repeat`
 /// tag. It doesn't allow for set_attribute to do any change
