@@ -10,7 +10,7 @@ macro_rules! declare_data_binding {
             {
                 match k.name() {
                     $(stringify!($field) => self.$field.get_attribute(k.next()),)*
-                    _ => AttributeGetResult::NoSuchProperty,
+                    _ => $crate::AttributeGetResult::NoSuchProperty,
                 }
             }
 
@@ -19,7 +19,7 @@ macro_rules! declare_data_binding {
             {
                 match k.name() {
                     $(stringify!($field) => self.$field.set_attribute(k.next(), value),)*
-                    _ => AttributeSetResult::NoSuchProperty(value),
+                    _ => $crate::AttributeSetResult::NoSuchProperty(value),
                 }
             }
         }

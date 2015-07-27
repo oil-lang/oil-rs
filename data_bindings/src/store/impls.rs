@@ -1,6 +1,7 @@
 use std::collections::{
     HashMap
 };
+use std::marker::Reflect;
 use std::collections::hash_state::HashState;
 
 use lookup::{
@@ -17,7 +18,7 @@ use {
 };
 
 /// `Box` implementation to allow virtual implementations
-impl<'a> Store for Box<Store + 'a> {
+impl Store for Box<Store + 'static> {
     fn get_attribute<'b>(&'b self, k: PropertyAccessor) -> AttributeGetResult<'b> {
         (**self).get_attribute(k)
     }
@@ -40,7 +41,7 @@ impl<T> Store for Rc<RefCell<T>> where T: Store {
     fn get_attribute<'b>(&'b self, k: PropertyAccessor) -> AttributeGetResult<'b> {
         let b = self.borrow();
         let a = b.get_attribute(k);
-        match 
+        match
     }
     fn set_attribute<'b>(&mut self, k: PropertyAccessor, value: StoreValue<'b>) -> AttributeSetResult<'b> {
         self.borrow_mut().set_attribute(k, value)
@@ -58,7 +59,7 @@ impl<T> Store for Rc<T> where T: Store {
 
 // Implementation for i64, String and others.
 impl<T> Store for T
-    where T: Into<StoreValueStatic> + Clone + Cast
+    where T: Into<StoreValueStatic> + Clone + Cast + Reflect + 'static
 {
 
     fn get_attribute<'b>(&'b self, k: PropertyAccessor) -> AttributeGetResult<'b> {
@@ -87,28 +88,28 @@ impl<T> Store for T
 /// to the array. (No tag actually allow that)
 /// It works similarly to the impl above for `T` when `T: Into<StoreValue> + Cast`.
 /// The get_attribute transforms `&'a [T]` into a `StoreValue::List`
-impl<T> Store for [T]
-    where T: Store
-{
-    fn get_attribute<'a>(&'a self, k: PropertyAccessor) -> AttributeGetResult<'a> {
-        match k.name() {
-            "" => AttributeGetResult::Found(self.into()),
-            _ => AttributeGetResult::NoSuchProperty
-        }
-    }
-    
-    fn set_attribute<'a>(&mut self, k: PropertyAccessor, value: StoreValue<'a>) -> AttributeSetResult<'a> {
-        match k.name() {
-            "" => AttributeSetResult::WrongType,
-            _ => AttributeSetResult::NoSuchProperty(value)
-        }
-    }
-}
+//impl<T> Store for [T]
+//    where T: Store
+//{
+//    fn get_attribute<'a>(&'a self, k: PropertyAccessor) -> AttributeGetResult<'a> {
+//        match k.name() {
+//            "" => AttributeGetResult::Found(self.into()),
+//            _ => AttributeGetResult::NoSuchProperty
+//        }
+//    }
+//
+//    fn set_attribute<'a>(&mut self, k: PropertyAccessor, value: StoreValue<'a>) -> AttributeSetResult<'a> {
+//        match k.name() {
+//            "" => AttributeSetResult::WrongType,
+//            _ => AttributeSetResult::NoSuchProperty(value)
+//        }
+//    }
+//}
 
 /// This implementation allows for property names such as `foo.bar`
-/// The rule follows the logic given by the `PrefixKeyIter` iterator. 
+/// The rule follows the logic given by the `PrefixKeyIter` iterator.
 impl<S, T> Store for HashMap<String, T, S>
-    where S: HashState + 'static,
+    where S: HashState + Reflect + 'static,
           T: Store
 {
 

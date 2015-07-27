@@ -1,4 +1,5 @@
 #![feature(hashmap_hasher)]
+#![feature(reflect_marker)]
 
 #[macro_use]
 extern crate mopa;
@@ -10,13 +11,12 @@ mod macros;
 
 pub use self::store::StoreValue;
 pub use self::store::Cast;
-pub use self::context::ContextManager;
 pub use self::context::DefaultContextManager;
 pub use self::lookup::PropertyAccessor;
 
 //mod error;
+pub mod context;
 mod store;
-mod context;
 mod lookup;
 
 /// Key trait to create a model that support two-ways databindings
@@ -25,7 +25,7 @@ mod lookup;
 /// The simplest way to implement it, is by using
 /// the `declare_data_binding!` macro like this:
 ///
-/// ```
+/// ```rust
 /// # #[macro_use]
 /// # extern crate oil_databindings;
 /// struct Player {
@@ -45,13 +45,16 @@ mod lookup;
 /// # fn main() {
 /// # }
 /// ```
-/// 
-/// `Store` is [mopafied](https://github.com/chris-morgan/mopa)
+///
+/// The trait `Store` is [mopafied](https://github.com/chris-morgan/mopa)
 /// to allow cast(s) to the original type:
-/// ```
+///
+/// ```rust
 /// # #[macro_use]
-/// # extern crate oil_databindings as oil;
-/// # use oil_databindings::{AmbientModel, PropertyAccessor, StoreValue};
+/// # extern crate oil_databindings;
+/// # use oil_databindings::{PropertyAccessor, StoreValue, Store};
+/// # use oil_databindings::context::AmbientModel;
+/// # use oil_databindings::context::Context;
 /// # struct Player {
 /// #     name: String,
 /// #     pv: i64,
@@ -68,27 +71,35 @@ mod lookup;
 /// # }
 /// # fn main() {
 ///     // Creation of an AmbientModel and an instance of the previously defined store
-///     let p = Box::new(Player { name: "Bob".to_string(), pv: 10, Default::default().. });
-///     let mut a = AmbientModel::Default();
+///     let p = Box::new(Player {
+///         name: "Bob".to_string(),
+///         pv: 10,
+///         xp: 0,
+///         non_relevant_stuff: 0
+///     });
+///     let mut a = AmbientModel::default();
 ///
 ///     // Registering the player object (giving ownership here)
-///     a.register_store("player", p);
+///     a.register_store("player".to_string(), p);
 ///
 ///     // Checking that the player is correctly registered:
-///     let attribute = a.get_attribute(PropertyAccessor::new("player.name")).unwrap();
-///     match attribute {
-///         StoreValue::String(s) => println!("Hello {}!", s),
-///         _ => unreachable!(),
+///     {
+///         let attribute = a.get_attribute(PropertyAccessor::new("player.name")).unwrap();
+///         match attribute {
+///             StoreValue::String(s) => println!("Hello {}!", s),
+///             _ => unreachable!(),
+///         }
 ///     }
 ///
 ///     // Get back a mutable reference to the player instance
-///     let iam_bob = a.get_store_mut("player").unwrap().downcast_ref::<Player>().unwrap();
+///     let iam_bob = a.get_store_mut("player".to_string()).unwrap()
+///                    .downcast_ref::<Box<Player>>().unwrap();
 ///     assert_eq!(iam_bob.name, "Bob");
 ///     assert_eq!(iam_bob.pv, 10);
 /// # }
 /// ```
 ///
-pub trait Store {//: mopa::Any {
+pub trait Store: mopa::Any {
 
     /// Return the value corresponding to the key 'k'.
     /// If no value is found with such a name, the trait
@@ -101,7 +112,7 @@ pub trait Store {//: mopa::Any {
     fn set_attribute<'a>(&mut self, k: PropertyAccessor, value: StoreValue<'a>) -> AttributeSetResult<'a>;
 }
 
-//mopafy!(Store);
+mopafy!(Store);
 
 /// Result type when calling `get_attribute` on a `Store`
 /// object.
@@ -115,14 +126,14 @@ pub enum AttributeGetResult<'a> {
 }
 
 impl<'a> AttributeGetResult<'a> {
-    
+
     pub fn unwrap(self) -> StoreValue<'a> {
         match self {
             AttributeGetResult::Found(s) => s,
             _ => panic!(),
         }
     }
-    
+
     pub fn is_found(&self) -> bool {
         match self { &AttributeGetResult::Found(_) => true, _ => false }
     }
@@ -190,10 +201,7 @@ mod test {
         let mut context = DefaultContextManager::default();
         let player = Player::new("Grub", 42, 100);
         context.register_global_store("player".to_string(), player);
-        println!("hello3");
-        {let a = context.get_attribute("main", "player.pv");
-        println!("hello 1{:?}", a);
-        assert_eq!(a.unwrap(), StoreValue::Integer(42));}
+        assert_eq!(context.get_attribute("main", "player.pv").unwrap(), StoreValue::Integer(42));
         assert_eq!(context.get_attribute("main", "player.xp").unwrap(), StoreValue::Integer(100));
     }
 

@@ -40,9 +40,9 @@ impl<'a> PropertyAccessor<'a> {
 
 /// This iterator generate from a PropertyAccessor
 /// a sequence of
-///
+/// ```txt
 ///     (String, PropertyAccessor)
-///
+/// ```
 /// where the first String is called the "prefix". It is a convenient
 /// iterator that works well with a `Map`-like container where keys can
 /// contain the separator `.` char.
@@ -52,12 +52,12 @@ impl<'a> PropertyAccessor<'a> {
 /// Given the PropertyAccessor `"settings.gui.window.scale"`,
 /// when trying in a Hashmap to access the object behind the property,
 /// we're going to try to reach in order:
-///
+/// ```txt
 ///     LocalProperty("settings"),  PropertyAccessor("gui.window.scale")
 ///     LocalProperty("settings.gui"),  PropertyAccessor("window.scale")
 ///     LocalProperty("settings.gui.window"),  PropertyAccessor("scale")
 ///     LocalProperty("settings.gui.window.scale"), PropertyAccessor("")
-///
+/// ```
 /// This check only make sense at the Hashmap level because Rust type won't
 /// contains in their name a `.`.
 pub struct PrefixKeyIter<'a> {
