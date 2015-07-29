@@ -172,6 +172,7 @@ mod test {
     #[derive(Debug)]
     struct Player {
         name: String,
+        test: Vec<String>,
         pv: i64,
         xp: i64,
         non_relevant_stuff: usize,
@@ -181,6 +182,7 @@ mod test {
         fn new<T: ToString>(name: T, pv: i64, xp: i64) -> Player {
             Player {
                 name: name.to_string(),
+                test: Vec::new(),
                 pv: pv,
                 xp: xp,
                 non_relevant_stuff: 0,
@@ -191,6 +193,7 @@ mod test {
     declare_data_binding! {
         Player {
             name,
+            test,
             pv,
             xp
         }

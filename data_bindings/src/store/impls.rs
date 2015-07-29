@@ -1,6 +1,7 @@
 use std::collections::{
     HashMap
 };
+use std::ops::Deref;
 use std::marker::Reflect;
 use std::collections::hash_state::HashState;
 
@@ -88,23 +89,23 @@ impl<T> Store for T
 /// to the array. (No tag actually allow that)
 /// It works similarly to the impl above for `T` when `T: Into<StoreValue> + Cast`.
 /// The get_attribute transforms `&'a [T]` into a `StoreValue::List`
-//impl<T> Store for [T]
-//    where T: Store
-//{
-//    fn get_attribute<'a>(&'a self, k: PropertyAccessor) -> AttributeGetResult<'a> {
-//        match k.name() {
-//            "" => AttributeGetResult::Found(self.into()),
-//            _ => AttributeGetResult::NoSuchProperty
-//        }
-//    }
-//
-//    fn set_attribute<'a>(&mut self, k: PropertyAccessor, value: StoreValue<'a>) -> AttributeSetResult<'a> {
-//        match k.name() {
-//            "" => AttributeSetResult::WrongType,
-//            _ => AttributeSetResult::NoSuchProperty(value)
-//        }
-//    }
-//}
+impl<T> Store for Vec<T>
+    where T: Store + Reflect
+{
+    fn get_attribute<'a>(&'a self, k: PropertyAccessor) -> AttributeGetResult<'a> {
+        match k.name() {
+            "" => AttributeGetResult::Found(self.deref().into()),
+            _ => AttributeGetResult::NoSuchProperty
+        }
+    }
+
+    fn set_attribute<'a>(&mut self, k: PropertyAccessor, value: StoreValue<'a>) -> AttributeSetResult<'a> {
+        match k.name() {
+            "" => AttributeSetResult::WrongType,
+            _ => AttributeSetResult::NoSuchProperty(value)
+        }
+    }
+}
 
 /// This implementation allows for property names such as `foo.bar`
 /// The rule follows the logic given by the `PrefixKeyIter` iterator.
