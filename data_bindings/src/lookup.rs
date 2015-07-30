@@ -23,7 +23,6 @@ impl<'a> PropertyAccessor<'a> {
     /// Returns the name associated with that property accessor
     /// or `None` if the end of the path has been reached.
     pub fn name(&self) -> &'a str {
-        println!("{}", self.path);
         self.path.find('.').map(|i| &self.path[..i]).unwrap_or(self.path)
     }
 
@@ -92,7 +91,7 @@ impl <'a> Iterator for PrefixKeyIter<'a> {
                 _ => {
                     self.position = usize::max_value();
                     Some((self.property_full_path, PropertyAccessor::new("")))
-                } 
+                }
             }
         }
     }
@@ -120,7 +119,7 @@ mod test {
         assert_eq!(b.name(), "bar");
         assert_eq!(a.name(), "foo");
     }
-    
+
     #[test]
     fn next_with_a_path_of_length_three() {
         let a = PropertyAccessor::new("foo.bar.bazz");
@@ -130,7 +129,7 @@ mod test {
         assert_eq!(b.name(), "bar");
         assert_eq!(c.name(), "bazz");
     }
-    
+
     #[test]
     fn prefixkeyiter_should_generate_property_accessor_with_correct_order() {
         let a = PrefixKeyIter::new(PropertyAccessor::new("foo.bar.bazz"));

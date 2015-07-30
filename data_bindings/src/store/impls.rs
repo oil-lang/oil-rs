@@ -203,7 +203,7 @@ mod test {
 
     #[bench]
     fn vec_direct_access(b: &mut Bencher) {
-        let total = 100;
+        let total = 1000;
         let v = A {
             a: vec![B { b: 1, c: C { a: Vec::new() }}; total],
         };
@@ -219,7 +219,7 @@ mod test {
 
     #[bench]
     fn vec_store_access(b: &mut Bencher) {
-        let total = 100;
+        let total = 1000;
         let v = A {
             a: vec![B { b: 1, c: C { a: Vec::new() }}; total],
         };
@@ -229,7 +229,6 @@ mod test {
                 StoreValue::List(iter) => iter,
                 _ => panic!("test failed on iter access"),
             };
-            println!("wtf ?");
             let mut sum = 0;
             for i in iter {
                 sum += match i.get_attribute(PropertyAccessor::new("b")).unwrap() {
