@@ -5,8 +5,9 @@ use {
     Store,
     PropertyAccessor,
     AttributeSetResult,
-    AttributeGetResult
+    AttributeGetResult,
 };
+use store::StoreValueStatic;
 use super::Context;
 
 /// The `ContextManager` is templated by a class implementing
@@ -18,7 +19,7 @@ pub struct ContextManager<G: Default, V> {
     views: HashMap<String, V>,
 }
 
-impl<G, V> ContextManager<G, V> 
+impl<G, V> ContextManager<G, V>
     where G: Store + Default,
           V: Store
 {
@@ -31,7 +32,7 @@ impl<G, V> ContextManager<G, V>
             views: HashMap::new()
         }
     }
-    
+
     /// Insert a root `Store` for the given view.
     /// **Note:**
     ///     With the `ContextManager`, all views have a store of the same type.
@@ -40,25 +41,25 @@ impl<G, V> ContextManager<G, V>
     pub fn insert_view_level_store(&mut self, view_name: String, store: V) {
         self.views.insert(view_name, store);
     }
-    
+
     /// Equivalent to the get_attribute of the `Store` trait.
     pub fn get_attribute<'a>(&'a mut self, view: &str, key: &str) -> Option<StoreValue<'a>> {
         match self.views.get(view) {
             Some(store) =>
-                if let AttributeGetResult::Found(sv) = store
+                if let AttributeGetResult::PrimitiveType(sv) = store
                     .get_attribute(PropertyAccessor::new(key)) {
                     return Some(sv);
                 },
             _ => ()
         }
-        if let AttributeGetResult::Found(sv) = self.global
+        if let AttributeGetResult::PrimitiveType(sv) = self.global
             .get_attribute(PropertyAccessor::new(key)) {
             Some(sv)
         } else {
             None
         }
     }
-    
+
     /// Equivalent to the `set_attribute` of the `Store` trait.
     /// TODO(Nemikolh): Move that comment for the trait `...`
     /// The view argument can be ignored. It offers the possibility
@@ -76,10 +77,10 @@ impl<G, V> ContextManager<G, V>
 }
 
 /// Implement `Context` equivalent method per view,
-/// if the type `V` implement `Context`. 
+/// if the type `V` implement `Context`.
 impl<G, V> ContextManager<G, V>
     where V: Context,
-          G: Default 
+          G: Default
 {
     pub fn register_store_for_view<S: Store>(
         &mut self,
@@ -88,8 +89,8 @@ impl<G, V> ContextManager<G, V>
         store: S) {
         self.views.get_mut(&view_name).unwrap().register_store(store_name, store);
     }
-    
-    pub fn register_value_for_view<M: Into<StoreValue<'static>>>(
+
+    pub fn register_value_for_view<M: Into<StoreValueStatic>>(
         &mut self,
         view_name: String,
         store_name: String,
@@ -99,7 +100,7 @@ impl<G, V> ContextManager<G, V>
 }
 
 /// Implement `Context` equivalent method for the global data,
-/// if the type `G` implement `Context`. 
+/// if the type `G` implement `Context`.
 impl<G, V> ContextManager<G, V>
     where G: Context + Default
 {
@@ -112,7 +113,7 @@ impl<G, V> ContextManager<G, V>
     }
 
 
-    pub fn register_global_value<M: Into<StoreValue<'static>>>(
+    pub fn register_global_value<M: Into<StoreValueStatic>>(
         &mut self,
         store_name: String,
         value: M)

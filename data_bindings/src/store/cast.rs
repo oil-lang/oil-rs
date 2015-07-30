@@ -1,25 +1,62 @@
 use num::ToPrimitive;
 use StoreValue;
 use store::StoreValueStatic;
+use std::ops::Deref;
 
 /// A type that want to be converted into from a `StoreValue`
 /// must implement this trait.
 pub trait Cast {
-    
+
     /// Try to cast the given StoreValue into Self.
     /// If the StoreValue has an appropriate type, return
     /// `None`.
     fn cast(this: StoreValue) -> Option<Self>;
 }
 
+/// A type to convert a type into a store value
+/// but without moving it.
+pub trait AsStoreValue {
+
+    /// Should convert the type into a StoreValue.
+    /// Note that the lifetime of the StoreValue is bounded
+    /// by `self`.
+    fn as_store_value(&self) -> StoreValue;
+}
+
+/// The friend trait of the `Cast` trait. It is automatically implemented
+/// and shouldn't be implemented directly. Rely on the `Cast` trait instead.
+pub trait AssignFromCast {
+
+    fn assign(&mut self, this: StoreValue);
+}
+
+impl<T> AssignFromCast for T
+    where T: Cast
+{
+    fn assign(&mut self, this: StoreValue) {
+        match <Self as Cast>::cast(this) {
+            Some(v) => *self = v,
+            None => (),
+        }
+    }
+}
+
 impl Cast for StoreValueStatic {
-    
     fn cast(this: StoreValue) -> Option<Self> {
         match this {
-            StoreValue::String(s) => Some(StoreValueStatic(StoreValue::String(s))),
-            StoreValue::Integer(i) => Some(StoreValueStatic(StoreValue::Integer(i))),
-            StoreValue::Boolean(b) => Some(StoreValueStatic(StoreValue::Boolean(b))),
-            StoreValue::List(_) => None
+            StoreValue::String(s) => Some(StoreValueStatic::String(s.to_string())),
+            StoreValue::Integer(i) => Some(StoreValueStatic::Integer(i)),
+            StoreValue::Boolean(b) => Some(StoreValueStatic::Boolean(b)),
+        }
+    }
+}
+
+impl AsStoreValue for StoreValueStatic {
+    fn as_store_value(&self) -> StoreValue {
+        match self {
+            &StoreValueStatic::String(ref s) => StoreValue::String(s.deref()),
+            &StoreValueStatic::Integer(i) => StoreValue::Integer(i),
+            &StoreValueStatic::Boolean(b) => StoreValue::Boolean(b),
         }
     }
 }
@@ -35,6 +72,11 @@ macro_rules! impl_for_integer {
                     }
                     _ => None
                 }
+            }
+        }
+        impl AsStoreValue for $type_ident {
+            fn as_store_value(&self) -> StoreValue {
+                StoreValue::Integer(*self as i64)
             }
         }
     )
@@ -53,7 +95,7 @@ impl Cast for String {
     fn cast(this: StoreValue) -> Option<Self> {
         match this {
             StoreValue::String(s) => {
-                Some(s)
+                Some(s.to_string())
             }
             StoreValue::Integer(i) => {
                 Some(i.to_string())
@@ -61,8 +103,13 @@ impl Cast for String {
             StoreValue::Boolean(b) => {
                 Some(b.to_string())
             }
-            _ => None,
         }
+    }
+}
+
+impl AsStoreValue for String {
+    fn as_store_value(&self) -> StoreValue {
+        StoreValue::String(self.deref())
     }
 }
 
@@ -78,7 +125,12 @@ impl Cast for bool {
             StoreValue::Integer(i) => {
                 Some(i != 0)
             }
-            _ => None,
         }
+    }
+}
+
+impl AsStoreValue for bool {
+    fn as_store_value(&self) -> StoreValue {
+        StoreValue::Boolean(*self)
     }
 }

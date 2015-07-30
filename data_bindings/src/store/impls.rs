@@ -1,7 +1,7 @@
 use std::collections::{
     HashMap
 };
-use std::ops::Deref;
+use std::slice;
 use std::marker::Reflect;
 use std::collections::hash_state::HashState;
 
@@ -10,6 +10,7 @@ use lookup::{
     PrefixKeyIter
 };
 use store::StoreValueStatic;
+use store::cast::AsStoreValue;
 use {
     AttributeSetResult,
     AttributeGetResult,
@@ -19,17 +20,7 @@ use {
 };
 
 /// `Box` implementation to allow virtual implementations
-impl Store for Box<Store + 'static> {
-    fn get_attribute<'b>(&'b self, k: PropertyAccessor) -> AttributeGetResult<'b> {
-        (**self).get_attribute(k)
-    }
-    fn set_attribute<'b>(&mut self, k: PropertyAccessor, value: StoreValue<'b>) -> AttributeSetResult<'b> {
-        (**self).set_attribute(k, value)
-    }
-}
-
-/// `Box` implementation to allow virtual implementations
-impl<T> Store for Box<T> where T: Store {
+impl<T: ?Sized> Store for Box<T> where T: Store {
     fn get_attribute<'b>(&'b self, k: PropertyAccessor) -> AttributeGetResult<'b> {
         (**self).get_attribute(k)
     }
@@ -59,30 +50,41 @@ impl<T> Store for Rc<T> where T: Store {
 */
 
 // Implementation for i64, String and others.
-impl<T> Store for T
-    where T: Into<StoreValueStatic> + Clone + Cast + Reflect + 'static
+impl_store_for_value_type_like!(i64);
+impl_store_for_value_type_like!(i32);
+impl_store_for_value_type_like!(i16);
+impl_store_for_value_type_like!(i8);
+impl_store_for_value_type_like!(u32);
+impl_store_for_value_type_like!(u16);
+impl_store_for_value_type_like!(u8);
+impl_store_for_value_type_like!(bool);
+impl_store_for_value_type_like!(String);
+impl_store_for_value_type_like!(StoreValueStatic);
+
+struct WrapperIter<'a, T: 'a> {
+    it: slice::Iter<'a, T>,
+}
+
+impl<'a, T> Iterator for WrapperIter<'a, T>
+    where T: Store + 'a
 {
+    type Item = &'a Store;
 
-    fn get_attribute<'b>(&'b self, k: PropertyAccessor) -> AttributeGetResult<'b> {
-        match k.name() {
-            "" => {
-                let attribute: StoreValue<'b> = self.clone().into().into();
-                AttributeGetResult::Found(attribute)
-            }
-            _ => AttributeGetResult::NoSuchProperty
-        }
-    }
-
-    fn set_attribute<'b>(&mut self, k: PropertyAccessor, value: StoreValue<'b>) -> AttributeSetResult<'b> {
-        match k.name() {
-            "" => match <Self as Cast>::cast(value) {
-                Some(c) => { *self = c; AttributeSetResult::Stored },
-                None => AttributeSetResult::WrongType
-            },
-            _ => AttributeSetResult::NoSuchProperty(value)
-        }
+    fn next(&mut self) -> Option<Self::Item> {
+        self.it.next().map(|i| i as &Store)
     }
 }
+/*impl<'a, T> From<&'a [T]> for StoreValue<'a>
+    where T: Store
+{
+
+    fn from(t: &'a [T]) -> StoreValue<'a> {
+        let i = Box::new(WrapperIter { it: t.iter() }) as Box<Iterator<Item=&'a Store> + 'a>;
+        StoreValue::List(i)
+    }
+}
+*/
+
 
 /// This implementation is used by the `repeat`
 /// tag. It doesn't allow for set_attribute to do any change
@@ -94,11 +96,24 @@ impl<T> Store for Vec<T>
 {
     fn get_attribute<'a>(&'a self, k: PropertyAccessor) -> AttributeGetResult<'a> {
         match k.name() {
-            "" => AttributeGetResult::Found(self.deref().into()),
+            "" => AttributeGetResult::IterableType(
+                Box::new(WrapperIter { it: self.iter() }) as Box<Iterator<Item=&'a Store> + 'a>
+            ),
             _ => AttributeGetResult::NoSuchProperty
         }
     }
 
+    // TODO(Nemikolh): We should be able to modify the element of the array.
+    // But in order to have a nicer interface it would be better to have something like:
+    //
+    //      get_attribute_mut() -> AttributeMutResult
+    //
+    // where:
+    //
+    //      AttributeMutResult<'a> {
+    //          PrimitiveType(&'a mut Cast),
+    //          IterableType()
+    //      }
     fn set_attribute<'a>(&mut self, k: PropertyAccessor, value: StoreValue<'a>) -> AttributeSetResult<'a> {
         match k.name() {
             "" => AttributeSetResult::WrongType,
@@ -119,7 +134,7 @@ impl<S, T> Store for HashMap<String, T, S>
             if let Some(store) = self.get(prefix) {
                 match store.get_attribute(key) {
                     AttributeGetResult::NoSuchProperty => (),
-                    AttributeGetResult::Found(v) => return AttributeGetResult::Found(v),
+                    default_case => return default_case,
                 }
             }
         }
@@ -140,6 +155,10 @@ impl<S, T> Store for HashMap<String, T, S>
         AttributeSetResult::NoSuchProperty(value)
     }
 }
+
+// ======================================== //
+//                   TESTS                  //
+// ======================================== //
 
 #[cfg(test)]
 mod test {
@@ -193,10 +212,7 @@ mod test {
             ]
         };
 
-        let mut iter = match v.get_attribute(PropertyAccessor::new("a")).unwrap() {
-            StoreValue::List(iter) => iter,
-            _ => panic!("test failed on iter access"),
-        };
+        let mut iter = v.get_attribute(PropertyAccessor::new("a")).unwrap_iter();
         assert_eq!(iter.next().unwrap().get_attribute(PropertyAccessor::new("b")).unwrap(), StoreValue::Integer(0));
         assert_eq!(iter.next().unwrap().get_attribute(PropertyAccessor::new("b")).unwrap(), StoreValue::Integer(1));
     }
@@ -225,10 +241,7 @@ mod test {
         };
 
         b.iter(|| {
-            let iter = match v.get_attribute(PropertyAccessor::new("a")).unwrap() {
-                StoreValue::List(iter) => iter,
-                _ => panic!("test failed on iter access"),
-            };
+            let iter = v.get_attribute(PropertyAccessor::new("a")).unwrap_iter();
             let mut sum = 0;
             for i in iter {
                 sum += match i.get_attribute(PropertyAccessor::new("b")).unwrap() {

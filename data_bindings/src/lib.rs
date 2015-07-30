@@ -118,27 +118,29 @@ mopafy!(Store);
 
 /// Result type when calling `get_attribute` on a `Store`
 /// object.
-#[derive(Clone)]
 pub enum AttributeGetResult<'a> {
     /// This value is returned when the get has succeeded
-    Found(StoreValue<'a>),
+    /// and the value is a `PrimitiveType`.
+    PrimitiveType(StoreValue<'a>),
+    /// This value is returned when the get has succeeded
+    /// and the value is a `IterableType`.
+    IterableType(Box<Iterator<Item=&'a Store> + 'a>),
     /// This value is returned to indicate that there's no such property
     /// accessible for the given PropertyAccessor.
     NoSuchProperty,
 }
 
-impl<'a> AttributeGetResult<'a> {
-
-    pub fn unwrap(self) -> StoreValue<'a> {
-        match self {
-            AttributeGetResult::Found(s) => s,
-            _ => panic!(),
-        }
-    }
-
-    pub fn is_found(&self) -> bool {
-        match self { &AttributeGetResult::Found(_) => true, _ => false }
-    }
+/// Result type when calling `get_attribute_mut` on a `Store`
+/// object.
+pub enum AttributeMutResult<'a> {
+    /// This value should be returned when the get has succeeded
+    /// and the value is  a `PrimitiveType`.
+    PrimitiveType(&'a mut store::AssignFromCast),
+    /// This value should be returned when the get has succeeded
+    /// and the value is an `IterableType`.
+    IterableType(Box<Iterator<Item=&'a mut Store> + 'a>),
+    /// Access didn't provide any result.
+    NoSuchProperty
 }
 
 /// Result type when calling `set_attribute` on a `Store`
@@ -161,6 +163,35 @@ pub enum AttributeSetResult<'a> {
     /// If the lookup failed, the value argument of `set_attribute` must
     /// be returned unchanged via this enum value.
     NoSuchProperty(StoreValue<'a>)
+}
+
+// ======================================== //
+//                   IMPLS                  //
+// ======================================== //
+
+impl<'a> AttributeGetResult<'a> {
+
+    pub fn unwrap(self) -> StoreValue<'a> {
+        match self {
+            AttributeGetResult::PrimitiveType(s) => s,
+            _ => panic!(),
+        }
+    }
+
+    pub fn unwrap_iter(self) -> Box<Iterator<Item=&'a Store> + 'a> {
+        match self {
+            AttributeGetResult::IterableType(it) => it,
+            _ => panic!(),
+        }
+    }
+
+    pub fn is_found(&self) -> bool {
+        match self {
+            &AttributeGetResult::PrimitiveType(_) => true,
+            &AttributeGetResult::IterableType(_) => true,
+            _ => false
+        }
+    }
 }
 
 // ======================================== //

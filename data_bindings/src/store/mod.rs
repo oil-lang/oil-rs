@@ -1,5 +1,6 @@
 
 pub use self::cast::Cast;
+pub use self::cast::AssignFromCast;
 pub use self::value::StoreValue;
 pub use self::value::StoreValueStatic;
 

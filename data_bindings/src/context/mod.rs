@@ -22,12 +22,12 @@ use lookup::PropertyAccessor;
 /// then those function can be used also on the `ContextManager`.
 pub trait Context {
 
-    /// Register a single value at the key    
-    fn register_value<V: Into<StoreValue<'static>>>(&mut self, key: String, value: V);
-    
+    /// Register a single value at the key
+    fn register_value<V: Into<StoreValueStatic>>(&mut self, key: String, value: V);
+
     /// Register a store:
     fn register_store<S: Store>(&mut self, key: String, store: S);
-    
+
     /// Return a previously registered store:
     /// This can be useful when you want to modify an existing store but without
     /// retaining a reference to it.
@@ -74,15 +74,15 @@ impl Store for AmbientModel {
 // Context implementation
 impl Context for AmbientModel {
 
-    fn register_value<V: Into<StoreValue<'static>>>(&mut self, key: String, value: V) {
-        self.values.insert(key, StoreValueStatic(value.into()));
+    fn register_value<V: Into<StoreValueStatic>>(&mut self, key: String, value: V) {
+        self.values.insert(key, value.into());
     }
 
     fn register_store<S: Store + 'static>(&mut self, key: String, store: S) {
         self.stores.insert(key, Box::new(store) as Box<Store>);
     }
-    
+
     fn get_store_mut(&mut self, key: String) -> Option<&mut Box<Store + 'static>> {
         self.stores.get_mut(&key)
-    } 
+    }
 }
