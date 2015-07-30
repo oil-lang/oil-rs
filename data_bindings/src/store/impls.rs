@@ -140,3 +140,104 @@ impl<S, T> Store for HashMap<String, T, S>
         AttributeSetResult::NoSuchProperty(value)
     }
 }
+
+#[cfg(test)]
+mod test {
+
+    use store::StoreValue;
+    use Store;
+    use PropertyAccessor;
+    use bench::Bencher;
+    use num::traits::ToPrimitive;
+
+    #[derive(Clone)]
+    struct A {
+        a: Vec<B>,
+    }
+
+    declare_data_binding! {
+        A {
+            a
+        }
+    }
+
+    #[derive(Clone)]
+    struct B {
+        b: u32,
+        c: C,
+    }
+
+    declare_data_binding! {
+        B {
+            b,
+            c
+        }
+    }
+
+    #[derive(Clone)]
+    struct C {
+        a: Vec<A>,
+    }
+
+    declare_data_binding! {
+        C {
+            a
+        }
+    }
+
+    #[test]
+    fn vec_access_should_return_box_of_elements() {
+        let v = A {
+            a: vec![B { b: 0, c: C { a: Vec::new() }},
+                    B { b: 1, c: C { a: Vec::new() }}
+            ]
+        };
+
+        let mut iter = match v.get_attribute(PropertyAccessor::new("a")).unwrap() {
+            StoreValue::List(iter) => iter,
+            _ => panic!("test failed on iter access"),
+        };
+        assert_eq!(iter.next().unwrap().get_attribute(PropertyAccessor::new("b")).unwrap(), StoreValue::Integer(0));
+        assert_eq!(iter.next().unwrap().get_attribute(PropertyAccessor::new("b")).unwrap(), StoreValue::Integer(1));
+    }
+
+    #[bench]
+    fn vec_direct_access(b: &mut Bencher) {
+        let total = 100;
+        let v = A {
+            a: vec![B { b: 1, c: C { a: Vec::new() }}; total],
+        };
+
+        b.iter(|| {
+            let mut sum = 0;
+            for i in v.a.iter() {
+                sum += i.b;
+            }
+            assert_eq!(sum, total.to_u32().unwrap());
+        });
+    }
+
+    #[bench]
+    fn vec_store_access(b: &mut Bencher) {
+        let total = 100;
+        let v = A {
+            a: vec![B { b: 1, c: C { a: Vec::new() }}; total],
+        };
+
+        b.iter(|| {
+            let iter = match v.get_attribute(PropertyAccessor::new("a")).unwrap() {
+                StoreValue::List(iter) => iter,
+                _ => panic!("test failed on iter access"),
+            };
+            println!("wtf ?");
+            let mut sum = 0;
+            for i in iter {
+                sum += match i.get_attribute(PropertyAccessor::new("b")).unwrap() {
+                    StoreValue::Integer(i) => i,
+                    _ => 0,
+                }
+            }
+            assert_eq!(sum, total.to_i64().unwrap());
+        });
+    }
+}
