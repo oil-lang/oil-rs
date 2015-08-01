@@ -228,6 +228,7 @@ mod test {
     use PropertyAccessor;
     use bench::Bencher;
     use num::traits::ToPrimitive;
+    use std::collections::HashMap;
 
     #[derive(Clone)]
     struct A {
@@ -256,19 +257,21 @@ mod test {
     #[derive(Clone)]
     struct C {
         a: Vec<A>,
+        b: i32
     }
 
     declare_data_binding! {
         C {
-            a
+            a,
+            b
         }
     }
 
     #[test]
     fn vec_access_should_return_box_of_elements() {
         let v = A {
-            a: vec![B { b: 0, c: C { a: Vec::new() }},
-                    B { b: 1, c: C { a: Vec::new() }}
+            a: vec![B { b: 0, c: C { a: Vec::new(), b: 1 }},
+                    B { b: 1, c: C { a: Vec::new(), b: 1 }}
             ]
         };
 
@@ -281,7 +284,7 @@ mod test {
     fn vec_direct_access(b: &mut Bencher) {
         let total = 1000;
         let v = A {
-            a: vec![B { b: 1, c: C { a: Vec::new() }}; total],
+            a: vec![B { b: 1, c: C { a: Vec::new(), b: 1 }}; total],
         };
 
         b.iter(|| {
@@ -294,17 +297,53 @@ mod test {
     }
 
     #[bench]
+    fn vec_hashmap_access(b: &mut Bencher) {
+        let total = 1000;
+        let mut h = HashMap::new();
+        h.insert("c.b", 1);
+        let v = vec![h; total];
+
+        b.iter(|| {
+            let mut sum = 0;
+            for i in v.iter() {
+                sum += *i.get("c.b").unwrap();
+            }
+            assert_eq!(sum, total.to_u32().unwrap());
+        });
+    }
+
+    #[bench]
     fn vec_store_access(b: &mut Bencher) {
         let total = 1000;
         let v = A {
-            a: vec![B { b: 1, c: C { a: Vec::new() }}; total],
+            a: vec![B { b: 1, c: C { a: Vec::new(), b: 1 }}; total],
         };
 
         b.iter(|| {
-            let iter = v.get_attribute(PropertyAccessor::new("a")).unwrap_iter();
             let mut sum = 0;
+            let iter = v.get_attribute(PropertyAccessor::new("a")).unwrap_iter();
             for i in iter {
                 sum += match i.get_attribute(PropertyAccessor::new("b")).unwrap() {
+                    StoreValue::Integer(i) => i,
+                    _ => 0,
+                }
+            }
+            assert_eq!(sum, total.to_i64().unwrap());
+        });
+    }
+
+    #[bench]
+    fn vec_store_2indirection_access(b: &mut Bencher) {
+        let total = 1000;
+        let v = A {
+            a: vec![B { b: 1, c: C { a: Vec::new(), b: 1 }}; total],
+        };
+
+        b.iter(|| {
+            let mut sum = 0;
+            let iter = v.get_attribute(PropertyAccessor::new("a")).unwrap_iter();
+            for i in iter {
+                sum += match i.get_attribute(PropertyAccessor::new("c.b")).unwrap() {
                     StoreValue::Integer(i) => i,
                     _ => 0,
                 }
