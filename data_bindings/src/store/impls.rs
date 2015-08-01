@@ -14,15 +14,18 @@ use store::cast::AsStoreValue;
 use {
     AttributeSetResult,
     AttributeGetResult,
+    AttributeMutResult,
     Store,
     StoreValue,
-    Cast
 };
 
 /// `Box` implementation to allow virtual implementations
 impl<T: ?Sized> Store for Box<T> where T: Store {
-    fn get_attribute<'b>(&'b self, k: PropertyAccessor) -> AttributeGetResult<'b> {
+    fn get_attribute(&self, k: PropertyAccessor) -> AttributeGetResult {
         (**self).get_attribute(k)
+    }
+    fn get_attribute_mut(&mut self, k: PropertyAccessor) -> AttributeMutResult {
+        (**self).get_attribute_mut(k)
     }
     fn set_attribute<'b>(&mut self, k: PropertyAccessor, value: StoreValue<'b>) -> AttributeSetResult<'b> {
         (**self).set_attribute(k, value)
@@ -65,6 +68,10 @@ struct WrapperIter<'a, T: 'a> {
     it: slice::Iter<'a, T>,
 }
 
+struct WrapperIterMut<'a, T: 'a> {
+    it: slice::IterMut<'a, T>,
+}
+
 impl<'a, T> Iterator for WrapperIter<'a, T>
     where T: Store + 'a
 {
@@ -72,6 +79,16 @@ impl<'a, T> Iterator for WrapperIter<'a, T>
 
     fn next(&mut self) -> Option<Self::Item> {
         self.it.next().map(|i| i as &Store)
+    }
+}
+
+impl<'a, T> Iterator for WrapperIterMut<'a, T>
+    where T: Store + 'a
+{
+    type Item = &'a mut Store;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.it.next().map(|i| i as &mut Store)
     }
 }
 /*impl<'a, T> From<&'a [T]> for StoreValue<'a>
@@ -100,6 +117,15 @@ impl<T> Store for Vec<T>
                 Box::new(WrapperIter { it: self.iter() }) as Box<Iterator<Item=&'a Store> + 'a>
             ),
             _ => AttributeGetResult::NoSuchProperty
+        }
+    }
+
+    fn get_attribute_mut<'a>(&'a mut self, k: PropertyAccessor) -> AttributeMutResult<'a> {
+        match k.name() {
+            "" => AttributeMutResult::IterableType(
+                Box::new(WrapperIterMut { it: self.iter_mut() }) as Box<Iterator<Item=&'a mut Store> + 'a>
+            ),
+            _ => AttributeMutResult::NoSuchProperty
         }
     }
 
@@ -139,6 +165,40 @@ impl<S, T> Store for HashMap<String, T, S>
             }
         }
         AttributeGetResult::NoSuchProperty
+    }
+
+    fn get_attribute_mut<'a>(&'a mut self, k: PropertyAccessor) -> AttributeMutResult<'a> {
+        // TODO(Nemikolh): Strangely this code doesn't compile.
+        // for (prefix, key) in PrefixKeyIter::new(k) {
+        //     if let Some(store) = self.get_mut(prefix) {
+        //         match store.get_attribute_mut(key) {
+        //             AttributeMutResult::NoSuchProperty => continue,
+        //             default_case => return default_case,
+        //         }
+        //     }
+        // }
+        //
+        // TODO(Nemikolh): Slow hack to get the job done.
+        let mut kfound = None;
+        let mut pfound = None;
+        for (prefix, key) in PrefixKeyIter::new(k) {
+            kfound = Some(key.clone());
+            if let Some(store) = self.get(prefix) {
+                match store.get_attribute(key) {
+                    AttributeGetResult::NoSuchProperty => (),
+                    _ => {
+                        pfound = Some(prefix);
+                        break;
+                    }
+                }
+            }
+        }
+        if pfound.is_some() && kfound.is_some() {
+            let store = self.get_mut(pfound.unwrap()).unwrap();
+            store.get_attribute_mut(kfound.unwrap())
+        } else {
+            AttributeMutResult::NoSuchProperty
+        }
     }
 
     fn set_attribute<'a>(&mut self, k: PropertyAccessor, mut value: StoreValue<'a>) -> AttributeSetResult<'a> {

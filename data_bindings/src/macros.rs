@@ -14,6 +14,15 @@ macro_rules! declare_data_binding {
                 }
             }
 
+            fn get_attribute_mut<'a>(&'a mut self, k: $crate::PropertyAccessor)
+                -> $crate::AttributeMutResult<'a>
+            {
+                match k.name() {
+                    $(stringify!($field) => self.$field.get_attribute_mut(k.next()),)*
+                    _ => $crate::AttributeMutResult::NoSuchProperty,
+                }
+            }
+
             fn set_attribute<'a>(&mut self, k: $crate::PropertyAccessor, value: $crate::StoreValue<'a>)
                 -> $crate::AttributeSetResult<'a>
             {
@@ -40,23 +49,32 @@ macro_rules! impl_store_for_value_type_like {
         impl Store for $type_ident
         {
 
-            fn get_attribute<'b>(&'b self, k: PropertyAccessor) -> AttributeGetResult<'b> {
+            fn get_attribute<'b>(&'b self, k: $crate::PropertyAccessor) -> $crate::AttributeGetResult<'b> {
                 match k.name() {
                     "" => {
-                        let attribute: StoreValue<'b> = self.as_store_value();
-                        AttributeGetResult::PrimitiveType(attribute)
+                        let attribute: $crate::StoreValue<'b> = self.as_store_value();
+                        $crate::AttributeGetResult::PrimitiveType(attribute)
                     }
-                    _ => AttributeGetResult::NoSuchProperty
+                    _ => $crate::AttributeGetResult::NoSuchProperty
                 }
             }
 
-            fn set_attribute<'b>(&mut self, k: PropertyAccessor, value: StoreValue<'b>) -> AttributeSetResult<'b> {
+            fn get_attribute_mut<'b>(&'b mut self, k: $crate::PropertyAccessor) -> $crate::AttributeMutResult<'b> {
                 match k.name() {
-                    "" => match <Self as Cast>::cast(value) {
-                        Some(c) => { *self = c; AttributeSetResult::Stored },
-                        None => AttributeSetResult::WrongType
+                    "" => {
+                        $crate::AttributeMutResult::PrimitiveType(self as &'b mut $crate::store::AssignFromCast)
+                    }
+                    _ => $crate::AttributeMutResult::NoSuchProperty
+                }
+            }
+
+            fn set_attribute<'b>(&mut self, k: $crate::PropertyAccessor, value: $crate::StoreValue<'b>) -> $crate::AttributeSetResult<'b> {
+                match k.name() {
+                    "" => match <Self as $crate::Cast>::cast(value) {
+                        Some(c) => { *self = c; $crate::AttributeSetResult::Stored },
+                        None => $crate::AttributeSetResult::WrongType
                     },
-                    _ => AttributeSetResult::NoSuchProperty(value)
+                    _ => $crate::AttributeSetResult::NoSuchProperty(value)
                 }
             }
         }

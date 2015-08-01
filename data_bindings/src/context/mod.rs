@@ -10,6 +10,7 @@ use {
     Store,
     StoreValue,
     AttributeGetResult,
+    AttributeMutResult,
     AttributeSetResult
 };
 use lookup::PropertyAccessor;
@@ -58,6 +59,15 @@ impl Store for AmbientModel {
             value
         } else {
             self.values.get_attribute(k)
+        }
+    }
+
+    fn get_attribute_mut<'a>(&'a mut self, k: PropertyAccessor) -> AttributeMutResult<'a> {
+        let value = self.stores.get_attribute_mut(k.clone());
+        if value.is_found() {
+            value
+        } else {
+            self.values.get_attribute_mut(k)
         }
     }
 

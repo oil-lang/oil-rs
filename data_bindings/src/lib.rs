@@ -104,9 +104,14 @@ mod lookup;
 pub trait Store: mopa::Any {
 
     /// Return the value corresponding to the key 'k'.
-    /// If no value is found with such a name, the trait
-    /// implementer should returns `None`.
-    fn get_attribute<'a>(&'a self, k: PropertyAccessor) -> AttributeGetResult<'a>;
+    /// If no value is found with such a name, the trait implementer
+    /// will returns `AttributeGetResult`.
+    fn get_attribute(&self, k: PropertyAccessor) -> AttributeGetResult;
+
+    /// Return the value corresponding to the key 'k' with a mutable access.
+    /// If no value is found with such a name, the trait implementer
+    /// will return `AttributeMutResult::NoSuchProperty`.
+    fn get_attribute_mut(&mut self, k: PropertyAccessor) -> AttributeMutResult;
 
     /// This method set the value for the attribute named 'k'.
     /// For consistency the lookup algorithm should be the
@@ -189,6 +194,24 @@ impl<'a> AttributeGetResult<'a> {
         match self {
             &AttributeGetResult::PrimitiveType(_) => true,
             &AttributeGetResult::IterableType(_) => true,
+            _ => false
+        }
+    }
+}
+
+impl<'a> AttributeMutResult<'a> {
+
+    pub fn unwrap_iter(self) -> Box<Iterator<Item=&'a mut Store> + 'a> {
+        match self {
+            AttributeMutResult::IterableType(it) => it,
+            _ => panic!(),
+        }
+    }
+
+    pub fn is_found(&self) -> bool {
+        match self {
+            &AttributeMutResult::PrimitiveType(_) => true,
+            &AttributeMutResult::IterableType(_) => true,
             _ => false
         }
     }
