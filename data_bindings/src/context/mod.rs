@@ -1,4 +1,6 @@
 pub use self::manager::ContextManager;
+pub use self::manager::ViewContext;
+pub use self::manager::ViewContextMut;
 
 mod manager;
 //mod proxies;

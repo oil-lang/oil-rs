@@ -18,7 +18,7 @@ pub use self::lookup::PropertyAccessor;
 
 //mod error;
 pub mod context;
-mod store;
+pub mod store;
 mod lookup;
 
 /// Key trait to create a model that support two-ways databindings
@@ -169,6 +169,19 @@ pub enum AttributeSetResult<'a> {
     /// be returned unchanged via this enum value.
     NoSuchProperty(StoreValue<'a>)
 }
+
+/// The context that is going to be used by oil. This trait is only here
+/// to reduce the burden of using the `ContextManager` and also reduce the amount
+/// of changes to performs when refactoring it.
+/// This trait only really matters to **oil** developpers.
+pub trait DataBindingsContext {
+    /// Returns a context for the given view that support lookup on `Store` registered in
+    /// the `ContextManager`.
+    fn get_view_context<'a>(&'a self, view_name: &String) -> self::context::ViewContext<'a>;
+    /// Identical to `get_view_context` except that you have a mutable access to the context.
+    fn get_view_context_mut<'a>(&'a mut self, view_name: &String) -> self::context::ViewContextMut<'a>;
+}
+
 
 // ======================================== //
 //                   IMPLS                  //
