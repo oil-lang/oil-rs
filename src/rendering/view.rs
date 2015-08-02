@@ -8,7 +8,8 @@ use focus::{FocusBuffer, FocusedElement};
 use super::render::RenderBuffer;
 use oil_shared::style::SelectorState;
 use oil_shared::style::Stylesheet;
-use data_bindings::{DataBindingBuffer,ContextManager};
+use data_bindings::DataBindingBuffer;
+use DataBindingsContext;
 use markup;
 use RenderBackbend;
 use Viewport;
@@ -53,13 +54,14 @@ impl View {
         }
     }
 
-    pub fn update<R>(
+    pub fn update<R, C>(
         &mut self,
         display: &Display,
         resource_manager: &R,
         vp: Viewport,
-        context: &ContextManager)
-        where R: ResourceManager
+        context: &mut C)
+        where R: ResourceManager,
+              C: DataBindingsContext
     {
         let updated_bindings = self.data_binding_buffer.update(context, &mut self.layout_data);
         if self.dirty_flags || updated_bindings {

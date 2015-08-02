@@ -8,7 +8,7 @@ use markup::MAIN_VIEW_NAME;
 use markup::Library;
 use resource::ResourceManager;
 use oil_shared::style::Stylesheet;
-use data_bindings::ContextManager;
+use DataBindingsContext;
 use RenderBackbend;
 use View;
 use Viewport;
@@ -87,13 +87,14 @@ impl Router {
         }
     }
 
-    pub fn update<R>(
+    pub fn update<R, C>(
         &mut self,
         display: &Display,
         resource_manager: &R,
         vp: Viewport,
-        context: &ContextManager)
-        where R: ResourceManager
+        context: &mut C)
+        where R: ResourceManager,
+              C: DataBindingsContext
     {
         for &mut (_, ref mut v) in self.stack.iter_mut() {
             v.borrow_mut().update(display, resource_manager, vp, context);

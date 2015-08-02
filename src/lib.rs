@@ -1,7 +1,4 @@
 #![feature(plugin)]
-#![feature(hashmap_hasher)]
-#![feature(rc_weak)]
-#![feature(into_cow)]
 #![feature(iter_cmp)]
 #![plugin(phf_macros)]
 
@@ -34,8 +31,9 @@ pub use oil_parsers::StdOutErrorReporter;
 pub use oil_parsers::EmptyErrorReporter;
 pub use self::router::Router;
 pub use self::rendering::View;
-pub use self::data_bindings::ContextManager;
+pub use self::data_bindings::DefaultContextManager;
 pub use self::data_bindings::Store;
+pub use self::data_bindings::DataBindingsContext;
 
 mod layout;
 mod router;
@@ -43,6 +41,10 @@ mod util;
 mod focus;
 mod state;
 
+/// Trait used by oil to perform the high level rendering operations.
+/// Ideally, `oil` should not depend on a specific implementation.
+///
+/// It turns out, today's this is not true at all.
 pub trait RenderBackbend {
     type Frame;
 
