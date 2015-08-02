@@ -1,8 +1,9 @@
 
 use std::collections::HashMap;
-use std::mem;
 
-use oil_shared::markup::{Node, NodeType, TemplateData, View, Template};
+use oil_shared::markup::{
+    Node, NodeType, TemplateData, View, Template
+};
 use ErrorReporter;
 
 // Library
@@ -47,6 +48,8 @@ impl<E> Library<E>
     /// with a group containing the templates childs.
     ///
     /// Note: this does not resolve data-bindings dependencies.
+    //#[deprecated(reason = "This is now managed automatically when the view is created.",
+    //         	 since = "0.2.0")]
     pub fn resolve_templates(&mut self) {
         let ref mut views = self.views;
         let ref templates = self.templates;
@@ -66,36 +69,22 @@ impl<E> Library<E>
                                   templates: &HashMap<String, Template>,
                                   node: &mut Node)
     {
-        for child in node.children.iter_mut() {
-
-            let mut is_empty = None;
-            let test = match child.node_type {
-                NodeType::Template(TemplateData { ref path }) => {
-                    is_empty = Some(path.clone());
-                    templates.get(path)
-                }
-                _ => None
-            };
-
-            match test {
-                Some(found) => {
-                    mem::swap(
-                        child,
-                        &mut Node::from_template(
-                            found,
-                            NodeType::Group
-                        )
-                    );
-                }
-                // TODO: Warn if the template name is not valid
-                //       (not a data-bindings)
-                None => match is_empty {
-                    Some(name) => err.log(
-                        format!("Warning `{}` template name not found", name)
-                    ),
-                    None => ()
+        let new_node_opt = match node.node_type {
+            NodeType::Template(TemplateData { ref path }) => {
+                match templates.get(path) {
+                    None => {
+                        err.log(format!(
+                                "Warning `{}` template name not found", path));
+                        None
+                    }
+                    Some(found) => Some(Node::from_template(found, NodeType::Group)),
                 }
             }
+            _ => None
+        };
+
+        if let Some(new_node) = new_node_opt {
+            *node = new_node;
         }
 
         for child in node.children.iter_mut() {

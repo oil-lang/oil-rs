@@ -1,4 +1,5 @@
 use glium::Display;
+use std::collections::HashMap;
 
 use resource::ResourceManager;
 use layout::LayoutBuffer;
@@ -7,6 +8,8 @@ use focus::{FocusBuffer, FocusedElement};
 use super::render::RenderBuffer;
 use oil_shared::style::SelectorState;
 use oil_shared::style::Stylesheet;
+use data_bindings::DataBindingBuffer;
+use DataBindingsContext;
 use markup;
 use RenderBackbend;
 use Viewport;
@@ -20,6 +23,7 @@ pub struct View {
     render_data: RenderBuffer,
     // Current state
     current_focused_node: FocusedElement,
+    data_binding_buffer: DataBindingBuffer,
 }
 
 impl View {
@@ -28,6 +32,7 @@ impl View {
         display: &Display,
         resource_manager: &R,
         view: &markup::View,
+        templates: &HashMap<String, markup::Template>,
         stylesheet: &Stylesheet)
         -> View
         where R: ResourceManager
@@ -36,6 +41,7 @@ impl View {
         let focus_buffer = FocusBuffer::new(view);
         let layout_buffer = LayoutBuffer::new(view);
         let render_buffer = RenderBuffer::new(display, resource_manager, &state_buffer);
+        let data_binding_buffer = DataBindingBuffer::new(view, templates);
 
         View {
             dirty_flags: true,
@@ -44,17 +50,21 @@ impl View {
             current_focused_node: focus_buffer.first_acceptor(),
             focus_data: focus_buffer,
             state_data: state_buffer,
+            data_binding_buffer: data_binding_buffer,
         }
     }
 
-    pub fn update<R>(
+    pub fn update<R, C>(
         &mut self,
         display: &Display,
         resource_manager: &R,
-        vp: Viewport)
-        where R: ResourceManager
+        vp: Viewport,
+        context: &mut C)
+        where R: ResourceManager,
+              C: DataBindingsContext
     {
-        if self.dirty_flags {
+        let updated_bindings = self.data_binding_buffer.update(context, &mut self.layout_data);
+        if self.dirty_flags || updated_bindings {
             self.set_state_for_focused_node();
             self.layout_data.update_from_state(&self.state_data);
             self.layout_data.compute_layout(vp.width, vp.height);

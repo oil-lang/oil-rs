@@ -1,7 +1,5 @@
-#![feature(core)]
-#![feature(std_misc)]
 #![feature(plugin)]
-#![feature(alloc)]
+#![feature(iter_cmp)]
 #![plugin(phf_macros)]
 
 #[macro_use]
@@ -15,6 +13,7 @@ extern crate image;
 extern crate cgmath;
 extern crate oil_parsers;
 extern crate oil_shared;
+extern crate oil_databindings;
 
 #[cfg(test)]
 extern crate glutin;
@@ -24,6 +23,7 @@ pub mod style;
 pub mod deps;
 pub mod rendering;
 pub mod resource;
+pub mod data_bindings;
 
 // Reexport
 pub use oil_parsers::ErrorReporter;
@@ -31,16 +31,20 @@ pub use oil_parsers::StdOutErrorReporter;
 pub use oil_parsers::EmptyErrorReporter;
 pub use self::router::Router;
 pub use self::rendering::View;
-pub use self::data_bindings::DataBinderContext;
-pub use self::data_bindings::DBStore;
+pub use self::data_bindings::DefaultContextManager;
+pub use self::data_bindings::Store;
+pub use self::data_bindings::DataBindingsContext;
 
 mod layout;
 mod router;
 mod util;
 mod focus;
 mod state;
-mod data_bindings;
 
+/// Trait used by oil to perform the high level rendering operations.
+/// Ideally, `oil` should not depend on a specific implementation.
+///
+/// It turns out, today's this is not true at all.
 pub trait RenderBackbend {
     type Frame;
 

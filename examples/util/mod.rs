@@ -15,11 +15,13 @@ pub fn run_example(title: &str, markup_path: &str, deps_path: &str, style_path: 
     //////////////////////////////////////////////////////////////////////////////
     // oil related code
     //
-    let library = {
+    let mut library = {
         let file = File::open(&Path::new(markup_path)).unwrap();
         let reader = BufReader::new(file);
         oil::markup::parse(oil::StdOutErrorReporter, reader)
     };
+
+    library.resolve_templates();
 
     let defs = oil::deps::parse_file(oil::StdOutErrorReporter, deps_path);
 
@@ -53,6 +55,7 @@ pub fn run_example(title: &str, markup_path: &str, deps_path: &str, style_path: 
         library,
         &stylesheet
     );
+    let mut data_binder_context = oil::DefaultContextManager::default();
 
     //////////////////////////////////////////////////////////////////////////////
     // main loop (modified example from glium lib)
@@ -62,7 +65,7 @@ pub fn run_example(title: &str, markup_path: &str, deps_path: &str, style_path: 
         let vp = oil::Viewport { width: width as f32, height: height as f32 };
 
         // Update views
-        router.update(&display, &resource_manager, vp);
+        router.update(&display, &resource_manager, vp, &mut data_binder_context);
 
         // Render views
         let mut f = renderer.prepare_frame(vp);

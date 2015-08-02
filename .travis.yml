@@ -1,12 +1,19 @@
 language: rust
+rust: nightly
 
 addons:
   apt:
     packages:
     - libxxf86vm-dev
+    - libosmesa6-dev
 
 script:
     - cargo build -v
+    - cd ./shared/
     - cargo test -v
-    - cd parsers/
+    - cd ../parsers/
+    - cargo test -v
+    - cd ../data_bindings
+    - cargo test -v
+    - cd ..
     - cargo test -v

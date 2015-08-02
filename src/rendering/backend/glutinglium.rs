@@ -42,7 +42,8 @@ impl<'a> GliumRenderer<'a> {
             varying vec2 v_tex_coords;
 
             void main() {
-                gl_FragColor = texture2D(texture, v_tex_coords);
+                vec3 gamma = vec3(2.2);
+                gl_FragColor = vec4(pow(texture2D(texture, v_tex_coords).rgb, gamma), 1);
             }
         ", None).unwrap();
 

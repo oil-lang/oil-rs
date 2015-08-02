@@ -8,6 +8,7 @@ use markup::MAIN_VIEW_NAME;
 use markup::Library;
 use resource::ResourceManager;
 use oil_shared::style::Stylesheet;
+use DataBindingsContext;
 use RenderBackbend;
 use View;
 use Viewport;
@@ -24,6 +25,21 @@ impl Router {
             stack: Vec::new(),
             views: HashMap::new(),
         }
+    }
+
+    pub fn from_library_and_stylesheet<R, E>(
+        display: &Display,
+        resource_manager:  &R,
+        lib: Library<E>,
+        style: &Stylesheet)
+        -> Router
+        where R: ResourceManager
+    {
+        let mut router = Router::new();
+        for (name, view) in lib.views.into_iter() {
+            router.add_view(name, View::new(display, resource_manager, &view, &lib.templates, style));
+        }
+        router
     }
 
     pub fn iter_name_views(&self) -> Keys<String,Rc<RefCell<View>>> {
@@ -71,26 +87,17 @@ impl Router {
         }
     }
 
-    pub fn from_library_and_stylesheet<R, E>(
+    pub fn update<R, C>(
+        &mut self,
         display: &Display,
-        resource_manager:  &R,
-        lib: Library<E>,
-        style: &Stylesheet)
-        -> Router
-        where R: ResourceManager
-    {
-        let mut router = Router::new();
-        for (name, view) in lib.views.into_iter() {
-            router.add_view(name, View::new(display, resource_manager, &view, style));
-        }
-        router
-    }
-
-    pub fn update<R>(&mut self, display: &Display, resource_manager: &R, vp: Viewport)
-        where R: ResourceManager
+        resource_manager: &R,
+        vp: Viewport,
+        context: &mut C)
+        where R: ResourceManager,
+              C: DataBindingsContext
     {
         for &mut (_, ref mut v) in self.stack.iter_mut() {
-            v.borrow_mut().update(display, resource_manager, vp);
+            v.borrow_mut().update(display, resource_manager, vp, context);
         }
     }
 

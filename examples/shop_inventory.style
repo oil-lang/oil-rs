@@ -1,17 +1,17 @@
 
 .shop {
-    width: 85px;
-    margin: 5px;
+    width: 160px;
+    margin: 10px;
 }
 
 .inventory {
-    width: 85px;
-    margin: 5px;
+    width: 160px;
+    margin: 10px;
 }
 
 .item {
-    height: 40px;
-    width: 40px;
+    height: 80px;
+    width: 80px;
     background-image: $item.notselected;
     background-image-rule: fit;
 }
@@ -30,8 +30,8 @@
 }
 
 .btn {
-    width: 160px;
-    height: 40px;
+    width: 640px;
+    height: 80px;
     background-image: $btn.notselected;
     background-image-rule: fit;
 }

@@ -18,14 +18,14 @@ notselected = Image(
 selected = Image(
     path: "./btn.png",
     offset-y: 46,
-    offset-x: 3,
+    offset-x: 2,
     width: 44,
     height: 44
 )
 notselected = Image(
     path: "./btn.png",
-    offset-y: 3,
-    offset-x: 3,
+    offset-y: 2,
+    offset-x: 2,
     width: 40,
     height: 40
 )
