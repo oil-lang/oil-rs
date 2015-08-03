@@ -1,0 +1,23 @@
+
+[package]
+name = "oil_fonts"
+version = "0.2.0"
+authors = ["Nemikolh <joan.varvenne@gmail.com>", "Vaelden <maugan.villatel@gmail.com>"]
+homepage = "http://oil-lang.github.io/"
+repository = "https://github.com/oil-lang/oil-rs"
+license = "MIT"
+keywords = ["ui", "fonts"]
+description = "Fonts library for oil."
+
+[dependencies]
+freetype-sys = "*"
+libc = "*"
+harfbuzz = "*"
+string_cache = "0.1.10"
+log = "*"
+euclid = "0.1.5"
+rand = "*"
+
+[dependencies.oil_shared]
+path = "../shared"
+version = "=0.1.0"
