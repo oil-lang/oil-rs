@@ -3,8 +3,9 @@
 #![feature(box_raw)]
 #![feature(hashmap_hasher)]
 
-#[macro_use]
-extern crate log;
+#[macro_use] extern crate bitflags;
+#[macro_use] extern crate log;
+extern crate smallvec;
 extern crate harfbuzz;
 extern crate freetype_sys;
 extern crate string_cache;

@@ -7,7 +7,7 @@
  *     https://github.com/servo/servo/blob/master/components/gfx/text/shaping/harfbuzz.rs
  */
 
-use harfbuzz::{HB_MEMORY_MODE_READONLY, HB_DIRECTION_LTR};
+use harfbuzz::{HB_MEMORY_MODE_READONLY, HB_DIRECTION_LTR, HB_DIRECTION_RTL};
 use harfbuzz::{RUST_hb_blob_create, RUST_hb_face_create_for_tables};
 use harfbuzz::{hb_blob_t};
 use harfbuzz::{hb_bool_t};
@@ -42,11 +42,11 @@ use std::ptr;
 
 use util::float_to_fixed;
 use glyph::GlyphId;
+use glyph::GlyphStore;
 use font::FontTableTag;
+use font::{RTL_FLAG, IGNORE_LIGATURES_SHAPING_FLAG, DISABLE_KERNING_SHAPING_FLAG};
 
-use font::{Font};//, ShapingOptions};
-#[derive(Copy, Clone)]
-pub struct ShapingOptions;
+use font::{Font, ShapingOptions};
 
 struct FontAndShapingOptions {
     font: *mut Font,
@@ -116,6 +116,61 @@ impl Shaper {
         }
     }
 
+    /// Calculate the layout metrics associated with the given text when painted in a specific
+    /// font.
+    pub fn shape_text(&self, text: &str, options: &ShapingOptions, glyphs: &mut GlyphStore) {
+        unsafe {
+            let hb_buffer: *mut hb_buffer_t = RUST_hb_buffer_create();
+            RUST_hb_buffer_set_direction(hb_buffer, if options.flags.contains(RTL_FLAG) {
+                HB_DIRECTION_RTL
+            } else {
+                HB_DIRECTION_LTR
+            });
+
+            RUST_hb_buffer_add_utf8(hb_buffer,
+                                    text.as_ptr() as *const c_char,
+                                    text.len() as c_int,
+                                    0,
+                                    text.len() as c_int);
+
+            let mut features = Vec::new();
+            if options.flags.contains(IGNORE_LIGATURES_SHAPING_FLAG) {
+                features.push(hb_feature_t {
+                    _tag: LIGA,
+                    _value: 0,
+                    _start: 0,
+                    _end: RUST_hb_buffer_get_length(hb_buffer),
+                })
+            }
+            if options.flags.contains(DISABLE_KERNING_SHAPING_FLAG) {
+                features.push(hb_feature_t {
+                    _tag: KERN,
+                    _value: 0,
+                    _start: 0,
+                    _end: RUST_hb_buffer_get_length(hb_buffer),
+                })
+            }
+
+            RUST_hb_shape(self.hb_font, hb_buffer, features.as_mut_ptr(), features.len() as u32);
+            self.save_glyph_results(text, options, glyphs, hb_buffer);
+            RUST_hb_buffer_destroy(hb_buffer);
+        }
+    }
+
+    pub fn set_options(&mut self, options: &ShapingOptions) {
+        self.font_and_shaping_options.options = *options
+    }
+
+    fn save_glyph_results(&self,
+                        text: &str,
+                        options: &ShapingOptions,
+                        glyphs: &mut GlyphStore,
+                        buffer: *mut hb_buffer_t) {
+        // TODO(Nemikolh) Cf:
+        // https://github.com/servo/servo/blob/master/components/gfx/text/shaping/harfbuzz.rs#L259-L504
+        panic!();
+    }
+
     fn float_to_fixed(f: f64) -> i32 {
         float_to_fixed(16, f)
     }
@@ -124,7 +179,15 @@ impl Shaper {
 
 
 
+macro_rules! hb_tag {
+    ($t1:expr, $t2:expr, $t3:expr, $t4:expr) => (
+        (($t1 as u32) << 24) | (($t2 as u32) << 16) | (($t3 as u32) << 8) | ($t4 as u32)
+    );
+}
 
+
+static KERN: u32 = hb_tag!('k', 'e', 'r', 'n');
+static LIGA: u32 = hb_tag!('l', 'i', 'g', 'a');
 
 
 /// Callbacks from Harfbuzz when font map and glyph advance lookup needed.

@@ -17,6 +17,8 @@ string_cache = "0.1.10"
 log = "*"
 euclid = "0.1.5"
 rand = "*"
+smallvec = "*"
+bitflags = "*"
 
 [dependencies.oil_shared]
 path = "../shared"
